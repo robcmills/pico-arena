@@ -36,27 +36,22 @@ function move_player_down(p)
  p.z=90
 end
 
-function update_player(pnum)
+function update_players()
  local bits=btn()
  if bits~=0 then btn_bits=bits end -- for debugging
 
- if pnum==1 then
-  if bits&1~=0 then move_player_left(p1) end
-  if bits&2~=0 then move_player_right(p1) end
-  if bits&4~=0 then move_player_up(p1) end
-  if bits&8~=0 then move_player_down(p1) end
- elseif pnum==2 then
-  if bits&256~=0 then move_player_left(p2)
-  elseif bits&512~=0 then move_player_right(p2)
-  elseif bits&1024~=0 then move_player_up(p2)
-  elseif bits&2048~=0 then move_player_down(p2)
-  end
- end
+ if bits&1~=0 then move_player_left(p1) end
+ if bits&2~=0 then move_player_right(p1) end
+ if bits&4~=0 then move_player_up(p1) end
+ if bits&8~=0 then move_player_down(p1) end
+ if bits&256~=0 then move_player_left(p2) end
+ if bits&512~=0 then move_player_right(p2) end
+ if bits&1024~=0 then move_player_up(p2) end
+ if bits&2048~=0 then move_player_down(p2) end
 end
 
 function _update()
- update_player(1)
- update_player(2)
+ update_players()
 end
 
 function draw_player(pnum)
