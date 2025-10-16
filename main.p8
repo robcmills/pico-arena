@@ -56,14 +56,18 @@ end
 
 function draw_player(pnum)
  local p = pnum==1 and p1 or p2
- local sprn=p.z<-45 and 18 or 17
+ local sprn=17 -- left/right
+ if p.z==-90 then sprn=18 end -- up
+ if p.z==90 then sprn=19 end -- down
  if pnum==2 then
   pal(12,8) -- swap blue for red
  end
- spr(sprn,p.x*8,p.y*8,1,1,p.flip_x)
+ local xoffset=p.flip_x and -1 or 0
+ spr(sprn,p.x*8+xoffset,p.y*8,1,1,p.flip_x)
  pal()
 end
 
+-- debug
 function to_bin(n)
   return n==0 and "0" or to_bin(flr(n/2))..(n%2)
 end
@@ -73,5 +77,5 @@ function _draw()
  map()
  draw_player(1)
  draw_player(2)
- print(to_bin(btn_bits))
+ -- print(to_bin(btn_bits))
 end
