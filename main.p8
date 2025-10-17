@@ -64,20 +64,20 @@ function update_players()
 
  local p1_move_bits=bits&p1_move_mask
  if p1_move_bits~=p1.last_btn_bits or now-p1.last_move_time>move_delay then
-  if bits&1~=0 then move_player_left(p1) end
-  if bits&2~=0 then move_player_right(p1) end
-  if bits&4~=0 then move_player_up(p1) end
-  if bits&8~=0 then move_player_down(p1) end
+  if bits&1~=0 then move_player_left(p1)
+  elseif bits&2~=0 then move_player_right(p1)
+  elseif bits&4~=0 then move_player_up(p1)
+  elseif bits&8~=0 then move_player_down(p1) end
   p1.last_btn_bits=p1_move_bits
   p1.last_move_time=now
  end
 
  local p2_move_bits=bits&p2_move_mask
  if p2_move_bits~=p2.last_btn_bits or now-p2.last_move_time>move_delay then
-  if bits&256~=0 then move_player_left(p2) end
-  if bits&512~=0 then move_player_right(p2) end
-  if bits&1024~=0 then move_player_up(p2) end
-  if bits&2048~=0 then move_player_down(p2) end
+  if bits&256~=0 then move_player_left(p2)
+  elseif bits&512~=0 then move_player_right(p2)
+  elseif bits&1024~=0 then move_player_up(p2)
+  elseif bits&2048~=0 then move_player_down(p2) end
   p2.last_btn_bits=p2_move_bits
   p2.last_move_time=now
  end
