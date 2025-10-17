@@ -1,16 +1,22 @@
 function _init()
  debug={}
+ move_delay=0.2 -- seconds between moves (only when btn held)
+ now=0
  p1 = {
   flip_x=false,
+  last_btn_bits=0,
+  last_move_time=0,
   x=3,
   y=3,
   z=0, -- direction in degrees clockwise (0=East,90=South)
  }
  p2 = {
   flip_x=false,
+  last_btn_bits=0,
+  last_move_time=0,
   x=6,
   y=6,
-  z=0, -- direction in degrees clockwise (0=East,90=South)
+  z=0,
  }
 end
 
@@ -36,19 +42,49 @@ function move_player_down(p)
  p.z=90
 end
 
+-- btn() returns a bitfield of all 12 button states for players 1 & 2
+-- p1: bits 0..5  p2: bits 8..13
+-- p1_mask=111111 p2_mask=11111100000000
+-- o,x,down,up,right,left
+-- p1_move_mask=1111 p2_move_mask=111100000000
+--                                |  |    8421
+--                                |  |   16
+--                                |  |  32
+--                                |  | 64
+--                                |  |128
+--                                |  256
+--                                | 512
+--                                |1024
+--                                2048
+p1_move_mask=15
+p2_move_mask=3840
+
 function update_players()
  local bits=btn()
- if bits&1~=0 then move_player_left(p1) end
- if bits&2~=0 then move_player_right(p1) end
- if bits&4~=0 then move_player_up(p1) end
- if bits&8~=0 then move_player_down(p1) end
- if bits&256~=0 then move_player_left(p2) end
- if bits&512~=0 then move_player_right(p2) end
- if bits&1024~=0 then move_player_up(p2) end
- if bits&2048~=0 then move_player_down(p2) end
+
+ local p1_move_bits=bits&p1_move_mask
+ if p1_move_bits~=p1.last_btn_bits or now-p1.last_move_time>move_delay then
+  if bits&1~=0 then move_player_left(p1) end
+  if bits&2~=0 then move_player_right(p1) end
+  if bits&4~=0 then move_player_up(p1) end
+  if bits&8~=0 then move_player_down(p1) end
+  p1.last_btn_bits=p1_move_bits
+  p1.last_move_time=now
+ end
+
+ local p2_move_bits=bits&p2_move_mask
+ if p2_move_bits~=p2.last_btn_bits or now-p2.last_move_time>move_delay then
+  if bits&256~=0 then move_player_left(p2) end
+  if bits&512~=0 then move_player_right(p2) end
+  if bits&1024~=0 then move_player_up(p2) end
+  if bits&2048~=0 then move_player_down(p2) end
+  p2.last_btn_bits=p2_move_bits
+  p2.last_move_time=now
+ end
 end
 
 function _update()
+ now=time()
  update_players()
 end
 
@@ -64,7 +100,7 @@ function draw_player_dir(p) -- draw direction reticle
 end
 
 function draw_player(pnum)
- local p = pnum==1 and p1 or p2
+ local p=pnum==1 and p1 or p2
 
  local sprn=17 -- left/right
  if p.z==-90 then sprn=18 end -- up
@@ -79,7 +115,6 @@ function draw_player(pnum)
  pal()
 end
 
--- debug
 function to_bin(n)
   return n==0 and "0" or to_bin(flr(n/2))..(n%2)
 end
@@ -89,5 +124,4 @@ function _draw()
  map()
  draw_player(1)
  draw_player(2)
- -- print(debug)
 end
