@@ -20,6 +20,7 @@ end
 function spawn_player(p)
  p.alive=true
  p.hp=p_hp
+ -- collect valid spawn points
  local spawns={}
  local other_p=p.id==1 and p2 or p1
  for x=1,m.celw do
@@ -29,9 +30,12 @@ function spawn_player(p)
    end
   end
  end
+ -- choose a random spawn point
  local s=rnd(spawns)
  p.x=s.x
  p.y=s.y
+ p.z=rnd({0,180})
+ p.flip_x=p.z==180
 end
 
 function _init()
@@ -172,7 +176,8 @@ function draw_hud()
  print("player 1",1,1,12)
  print(p1.hp,1,9,14)
  print("player 2",95,1,8)
- print(p2.hp,95,9,14)
+ local p2hp_w=print(p2.hp,129,0)-128 -- get width by printing offscreen
+ print(p2.hp,128-p2hp_w,9,14)
 end
 
 function to_bin(n)
