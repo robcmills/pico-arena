@@ -1,3 +1,7 @@
+-- constants
+p_hp=16
+spawn_spr=4
+
 maps={
  map1={
   celx=0,
@@ -13,30 +17,49 @@ function init_map(_m)
  m.sy=flr((screen_size-tile_size*m.celh)/2)
 end
 
+function spawn_player(p)
+ p.alive=true
+ p.hp=p_hp
+ local spawns={}
+ local other_p=p.id==1 and p2 or p1
+ for x=1,m.celw do
+  for y=1,m.celh do
+   if mget(x,y)==spawn_spr and other_p.x~=x and other_p.y~=y then
+    add(spawns,{x=x,y=y})
+   end
+  end
+ end
+ local s=rnd(spawns)
+ p.x=s.x
+ p.y=s.y
+end
+
 function _init()
  debug=0
  move_delay=0.15 -- seconds between moves (only when btn held)
  now=0
  p1 = {
-  hp=16,
+  alive=false,
+  hp=p_hp,
   id=1,
   flip_x=false,
   last_move_bits=0,
   last_move_time=0,
-  w=1, -- weapon (1=line)
-  x=3,
-  y=5,
-  z=0, -- direction in degrees clockwise (0=East,90=South)
+  w=1, -- selected weapon (1=line)
+  x=0, -- x position in tiles, relative to map origin (top left)
+  y=0, -- y position in tiles, relative to map origin (top left)
+  z=0, -- facing direction in degrees clockwise (0=East,90=South)
  }
  p2 = {
-  hp=16,
+  alive=false,
+  hp=p_hp,
   id=2,
   flip_x=true,
   last_move_bits=0,
   last_move_time=0,
   w=1,
-  x=6,
-  y=8,
+  x=0,
+  y=0,
   z=180,
  }
  m=nil -- active map
@@ -44,6 +67,8 @@ function _init()
  tile_size=8
 
  init_map(maps.map1)
+ spawn_player(p1)
+ spawn_player(p2)
 end
 
 function move_player(p,z)
@@ -119,10 +144,10 @@ end
 function draw_player_dir(p) -- draw direction reticle
  local x_offset=p.z==0 and 1 or p.z==180 and -1 or 0 -- offset to adjacent tile
  local x_tile_offset=p.z==0 and -1 or 0 -- account for off-center sprites
- local x=p.x*8+x_offset*8+x_tile_offset
+ local x=p.x*8+x_offset*8+x_tile_offset+m.sx
  local y_offset=p.z==-90 and -1 or p.z==90 and 1 or 0
  local y_tile_offset=p.z==90 and -1 or 0
- local y=p.y*8+y_offset*8+y_tile_offset
+ local y=p.y*8+y_offset*8+y_tile_offset+m.sy
  local sprn=x_offset==0 and 21 or 20
  spr(sprn,x,y,1,1,x_offset<0,y_offset<0)
 end
@@ -137,8 +162,8 @@ function draw_player(pnum)
  if pnum==2 then
   pal(12,8) -- swap blue for red
  end
- local xoffset=p.flip_x and -1 or 0
- spr(sprn,p.x*8+xoffset,p.y*8,1,1,p.flip_x) -- draw player sprite
+ local xoffset=p.flip_x and -1 or 0 -- account for off-center sprites
+ spr(sprn,p.x*8+xoffset+m.sx,p.y*8+m.sy,1,1,p.flip_x) -- draw player sprite
  draw_player_dir(p)
  pal()
 end
@@ -152,6 +177,10 @@ end
 
 function to_bin(n)
   return n==0 and "0" or to_bin(flr(n/2))..(n%2)
+end
+
+function debug_print(str)
+ print(str,1,120,6)
 end
 
 function _draw()
