@@ -1,6 +1,6 @@
 function _init()
- debug={}
- move_delay=0.2 -- seconds between moves (only when btn held)
+ debug=0
+ move_delay=0.15 -- seconds between moves (only when btn held)
  now=0
  p1 = {
   flip_x=false,
@@ -25,9 +25,14 @@ function move_player(p,z)
  local dy=z==90 and 1 or z==-90 and -1 or 0
  if z==0 then p.flip_x=false end
  if z==180 then p.flip_x=true end
- p.x+=dx
- p.y+=dy
  p.z=z
+ -- collision detection
+ local to_x=p.x+dx -- target destination
+ local to_y=p.y+dy
+ local to_spr=mget(to_x,to_y) -- target sprite
+ if fget(to_spr,0) then return end -- is_solid flag
+ p.x=to_x
+ p.y=to_y
 end
 
 -- btn() returns a bitfield of all 12 button states for players 1 & 2
