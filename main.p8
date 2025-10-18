@@ -20,26 +20,14 @@ function _init()
  }
 end
 
-function move_player_left(p)
- p.flip_x=true
- p.x-=1
- p.z=180
-end
-
-function move_player_right(p)
- p.flip_x=false
- p.x+=1
- p.z=0
-end
-
-function move_player_up(p)
- p.y-=1
- p.z=-90
-end
-
-function move_player_down(p)
- p.y+=1
- p.z=90
+function move_player(p,z)
+ local dx=z==0 and 1 or z==180 and -1 or 0
+ local dy=z==90 and 1 or z==-90 and -1 or 0
+ if z==0 then p.flip_x=false end
+ if z==180 then p.flip_x=true end
+ p.x+=dx
+ p.y+=dy
+ p.z=z
 end
 
 -- btn() returns a bitfield of all 12 button states for players 1 & 2
@@ -64,20 +52,20 @@ function update_players()
 
  local p1_move_bits=bits&p1_move_mask
  if p1_move_bits~=p1.last_btn_bits or now-p1.last_move_time>move_delay then
-  if bits&1~=0 then move_player_left(p1)
-  elseif bits&2~=0 then move_player_right(p1)
-  elseif bits&4~=0 then move_player_up(p1)
-  elseif bits&8~=0 then move_player_down(p1) end
+  if bits&1~=0 then move_player(p1,180)
+  elseif bits&2~=0 then move_player(p1,0)
+  elseif bits&4~=0 then move_player(p1,-90)
+  elseif bits&8~=0 then move_player(p1,90) end
   p1.last_btn_bits=p1_move_bits
   p1.last_move_time=now
  end
 
  local p2_move_bits=bits&p2_move_mask
  if p2_move_bits~=p2.last_btn_bits or now-p2.last_move_time>move_delay then
-  if bits&256~=0 then move_player_left(p2)
-  elseif bits&512~=0 then move_player_right(p2)
-  elseif bits&1024~=0 then move_player_up(p2)
-  elseif bits&2048~=0 then move_player_down(p2) end
+  if bits&256~=0 then move_player(p2,180)
+  elseif bits&512~=0 then move_player(p2,0)
+  elseif bits&1024~=0 then move_player(p2,-90)
+  elseif bits&2048~=0 then move_player(p2,90) end
   p2.last_btn_bits=p2_move_bits
   p2.last_move_time=now
  end
