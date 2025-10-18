@@ -1,25 +1,49 @@
+maps={
+ map1={
+  celx=0,
+  cely=0,
+  celh=10,
+  celw=10,
+ }
+}
+
+function init_map(_m)
+ m=_m
+ m.sx=flr((screen_size-tile_size*m.celw)/2)
+ m.sy=flr((screen_size-tile_size*m.celh)/2)
+end
+
 function _init()
  debug=0
  move_delay=0.15 -- seconds between moves (only when btn held)
  now=0
  p1 = {
+  hp=16,
   id=1,
   flip_x=false,
-  last_btn_bits=0,
+  last_move_bits=0,
   last_move_time=0,
+  w=1, -- weapon (1=line)
   x=3,
-  y=3,
+  y=5,
   z=0, -- direction in degrees clockwise (0=East,90=South)
  }
  p2 = {
+  hp=16,
   id=2,
-  flip_x=false,
-  last_btn_bits=0,
+  flip_x=true,
+  last_move_bits=0,
   last_move_time=0,
+  w=1,
   x=6,
-  y=6,
-  z=0,
+  y=8,
+  z=180,
  }
+ m=nil -- active map
+ screen_size=128
+ tile_size=8
+
+ init_map(maps.map1)
 end
 
 function move_player(p,z)
@@ -60,23 +84,25 @@ p2_move_mask=3840
 function update_players()
  local bits=btn()
 
+ -- p1 movement
  local p1_move_bits=bits&p1_move_mask
- if p1_move_bits~=p1.last_btn_bits or now-p1.last_move_time>move_delay then
+ if p1_move_bits~=p1.last_move_bits or now-p1.last_move_time>move_delay then
   if bits&1~=0 then move_player(p1,180)
   elseif bits&2~=0 then move_player(p1,0)
   elseif bits&4~=0 then move_player(p1,-90)
   elseif bits&8~=0 then move_player(p1,90) end
-  p1.last_btn_bits=p1_move_bits
+  p1.last_move_bits=p1_move_bits
   p1.last_move_time=now
  end
 
+ -- p2 movement
  local p2_move_bits=bits&p2_move_mask
- if p2_move_bits~=p2.last_btn_bits or now-p2.last_move_time>move_delay then
+ if p2_move_bits~=p2.last_move_bits or now-p2.last_move_time>move_delay then
   if bits&256~=0 then move_player(p2,180)
   elseif bits&512~=0 then move_player(p2,0)
   elseif bits&1024~=0 then move_player(p2,-90)
   elseif bits&2048~=0 then move_player(p2,90) end
-  p2.last_btn_bits=p2_move_bits
+  p2.last_move_bits=p2_move_bits
   p2.last_move_time=now
  end
 end
@@ -84,6 +110,10 @@ end
 function _update()
  now=time()
  update_players()
+end
+
+function draw_map()
+ map(m.celx,m.cely,m.sx,m.sy,m.celw,m.celh)
 end
 
 function draw_player_dir(p) -- draw direction reticle
@@ -113,13 +143,21 @@ function draw_player(pnum)
  pal()
 end
 
+function draw_hud()
+ print("player 1",1,1,12)
+ print(p1.hp,1,9,14)
+ print("player 2",95,1,8)
+ print(p2.hp,95,9,14)
+end
+
 function to_bin(n)
   return n==0 and "0" or to_bin(flr(n/2))..(n%2)
 end
 
 function _draw()
  cls()
- map()
+ draw_map()
  draw_player(1)
  draw_player(2)
+ draw_hud()
 end
