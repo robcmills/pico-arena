@@ -44,6 +44,7 @@ function _init()
  now=0
  p1 = {
   alive=false,
+  c=12, -- color
   hp=p_hp,
   id=1,
   flip_x=false,
@@ -56,6 +57,7 @@ function _init()
  }
  p2 = {
   alive=false,
+  c=8,
   hp=p_hp,
   id=2,
   flip_x=true,
@@ -108,6 +110,7 @@ end
 --                                |1024
 --                                2048
 p1_move_mask=15
+p1_fire_mask=16
 p2_move_mask=3840
 
 function update_players()
@@ -133,6 +136,13 @@ function update_players()
   elseif bits&2048~=0 then move_player(p2,90) end
   p2.last_move_bits=p2_move_bits
   p2.last_move_time=now
+ end
+
+ -- weapon fire
+ local p1_fire_bits=bits&p1_fire_mask
+ if p1_fire_bits~=0 then
+  if p1.hp>0 then p1.hp-=1 end
+  if p2.hp>0 then p2.hp-=1 end
  end
 end
 
@@ -164,7 +174,7 @@ function draw_player(pnum)
  if p.z==90 then sprn=19 end -- down
 
  if pnum==2 then
-  pal(12,8) -- swap blue for red
+  pal(p1.c,p2.c) -- swap p1 -> p2 color (reuse same sprite)
  end
  local xoffset=p.flip_x and -1 or 0 -- account for off-center sprites
  spr(sprn,p.x*8+xoffset+m.sx,p.y*8+m.sy,1,1,p.flip_x) -- draw player sprite
@@ -172,12 +182,17 @@ function draw_player(pnum)
  pal()
 end
 
+function draw_hp(p)
+ local x=p.id==1 and 1 or 128-34
+ rect(x,8,x+p_hp*2,9,1) -- background
+ if p.hp>0 then rect(x,8,x+p.hp*2,9,p.c) end -- hp
+end
+
 function draw_hud()
- print("player 1",1,1,12)
- print(p1.hp,1,9,14)
- print("player 2",95,1,8)
- local p2hp_w=print(p2.hp,129,0)-128 -- get width by printing offscreen
- print(p2.hp,128-p2hp_w,9,14)
+ print("player 1",1,1,p1.c)
+ draw_hp(p1)
+ print("player 2",95,1,p2.c)
+ draw_hp(p2)
 end
 
 function to_bin(n)
