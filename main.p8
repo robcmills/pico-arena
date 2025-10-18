@@ -3,6 +3,7 @@ function _init()
  move_delay=0.15 -- seconds between moves (only when btn held)
  now=0
  p1 = {
+  id=1,
   flip_x=false,
   last_btn_bits=0,
   last_move_time=0,
@@ -11,6 +12,7 @@ function _init()
   z=0, -- direction in degrees clockwise (0=East,90=South)
  }
  p2 = {
+  id=2,
   flip_x=false,
   last_btn_bits=0,
   last_move_time=0,
@@ -26,11 +28,14 @@ function move_player(p,z)
  if z==0 then p.flip_x=false end
  if z==180 then p.flip_x=true end
  p.z=z
- -- collision detection
  local to_x=p.x+dx -- target destination
  local to_y=p.y+dy
- local to_spr=mget(to_x,to_y) -- target sprite
+ -- map collisions
+ local to_spr=mget(to_x,to_y) -- target map sprite
  if fget(to_spr,0) then return end -- is_solid flag
+ -- player collisions
+ local other_p=p.id==1 and p2 or p1
+ if other_p.x==to_x and other_p.y==to_y then return end
  p.x=to_x
  p.y=to_y
 end
