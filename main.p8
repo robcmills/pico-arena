@@ -10,6 +10,10 @@ p_hp=16
 player_fire_anim_time=0.3 -- seconds player fire animation lasts
 spawn_spr=4
 
+-- colors
+yellow=10
+white=7
+
 maps={
  map1={
   celx=0,
@@ -52,6 +56,7 @@ function _init()
  p1 = {
   alive=false,
   c=12, -- color
+  explode_particles={},
   hp=p_hp,
   id=1,
   flip_x=false,
@@ -68,6 +73,7 @@ function _init()
  p2 = {
   alive=false,
   c=8,
+  explode_particles={},
   hp=p_hp,
   id=2,
   flip_x=true,
@@ -133,6 +139,24 @@ function push_player(p, dir)
  return true
 end
 
+function tile_to_pixel(tile,xy)
+ return tile*8+(xy=="x" and m.sx or m.sy)
+end
+
+function explode_player(player, dir)
+ for i=1,16 do
+  local p={
+   c=rnd({player.c,yellow,white}),
+   end_time=now+1+rnd(2),
+   size=flr(rnd(2)),
+   x=tile_to_pixel(player.x,"x")+flr(rnd(10)),
+   y=tile_to_pixel(player.y,"y")+flr(rnd(10)),
+   z=dir
+  }
+  add(player.explode_particles, p)
+ end
+end
+
 function fire_line(p)
  local collider=nil -- entity colliding with line (if any)
  local collider_pushed=false -- entity colliding with line was pushed
@@ -156,8 +180,13 @@ function fire_line(p)
   local other_p=p.id==1 and p2 or p1
   if other_p.x==t.x and other_p.y==t.y then
    collider='player'
-   dmg_player(other_p, line_dmg)
-   collider_pushed=push_player(other_p, p.z)
+   explode_player(other_p, p.z)
+   --dmg_player(other_p, line_dmg)
+   --if other_p.hp>0 then
+    --collider_pushed=push_player(other_p, p.z)
+   --elseif #other_p.explode_particles==0 then
+    --explode_player(other_p, p.z)
+   --end
    break
   end
  end
@@ -207,6 +236,15 @@ end
 
 function fire_weapon(p)
  if p.w==1 then fire_line(p) end
+end
+
+function update_player_particles(p)
+ -- explosion particles
+ if #p.explode_particles>0 then
+  for p in all(p.explode_particles) do
+   if p.end_time<now then del(p.explode_particles,p) end
+  end
+ end
 end
 
 -- btn() returns a bitfield of all 12 button states for players 1 & 2
@@ -267,6 +305,9 @@ function update_players()
   p2.last_fire_bits=p2_fire_bits
   p2.last_fire_time=now
  end
+
+ update_player_particles(p1)
+ update_player_particles(p2)
 end
 
 function update_lines()
@@ -301,13 +342,24 @@ end
 function draw_player(pnum)
  local p=pnum==1 and p1 or p2
 
+ if pnum==2 then
+  pal(p1.c,p2.c) -- swap p1 -> p2 color (reuse same sprite)
+ end
+
+ --if p.hp<=0 and #p.explode_particles>0 then
+ if #p.explode_particles>0 then
+  -- draw explosion
+  for p in all(p.explode_particles) do
+   rectfill(p.x,p.y,p.x+p.size,p.y+p.size,p.c)
+  end
+  pal()
+  return
+ end
+
  local sprn=17 -- left/right
  if p.z==-90 then sprn=18 end -- up
  if p.z==90 then sprn=19 end -- down
 
- if pnum==2 then
-  pal(p1.c,p2.c) -- swap p1 -> p2 color (reuse same sprite)
- end
  local xoffset=p.flip_x and -1 or 0 -- account for off-center sprites
 
  -- player fire animation
@@ -323,7 +375,8 @@ function draw_player(pnum)
   pal(p1.c,10) -- swap p1 color -> yellow
  end
 
- spr(sprn,p.x*8+xoffset+m.sx,p.y*8+m.sy,1,1,p.flip_x) -- draw player sprite
+ -- draw player sprite
+ spr(sprn,p.x*8+xoffset+m.sx,p.y*8+m.sy,1,1,p.flip_x)
  draw_player_dir(p)
  pal()
 end
@@ -367,4 +420,6 @@ function _draw()
  draw_player(2)
  draw_lines()
  draw_hud()
+ local p=p2.explode_particles[1]
+ if p then debug_print(p.end_time..","..now) end
 end
