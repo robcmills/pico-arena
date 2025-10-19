@@ -1,5 +1,5 @@
 -- constants
-dmg_anim_time=0.2 -- seconds player damage animation lasts
+dmg_anim_time=0.1-- seconds player damage animation lasts
 line_delay=0.2 -- seconds between weapon fires
 line_dmg=1
 line_color=10
@@ -7,6 +7,7 @@ line_life=0.1 -- seconds
 line_push=1 -- number of tiles a line collision pushes the player
 move_delay=0.1 -- seconds between moves (only when btn held)
 p_hp=16
+player_fire_anim_time=0.3 -- seconds player fire animation lasts
 spawn_spr=4
 
 maps={
@@ -199,6 +200,9 @@ function fire_line(p)
  end
 
  add(lines,{start_pos=s,target_pos=t,start_time=now,p=p.id})
+
+ -- player fire animation
+ p.last_fire_time=now
 end
 
 function fire_weapon(p)
@@ -298,10 +302,16 @@ function draw_player(pnum)
  end
  local xoffset=p.flip_x and -1 or 0 -- account for off-center sprites
 
+ -- player fire animation
+ if p.last_fire_time>0 and now-p.last_fire_time<player_fire_anim_time then
+  if sprn==17 then sprn=22 end -- use "squinting" sprites
+  if sprn==19 then sprn=23 end
+ end
+
  -- taking damage
  if p.last_dmg_time>0 and now-p.last_dmg_time<dmg_anim_time then
   if sprn==17 then sprn=22 end -- use "squinting" sprites
-  if sprn==18 then sprn=23 end
+  if sprn==19 then sprn=23 end
   pal(p1.c,10) -- swap p1 color -> yellow
  end
 
