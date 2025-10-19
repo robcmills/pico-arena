@@ -226,6 +226,7 @@ end
 p1_move_mask=15
 p1_fire_mask=16
 p2_move_mask=3840
+p2_fire_mask=4096
 
 function update_players()
  local bits=btn()
@@ -258,6 +259,13 @@ function update_players()
   fire_weapon(p1)
   p1.last_fire_bits=p1_fire_bits
   p1.last_fire_time=now
+ end
+
+ local p2_fire_bits=bits&p2_fire_mask
+ if p2_fire_bits~=0 and (p2_fire_bits~=p2.last_fire_bits or now-p2.last_fire_time>line_delay) then
+  fire_weapon(p2)
+  p2.last_fire_bits=p2_fire_bits
+  p2.last_fire_time=now
  end
 end
 
