@@ -1,4 +1,7 @@
 -- constants
+fire_delay=0.1 -- seconds between weapon fires
+line_color=10
+move_delay=0.1 -- seconds between moves (only when btn held)
 p_hp=16
 spawn_spr=4
 
@@ -40,7 +43,6 @@ end
 
 function _init()
  debug=0
- move_delay=0.15 -- seconds between moves (only when btn held)
  now=0
  p1 = {
   alive=false,
@@ -48,6 +50,8 @@ function _init()
   hp=p_hp,
   id=1,
   flip_x=false,
+  last_fire_bits=0,
+  last_fire_time=0,
   last_move_bits=0,
   last_move_time=0,
   w=1, -- selected weapon (1=line)
@@ -61,6 +65,8 @@ function _init()
   hp=p_hp,
   id=2,
   flip_x=true,
+  last_fire_bits=0,
+  last_fire_time=0,
   last_move_bits=0,
   last_move_time=0,
   w=1,
@@ -68,6 +74,7 @@ function _init()
   y=0,
   z=180,
  }
+ lines={} -- line weapon "tracers"
  m=nil -- active map
  screen_size=128
  tile_size=8
@@ -93,6 +100,68 @@ function move_player(p,z)
  if other_p.x==to_x and other_p.y==to_y then return end
  p.x=to_x
  p.y=to_y
+end
+
+function fire_line(p)
+ local collider=nil -- entity colliding with line (if any)
+ local s={x=p.x,y=p.y} -- start tile
+ local t={x=p.x,y=p.y} -- target tile
+ -- walk in dir until hitting a solid tile, player or screen edge
+ local c=0
+ while c<128 do
+  c+=1
+  if p.z==0 then t.x+=1 end
+  if p.z==180 then t.x-=1 end
+  if p.z==90 then t.y+=1 end
+  if p.z==-90 then t.y-=1 end
+  -- check for solid tile
+  local to_spr=mget(t.x,t.y)
+  if fget(to_spr,0) then
+   collider='tile'
+   break
+  end
+  -- check for player
+  local other_p=p.id==1 and p2 or p1
+  if other_p.x==t.x and other_p.y==t.y then
+   collider='player'
+   break
+  end
+ end
+
+ -- convert tile pos to pixel pos + map offset
+ s.x=s.x*8+m.sx
+ s.y=s.y*8+m.sy
+ t.x=t.x*8+m.sx
+ t.y=t.y*8+m.sy
+ -- account for player direction and reticle offset (start pos)
+ if p.z==0 then s.x+=10 end
+ if p.z==180 then s.x-=4 end
+ if p.z==0 or p.z==180 then
+  s.y+=3
+  t.y+=3
+ end
+ if p.z==-90 then s.y-=4 end
+ if p.z==90 then s.y+=10 end
+ if p.z==-90 or p.z==90 then
+  s.x+=3
+  t.x+=3
+ end
+ -- account for solid tile and player body offset (target pos)
+ if collider=='tile' then
+  if p.z==0 then t.x-=1 end
+  if p.z==180 then t.x+=7 end
+  if p.z==90 then t.y-=1 end
+  if p.z==-90 then t.y+=7 end
+ elseif collider=='player' then
+  if p.z==180 then t.x+=6 end
+  if p.z==-90 then t.y+=6 end
+ end
+
+ add(lines,{start_pos=s,target_pos=t,start_time=now,p=p.id})
+end
+
+function fire_weapon(p)
+ if p.w==1 then fire_line(p) end
 end
 
 -- btn() returns a bitfield of all 12 button states for players 1 & 2
@@ -140,9 +209,10 @@ function update_players()
 
  -- weapon fire
  local p1_fire_bits=bits&p1_fire_mask
- if p1_fire_bits~=0 then
-  if p1.hp>0 then p1.hp-=1 end
-  if p2.hp>0 then p2.hp-=1 end
+ if p1_fire_bits~=0 and (p1_fire_bits~=p1.last_fire_bits or now-p1.last_fire_time>fire_delay) then
+  fire_weapon(p1)
+  p1.last_fire_bits=p1_fire_bits
+  p1.last_fire_time=now
  end
 end
 
@@ -188,6 +258,17 @@ function draw_hp(p)
  if p.hp>0 then rect(x,8,x+p.hp*2,9,p.c) end -- hp
 end
 
+function draw_lines()
+ for l in all(lines) do
+  line(
+   l.start_pos.x,
+   l.start_pos.y,
+   l.target_pos.x,
+   l.target_pos.y,
+   line_color)
+ end
+end
+
 function draw_hud()
  print("player 1",1,1,p1.c)
  draw_hp(p1)
@@ -208,5 +289,7 @@ function _draw()
  draw_map()
  draw_player(1)
  draw_player(2)
+ draw_lines()
  draw_hud()
+ debug_print(#lines)
 end
