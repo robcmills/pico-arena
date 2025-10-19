@@ -144,23 +144,37 @@ function tile_to_pixel(tile,xy)
 end
 
 function explode_player(player, dir)
+ local cx=tile_to_pixel(player.x,"x")+4
+ local cy=tile_to_pixel(player.y,"y")+4
+ local base_angle
+ if dir==0 then base_angle=0
+ elseif dir==90 then base_angle=0.25
+ elseif dir==180 then base_angle=0.5
+ elseif dir==-90 then base_angle=-0.25
+ else base_angle=rnd()
+ end
+ local spread=0.12 -- allow a slight directional spread
+ local max_radius=4
  for i=1,16 do
+  local size=flr(rnd(3)) -- 0..2 pixels
+  local spawn_angle=rnd()
+  local spawn_radius=sqrt(rnd())*max_radius
+  local angle=base_angle+(rnd()-0.5)*spread
+  local speed=0.6+(2-size)*0.4+rnd(0.2) -- large=slow, small=fast
   local p={
    c=rnd({player.c,yellow,white}),
-   end_time=now+0.2+rnd(1),
-   size=flr(rnd(2)),
-   x=tile_to_pixel(player.x,"x")+flr(rnd(10)),
-   y=tile_to_pixel(player.y,"y")+flr(rnd(10)),
-   z=dir
+   end_time=now+0.35+rnd(0.6),
+   size=size,
+   x=cx+cos(spawn_angle)*spawn_radius,
+   y=cy+sin(spawn_angle)*spawn_radius,
+   vx=cos(angle)*speed,
+   vy=sin(angle)*speed
   }
-  p.v=flr(3/p.size) -- velocity
   p.update=function()
-   if p.z==0 then p.x+=p.v end
-   if p.z==180 then p.x-=p.v end
-   if p.z==90 then p.y+=p.v end
-   if p.z==-90 then p.y-=p.v end
+   p.x+=p.vx
+   p.y+=p.vy
   end
-  add(player.explode_particles, p)
+  add(player.explode_particles,p)
  end
 end
 
