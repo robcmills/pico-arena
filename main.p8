@@ -1,6 +1,9 @@
 -- constants
-fire_delay=0.1 -- seconds between weapon fires
+line_delay=0.2 -- seconds between weapon fires
+line_dmg=1
 line_color=10
+line_life=0.1 -- seconds
+line_push=1 -- number of tiles a line collision pushes the player
 move_delay=0.1 -- seconds between moves (only when btn held)
 p_hp=16
 spawn_spr=4
@@ -102,8 +105,32 @@ function move_player(p,z)
  p.y=to_y
 end
 
+function dmg_player(p, dmg)
+ p.hp-=dmg
+end
+
+function push_player(p, dir)
+ -- get tile coordinates of push destination
+ local to={x=p.x,y=p.y}
+ if dir==0 then to.x+=line_push end
+ if dir==180 then to.x-=line_push end
+ if dir==90 then to.y+=line_push end
+ if dir==-90 then to.y-=line_push end
+ -- check if solid tile
+ local to_spr=mget(to.x,to.y)
+ if fget(to_spr,0) then return false end
+ -- check if other player
+ local other_p=p.id==1 and p2 or p1
+ if other_p.x==to.x and other_p.y==to.y then return false end
+ -- push player
+ p.x=to.x
+ p.y=to.y
+ return true
+end
+
 function fire_line(p)
  local collider=nil -- entity colliding with line (if any)
+ local collider_pushed=false -- entity colliding with line was pushed
  local s={x=p.x,y=p.y} -- start tile
  local t={x=p.x,y=p.y} -- target tile
  -- walk in dir until hitting a solid tile, player or screen edge
@@ -124,6 +151,8 @@ function fire_line(p)
   local other_p=p.id==1 and p2 or p1
   if other_p.x==t.x and other_p.y==t.y then
    collider='player'
+   dmg_player(other_p, line_dmg)
+   collider_pushed=push_player(other_p, p.z)
    break
   end
  end
@@ -155,6 +184,14 @@ function fire_line(p)
  elseif collider=='player' then
   if p.z==180 then t.x+=6 end
   if p.z==-90 then t.y+=6 end
+ end
+
+ -- extend line if collider was pushed
+ if collider_pushed then
+  if p.z==0 then t.x+=line_push*tile_size end
+  if p.z==180 then t.x-=line_push*tile_size end
+  if p.z==90 then t.y+=line_push*tile_size end
+  if p.z==-90 then t.y-=line_push*tile_size end
  end
 
  add(lines,{start_pos=s,target_pos=t,start_time=now,p=p.id})
@@ -209,16 +246,25 @@ function update_players()
 
  -- weapon fire
  local p1_fire_bits=bits&p1_fire_mask
- if p1_fire_bits~=0 and (p1_fire_bits~=p1.last_fire_bits or now-p1.last_fire_time>fire_delay) then
+ if p1_fire_bits~=0 and (p1_fire_bits~=p1.last_fire_bits or now-p1.last_fire_time>line_delay) then
   fire_weapon(p1)
   p1.last_fire_bits=p1_fire_bits
   p1.last_fire_time=now
  end
 end
 
+function update_lines()
+ for i,l in pairs(lines) do
+  if now-l.start_time>line_life then
+   deli(lines,i)
+  end
+ end
+end
+
 function _update()
  now=time()
  update_players()
+ update_lines()
 end
 
 function draw_map()
@@ -291,5 +337,4 @@ function _draw()
  draw_player(2)
  draw_lines()
  draw_hud()
- debug_print(#lines)
 end
