@@ -1,4 +1,5 @@
 -- constants
+dmg_anim_time=0.2 -- seconds player damage animation lasts
 line_delay=0.2 -- seconds between weapon fires
 line_dmg=1
 line_color=10
@@ -53,6 +54,7 @@ function _init()
   hp=p_hp,
   id=1,
   flip_x=false,
+  last_dmg_time=0,
   last_fire_bits=0,
   last_fire_time=0,
   last_move_bits=0,
@@ -68,6 +70,7 @@ function _init()
   hp=p_hp,
   id=2,
   flip_x=true,
+  last_dmg_time=0,
   last_fire_bits=0,
   last_fire_time=0,
   last_move_bits=0,
@@ -107,6 +110,7 @@ end
 
 function dmg_player(p, dmg)
  p.hp-=dmg
+ p.last_dmg_time=now
 end
 
 function push_player(p, dir)
@@ -293,6 +297,14 @@ function draw_player(pnum)
   pal(p1.c,p2.c) -- swap p1 -> p2 color (reuse same sprite)
  end
  local xoffset=p.flip_x and -1 or 0 -- account for off-center sprites
+
+ -- taking damage
+ if p.last_dmg_time>0 and now-p.last_dmg_time<dmg_anim_time then
+  if sprn==17 then sprn=22 end -- use "squinting" sprites
+  if sprn==18 then sprn=23 end
+  pal(p1.c,10) -- swap p1 color -> yellow
+ end
+
  spr(sprn,p.x*8+xoffset+m.sx,p.y*8+m.sy,1,1,p.flip_x) -- draw player sprite
  draw_player_dir(p)
  pal()
