@@ -168,7 +168,7 @@ function explode_player(player, dir)
    x=cx+cos(spawn_angle)*spawn_radius,
    y=cy+sin(spawn_angle)*spawn_radius,
    vx=cos(angle)*speed,
-   vy=sin(angle)*speed
+   vy=-sin(angle)*speed
   }
   p.update=function()
    p.x+=p.vx
@@ -445,6 +445,4 @@ function _draw()
  draw_player(2)
  draw_lines()
  draw_hud()
- local p=p2.explode_particles[1]
- if p then debug_print(p.end_time..","..now) end
 end
