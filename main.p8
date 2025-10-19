@@ -238,11 +238,11 @@ function fire_weapon(p)
  if p.w==1 then fire_line(p) end
 end
 
-function update_player_particles(p)
+function update_player_particles(player)
  -- explosion particles
- if #p.explode_particles>0 then
-  for p in all(p.explode_particles) do
-   if p.end_time<now then del(p.explode_particles,p) end
+ if #player.explode_particles>0 then
+  for particle in all(player.explode_particles) do
+   if particle.end_time<now then del(player.explode_particles,particle) end
   end
  end
 end
