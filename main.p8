@@ -146,24 +146,22 @@ end
 function explode_player(player, dir)
  local cx=tile_to_pixel(player.x,"x")+4
  local cy=tile_to_pixel(player.y,"y")+4
- local base_angle
- if dir==0 then base_angle=0
- elseif dir==90 then base_angle=0.25
+ local base_angle=0
+ if dir==90 then base_angle=0.25
  elseif dir==180 then base_angle=0.5
  elseif dir==-90 then base_angle=-0.25
- else base_angle=rnd()
  end
- local spread=0.12 -- allow a slight directional spread
+ local spread=0.16
  local max_radius=4
  for i=1,16 do
-  local size=flr(rnd(3)) -- 0..2 pixels
+  local size=flr(rnd(3))
   local spawn_angle=rnd()
   local spawn_radius=sqrt(rnd())*max_radius
   local angle=base_angle+(rnd()-0.5)*spread
   local speed=0.6+(2-size)*0.4+rnd(0.2) -- large=slow, small=fast
   local p={
    c=rnd({player.c,yellow,white}),
-   end_time=now+0.35+rnd(0.6),
+   end_time=now+0.25+rnd(0.5),
    size=size,
    x=cx+cos(spawn_angle)*spawn_radius,
    y=cy+sin(spawn_angle)*spawn_radius,
@@ -199,15 +197,14 @@ function fire_line(p)
   end
   -- check for player
   local other_p=p.id==1 and p2 or p1
-  if other_p.x==t.x and other_p.y==t.y then
+  if other_p.x==t.x and other_p.y==t.y and other_p.hp>0 then
    collider='player'
-   explode_player(other_p, p.z)
-   --dmg_player(other_p, line_dmg)
-   --if other_p.hp>0 then
-    --collider_pushed=push_player(other_p, p.z)
-   --elseif #other_p.explode_particles==0 then
-    --explode_player(other_p, p.z)
-   --end
+   dmg_player(other_p, line_dmg)
+   if other_p.hp>0 then
+    collider_pushed=push_player(other_p, p.z)
+   elseif #other_p.explode_particles==0 then
+    explode_player(other_p, p.z)
+   end
    break
   end
  end
