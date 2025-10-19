@@ -147,12 +147,19 @@ function explode_player(player, dir)
  for i=1,16 do
   local p={
    c=rnd({player.c,yellow,white}),
-   end_time=now+1+rnd(2),
+   end_time=now+0.2+rnd(1),
    size=flr(rnd(2)),
    x=tile_to_pixel(player.x,"x")+flr(rnd(10)),
    y=tile_to_pixel(player.y,"y")+flr(rnd(10)),
    z=dir
   }
+  p.v=flr(3/p.size) -- velocity
+  p.update=function()
+   if p.z==0 then p.x+=p.v end
+   if p.z==180 then p.x-=p.v end
+   if p.z==90 then p.y+=p.v end
+   if p.z==-90 then p.y-=p.v end
+  end
   add(player.explode_particles, p)
  end
 end
@@ -242,7 +249,11 @@ function update_player_particles(player)
  -- explosion particles
  if #player.explode_particles>0 then
   for particle in all(player.explode_particles) do
-   if particle.end_time<now then del(player.explode_particles,particle) end
+   if particle.end_time<now then
+    del(player.explode_particles,particle)
+   else
+    particle.update()
+   end
   end
  end
 end
