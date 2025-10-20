@@ -30,7 +30,6 @@ function init_map(_m)
 end
 
 function spawn_player(p)
- p.alive=true
  p.hp=p_hp
  -- collect valid spawn points
  local spawns={}
@@ -52,9 +51,9 @@ end
 
 function _init()
  debug=0
+ game_type="versus"
  now=0
  p1 = {
-  alive=false,
   c=12, -- color
   explode_particles={},
   hp=p_hp,
@@ -71,7 +70,6 @@ function _init()
   z=0, -- facing direction in degrees clockwise (0=East,90=South)
  }
  p2 = {
-  alive=false,
   c=8,
   explode_particles={},
   hp=p_hp,
@@ -161,7 +159,7 @@ function explode_player(player, dir)
   local speed=0.6+(2-size)*0.4+rnd(0.2) -- large=slow, small=fast
   local p={
    c=rnd({player.c,yellow,white}),
-   end_time=now+0.25+rnd(0.5),
+   end_time=now+0.5+rnd(0.5),
    size=size,
    x=cx+cos(spawn_angle)*spawn_radius,
    y=cy+sin(spawn_angle)*spawn_radius,
@@ -262,6 +260,9 @@ function update_player_particles(player)
   for particle in all(player.explode_particles) do
    if particle.end_time<now then
     del(player.explode_particles,particle)
+    if #player.explode_particles==0 and game_type=="versus" then
+     spawn_player(player)
+    end
    else
     particle.update()
    end

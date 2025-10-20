@@ -1,4 +1,6 @@
 
-- [ ] Prevent fragged player from colliding
-- [ ] Respawn fragged player
+- [x] Prevent fragged player from colliding
+- [x] Respawn fragged player
+- [ ] Add fancy animations for:
+  - [ ] player spawn
 - [ ] Add frag counts to HUD
