@@ -110,7 +110,7 @@ function move_player(p,z)
  if fget(to_spr,0) then return end -- is_solid flag
  -- player collisions
  local other_p=p.id==1 and p2 or p1
- if other_p.x==to_x and other_p.y==to_y then return end
+ if other_p.x==to_x and other_p.y==to_y and other_p.hp>0 then return end
  p.x=to_x
  p.y=to_y
 end
@@ -368,12 +368,16 @@ function draw_player(pnum)
   pal(p1.c,p2.c) -- swap p1 -> p2 color (reuse same sprite)
  end
 
- --if p.hp<=0 and #p.explode_particles>0 then
  if #p.explode_particles>0 then
   -- draw explosion
   for p in all(p.explode_particles) do
    rectfill(p.x,p.y,p.x+p.size,p.y+p.size,p.c)
   end
+  pal()
+  return
+ end
+
+ if p.hp<=0 then
   pal()
   return
  end
