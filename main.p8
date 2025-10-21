@@ -1,3 +1,17 @@
+-- utils
+
+-- random weighted choice
+function rndw(choices)
+  local total=0
+  for c in all(choices) do total+=c.w end
+  local r=rnd(total)
+  local run=0
+  for c in all(choices) do
+    run+=c.w
+    if r<run then return c.v end
+  end
+end
+
 -- constants
 dmg_anim_time=0.1-- seconds player damage animation lasts
 line_delay=0.2 -- seconds between weapon fires
@@ -40,6 +54,7 @@ function spawn_player(p)
    end
   end
  end
+
  -- choose a random spawn point
  local s=rnd(spawns)
  p.x=s.x
@@ -48,8 +63,36 @@ function spawn_player(p)
  p.flip_x=p.z==180
  p.hp=p_hp
  p.last_spawn_time=now
+
  -- spawn particles
- -- todo
+ p.spawn_particles={}
+ for i=1,8 do
+  local target_x=tile_to_pixel(p.x,"x")+1+rnd(4)
+  local target_y=tile_to_pixel(p.y,"y")+1+rnd(4)
+  local start_x=target_x
+  local start_y=target_y-rnd(24)
+  local size=rnd(2)
+  local duration=0.32+rnd(0.32)
+  local particle={
+   c=rndw({{v=p.c,w=0.6},{v=white,w=0.1},{v=yellow,w=0.3}}),
+   duration=duration,
+   end_time=now+duration,
+   size=size,
+   start_time=now,
+   start_y=start_y,
+   target_y=target_y,
+   x=start_x,
+   y=start_y,
+  }
+  particle.update=function()
+   local t=(now-particle.start_time)/particle.duration
+   if t<0 then t=0 end
+   if t>1 then t=1 end
+   local eased=1-(1-t)^2 -- ease out slowdown
+   particle.y=particle.start_y+(particle.target_y-particle.start_y)*eased
+  end
+  add(p.spawn_particles,particle)
+ end
 end
 
 function _init()
