@@ -56,6 +56,7 @@ function _init()
  p1 = {
   c=12, -- color
   explode_particles={},
+  score=0,
   hp=p_hp,
   id=1,
   flip_x=false,
@@ -72,6 +73,7 @@ function _init()
  p2 = {
   c=8,
   explode_particles={},
+  score=0,
   hp=p_hp,
   id=2,
   flip_x=true,
