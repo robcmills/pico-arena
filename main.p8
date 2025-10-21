@@ -30,7 +30,6 @@ function init_map(_m)
 end
 
 function spawn_player(p)
- p.hp=p_hp
  -- collect valid spawn points
  local spawns={}
  local other_p=p.id==1 and p2 or p1
@@ -47,6 +46,10 @@ function spawn_player(p)
  p.y=s.y
  p.z=rnd({0,180})
  p.flip_x=p.z==180
+ p.hp=p_hp
+ p.last_spawn_time=now
+ -- spawn particles
+ -- todo
 end
 
 function _init()
@@ -65,6 +68,8 @@ function _init()
   last_fire_time=0,
   last_move_bits=0,
   last_move_time=0,
+  last_spawn_time=0,
+  spawn_particles={},
   w=1, -- selected weapon (1=line)
   x=0, -- x position in tiles, relative to map origin (top left)
   y=0, -- y position in tiles, relative to map origin (top left)
@@ -82,6 +87,8 @@ function _init()
   last_fire_time=0,
   last_move_bits=0,
   last_move_time=0,
+  last_spawn_time=0,
+  spawn_particles={},
   w=1,
   x=0,
   y=0,
@@ -257,6 +264,17 @@ function fire_weapon(p)
 end
 
 function update_player_particles(player)
+ -- spawn particles
+ if #player.spawn_particles>0 then
+  for particle in all(player.spawn_particles) do
+   if particle.end_time<now then
+    del(player.spawn_particles,particle)
+   else
+    particle.update()
+   end
+  end
+ end
+
  -- explosion particles
  if #player.explode_particles>0 then
   for particle in all(player.explode_particles) do
@@ -369,6 +387,15 @@ function draw_player(pnum)
 
  if pnum==2 then
   pal(p1.c,p2.c) -- swap p1 -> p2 color (reuse same sprite)
+ end
+
+ if #p.spawn_particles>0 then
+  -- draw spawn particles
+  for p in all(p.spawn_particles) do
+   rectfill(p.x,p.y,p.x+p.size,p.y+p.size,p.c)
+  end
+  pal()
+  return
  end
 
  if #p.explode_particles>0 then
