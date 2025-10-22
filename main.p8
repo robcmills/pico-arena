@@ -254,6 +254,7 @@ function fire_line(p)
     collider_pushed=push_player(other_p, p.z)
    elseif #other_p.explode_particles==0 then
     explode_player(other_p, p.z)
+    p.score+=1
    end
    break
   end
@@ -497,11 +498,34 @@ function draw_lines()
  end
 end
 
+-- pico8 palette color (int) to P8SCII Control Codes parameter (hex superset)
+function int_to_p8hex(n)
+ local set={1,2,3,4,5,6,7,8,9,"a","b","c","d","e","f","g"}
+ return set[n]
+end
+
+-- MM:SS with leading zeros
+function format_time(t)
+ local m=flr(t/60)
+ local s=flr(t%60)
+ return tostr(m<10 and "0" or "")..tostr(m)..":"..tostr(s<10 and "0" or "")..tostr(s)
+end
+
 function draw_hud()
  print("player 1",1,1,p1.c)
  draw_hp(p1)
- print("player 2",95,1,p2.c)
+ local p2hud_w=print("player 2",0,-16)
+ print("player 2",screen_size-p2hud_w,1,p2.c)
  draw_hp(p2)
+ -- scores
+ local p1_score_pad=tostr(p1.score<10 and "0" or "")..tostr(p1.score)
+ local p1_score_hud="\#"..int_to_p8hex(p1.c).."\f7"..p1_score_pad
+ print(p1_score_hud,screen_size/2-21,2)
+ local p2_score_pad=tostr(p2.score<10 and "0" or "")..tostr(p2.score)
+ local p2_score_hud="\#"..int_to_p8hex(p2.c).."\f7"..p2_score_pad
+ print(p2_score_hud,screen_size/2+13,2)
+ -- game clock
+ print(format_time(now),screen_size/2-10,2)
 end
 
 function to_bin(n)
