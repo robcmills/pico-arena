@@ -5,17 +5,20 @@
 
 # TODO
 
+- [ ] Refactor movement
+- [ ] Add "dash" move
 - [ ] Namespace all globals (game.x)
 - [ ] Refactor naming (longer, more explicit, more scalable)
 - [x] Prevent fragged player from colliding
 - [x] Respawn fragged player
 - [ ] Add fancy animations for:
   - [x] player spawn
+  - [ ] energy pickup
 - [ ] Enable choosing player color
 - [x] Add frag counts to HUD
 - [ ] Add game clock
 - [ ] Add energy (in progress)
-  - [ ] Implement energy respawn (timer)
+  - [x] Implement energy respawn (timer)
 - [ ] Add more map tile types
   - [ ] destructible walls
   - [ ] movable walls

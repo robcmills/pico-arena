@@ -391,13 +391,12 @@ end
 function update_player_entity_collisions(p)
   local entity=entities[p.x..","..p.y]
   -- energy pickup
-  if entity and entity.type=="energy" and entity.last_collected_time==nil then
+  if entity and entity.type=="energy" and entity.last_collected_time==nil and p.energy<player_max_energy then
     p.energy+=energy_pickup_amount
     if p.energy>player_max_energy then p.energy=player_max_energy end
     entity.last_collected_time=now
     -- TODO: play energy pickup sound
     -- TODO: flash player energy bar white
-    -- TODO: start energy respawn timer
   end
 end
 
