@@ -6,7 +6,7 @@
 - [ ] Add fancy animations for:
   - [x] player spawn
 - [ ] Enable choosing player color
-- [ ] Add frag counts to HUD
+- [x] Add frag counts to HUD
 - [ ] Add game clock
 - [ ] Add energy
 - [ ] Add more map tile types
