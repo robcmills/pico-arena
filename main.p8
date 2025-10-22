@@ -496,15 +496,28 @@ function draw_arena()
   map(arena.celx,arena.cely,arena.sx,arena.sy,arena.celw,arena.celh)
 end
 
-function draw_energy_entity(e)
-  if e.last_collected_time==nil then return end
-  local x=e.x*tile_size+arena.sx
-  local y=e.y*tile_size+arena.sy
+function draw_energy_sprite(e,x,y)
+  spr(energy_spr,x,y)
   pal(yellow,dark_gray)
   clip(x,y,tile_size,tile_size-2-flr((now-e.last_collected_time)/3))
   spr(energy_spr,x,y)
   clip()
   pal()
+end
+
+function draw_energy_entity(e)
+  if e.last_collected_time==nil then return end
+  -- if a player is "on top" of the energy pickup it will be obscured,
+  -- so draw it in hud instead (so player can see respawn timing)
+  if p1.x==e.x and p1.y==e.y then
+    draw_energy_sprite(e,1,14)
+  elseif p2.x==e.x and p2.y==e.y then
+    draw_energy_sprite(e,128-8,14)
+  else
+    local x=e.x*tile_size+arena.sx
+    local y=e.y*tile_size+arena.sy
+    draw_energy_sprite(e,x,y)
+  end
 end
 
 function draw_entities()
