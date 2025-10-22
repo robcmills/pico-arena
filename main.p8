@@ -14,6 +14,9 @@ end
 
 -- constants
 dmg_anim_time=0.1-- seconds player damage animation lasts
+energy_pickup_amount=8 -- amount of energy per energy pickup
+energy_spr=33 -- sprite index for energy pickups
+is_solid_flag=0 -- flag for map sprites that are solid (can not be walked through)
 line_delay=0.2 -- seconds between weapon fires
 line_dmg=1
 line_color=10
@@ -157,14 +160,28 @@ function move_player(p,z)
   if z==0 then p.flip_x=false end
   if z==180 then p.flip_x=true end
   p.z=z
-  local to_x=p.x+dx -- target destination
+  -- target destination
+  local to_x=p.x+dx
   local to_y=p.y+dy
   -- map collisions
   local to_spr=mget(to_x,to_y) -- target map sprite
-  if fget(to_spr,0) then return end -- is_solid flag
+  if fget(to_spr,is_solid_flag) then
+    -- TODO: play solid bump sound
+    return
+  end
   -- player collisions
   local other_p=p.id==1 and p2 or p1
-  if other_p.x==to_x and other_p.y==to_y and other_p.hp>0 then return end
+  if other_p.x==to_x and other_p.y==to_y and other_p.hp>0 then
+    -- TODO: play player bump sound
+    return
+  end
+  -- energy pickup
+  if to_spr==energy_spr then
+    p.energy+=energy_pickup_amount
+    if p.energy>player_max_energy then p.energy=player_max_energy end
+    -- TODO: play energy pickup sound
+  end
+  -- move player
   p.x=to_x
   p.y=to_y
 end

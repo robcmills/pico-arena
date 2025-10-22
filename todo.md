@@ -13,7 +13,8 @@
 - [ ] Enable choosing player color
 - [x] Add frag counts to HUD
 - [ ] Add game clock
-- [ ] Add energy
+- [ ] Add energy (in progress)
+  - [ ] Implement energy respawn (timer)
 - [ ] Add more map tile types
   - [ ] destructible walls
   - [ ] movable walls
