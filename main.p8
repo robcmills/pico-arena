@@ -20,13 +20,15 @@ line_color=10
 line_life=0.1 -- seconds
 line_push=1 -- number of tiles a line collision pushes the player
 move_delay=0.1 -- seconds between moves (only when btn held)
-p_hp=16
+player_max_energy=16
+player_max_hp=16
 player_fire_anim_time=0.3 -- seconds player fire animation lasts
 spawn_spr=4
 
 -- colors
-yellow=10
+dark_gray=5
 white=7
+yellow=10
 
 maps={
   map1={
@@ -61,7 +63,7 @@ function spawn_player(p)
   p.y=s.y
   p.z=rnd({0,180})
   p.flip_x=p.z==180
-  p.hp=p_hp
+  p.hp=player_max_hp
   p.last_spawn_time=now
 
   -- spawn particles
@@ -101,9 +103,10 @@ function _init()
   now=0
   p1 = {
     c=12, -- color
+    energy=player_max_energy,
     explode_particles={},
     score=0,
-    hp=p_hp,
+    hp=player_max_hp,
     id=1,
     flip_x=false,
     last_dmg_time=0,
@@ -120,9 +123,10 @@ function _init()
   }
   p2 = {
     c=8,
+    energy=player_max_energy,
     explode_particles={},
     score=0,
-    hp=p_hp,
+    hp=player_max_hp,
     id=2,
     flip_x=true,
     last_dmg_time=0,
@@ -227,6 +231,12 @@ function explode_player(player, dir)
 end
 
 function fire_line(p)
+  if p.energy<=0 then
+    -- TODO: play empty energy sound
+    -- TODO: flash player energy bar light_gray
+    return
+  end
+
   local collider=nil -- entity colliding with line (if any)
   local collider_pushed=false -- entity colliding with line was pushed
   local s={x=p.x,y=p.y} -- start tile
@@ -299,8 +309,8 @@ function fire_line(p)
 
   add(lines,{start_pos=s,target_pos=t,start_time=now,p=p.id})
 
-  -- player fire animation
-  p.last_fire_time=now
+  if p.energy>0 then p.energy-=1 end
+  p.last_fire_time=now -- player fire animation
 end
 
 function fire_weapon(p)
@@ -482,9 +492,15 @@ function draw_player(pnum)
 end
 
 function draw_hp(p)
-  local x=p.id==1 and 1 or 128-34
-  rect(x,8,x+p_hp*2,9,1) -- background
-  if p.hp>0 then rect(x,8,x+p.hp*2,9,p.c) end -- hp
+  local x=p.id==1 and 1 or 128/2+13
+  rect(x,9,x+player_max_hp*3,10,1) -- background
+  if p.hp>0 then rect(x,9,x+p.hp*3,10,p.c) end -- hp
+end
+
+function draw_energy(p)
+  local x=p.id==1 and 1 or 128/2+13
+  rect(x,12,x+player_max_energy*3,13,dark_gray) -- background
+  if p.energy>0 then rect(x,12,x+p.energy*3,13,yellow) end -- energy
 end
 
 function draw_lines()
@@ -512,18 +528,23 @@ function format_time(t)
 end
 
 function draw_hud()
-  print("player 1",1,1,p1.c)
-  draw_hp(p1)
+  -- names
+  print("player 1",1,2,p1.c)
   local p2hud_w=print("player 2",0,-16)
-  print("player 2",screen_size-p2hud_w,1,p2.c)
+  print("player 2",screen_size-p2hud_w-1,2,p2.c)
+  -- hp
+  draw_hp(p1)
   draw_hp(p2)
+  -- energy
+  draw_energy(p1)
+  draw_energy(p2)
   -- scores
   local p1_score_pad=tostr(p1.score<10 and "0" or "")..tostr(p1.score)
   local p1_score_hud="\#"..int_to_p8hex(p1.c).."\f7"..p1_score_pad
-  print(p1_score_hud,screen_size/2-21,2)
+  print(p1_score_hud,screen_size/2-22,2)
   local p2_score_pad=tostr(p2.score<10 and "0" or "")..tostr(p2.score)
   local p2_score_hud="\#"..int_to_p8hex(p2.c).."\f7"..p2_score_pad
-  print(p2_score_hud,screen_size/2+13,2)
+  print(p2_score_hud,screen_size/2+14,2)
   -- game clock
   print(format_time(now),screen_size/2-10,2)
 end

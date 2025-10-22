@@ -1,3 +1,8 @@
+# Bugs
+
+- player eyes turn yellow when over energy sprite because they are "black" which is transparent
+
+
 # TODO
 
 - [ ] Refactor naming (longer, more explicit, more scalable)
