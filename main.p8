@@ -33,8 +33,8 @@ dark_gray=5
 white=7
 yellow=10
 
-maps={
-  map1={
+arenas={
+  arena1={
     celx=0,
     cely=0,
     celh=10,
@@ -42,18 +42,18 @@ maps={
   }
 }
 
-function init_map(_m)
-  m=_m
-  m.sx=flr((screen_size-tile_size*m.celw)/2)
-  m.sy=flr((screen_size-tile_size*m.celh)/2)
+function init_arena(m)
+  arena=m
+  arena.sx=flr((screen_size-tile_size*arena.celw)/2)
+  arena.sy=flr((screen_size-tile_size*arena.celh)/2)
 end
 
 function spawn_player(p)
   -- collect valid spawn points
   local spawns={}
   local other_p=p.id==1 and p2 or p1
-  for x=1,m.celw do
-    for y=1,m.celh do
+  for x=1,arena.celw do
+    for y=1,arena.celh do
       if mget(x,y)==spawn_spr and other_p.x~=x and other_p.y~=y then
         add(spawns,{x=x,y=y})
       end
@@ -101,6 +101,7 @@ function spawn_player(p)
 end
 
 function _init()
+  arena=nil -- active arena (map)
   debug=0
   game_type="versus"
   now=0
@@ -120,8 +121,8 @@ function _init()
     last_spawn_time=0,
     spawn_particles={},
     w=1, -- selected weapon (1=line)
-    x=0, -- x position in tiles, relative to map origin (top left)
-    y=0, -- y position in tiles, relative to map origin (top left)
+    x=0, -- x position in tiles, relative to arena origin (top left)
+    y=0, -- y position in tiles, relative to arena origin (top left)
     z=0, -- facing direction in degrees clockwise (0=East,90=South)
   }
   p2 = {
@@ -145,11 +146,10 @@ function _init()
     z=180,
   }
   lines={} -- line weapon "tracers"
-  m=nil -- active map
   screen_size=128
   tile_size=8
 
-  init_map(maps.map1)
+  init_arena(arenas.arena1)
   spawn_player(p1)
   spawn_player(p2)
 end
@@ -163,7 +163,7 @@ function move_player(p,z)
   -- target destination
   local to_x=p.x+dx
   local to_y=p.y+dy
-  -- map collisions
+  -- arena collisions
   local to_spr=mget(to_x,to_y) -- target map sprite
   if fget(to_spr,is_solid_flag) then
     -- TODO: play solid bump sound
@@ -180,6 +180,8 @@ function move_player(p,z)
     p.energy+=energy_pickup_amount
     if p.energy>player_max_energy then p.energy=player_max_energy end
     -- TODO: play energy pickup sound
+    -- TODO: flash player energy bar white
+    -- TODO: start energy respawn timer
   end
   -- move player
   p.x=to_x
@@ -211,7 +213,7 @@ function push_player(p, dir)
 end
 
 function tile_to_pixel(tile,xy)
-  return tile*8+(xy=="x" and m.sx or m.sy)
+  return tile*8+(xy=="x" and arena.sx or arena.sy)
 end
 
 function explode_player(player, dir)
@@ -288,10 +290,10 @@ function fire_line(p)
   end
 
   -- convert tile pos to pixel pos + map offset
-  s.x=s.x*8+m.sx
-  s.y=s.y*8+m.sy
-  t.x=t.x*8+m.sx
-  t.y=t.y*8+m.sy
+  s.x=s.x*8+arena.sx
+  s.y=s.y*8+arena.sy
+  t.x=t.x*8+arena.sx
+  t.y=t.y*8+arena.sy
   -- account for player direction and reticle offset (start pos)
   if p.z==0 then s.x+=10 end
   if p.z==180 then s.x-=4 end
@@ -438,17 +440,17 @@ function _update()
   update_lines()
 end
 
-function draw_map()
-  map(m.celx,m.cely,m.sx,m.sy,m.celw,m.celh)
+function draw_arena()
+  map(arena.celx,arena.cely,arena.sx,arena.sy,arena.celw,arena.celh)
 end
 
 function draw_player_dir(p) -- draw direction reticle
   local x_offset=p.z==0 and 1 or p.z==180 and -1 or 0 -- offset to adjacent tile
   local x_tile_offset=p.z==0 and -1 or 0 -- account for off-center sprites
-  local x=p.x*8+x_offset*8+x_tile_offset+m.sx
+  local x=p.x*8+x_offset*8+x_tile_offset+arena.sx
   local y_offset=p.z==-90 and -1 or p.z==90 and 1 or 0
   local y_tile_offset=p.z==90 and -1 or 0
-  local y=p.y*8+y_offset*8+y_tile_offset+m.sy
+  local y=p.y*8+y_offset*8+y_tile_offset+arena.sy
   local sprn=x_offset==0 and 21 or 20
   spr(sprn,x,y,1,1,x_offset<0,y_offset<0)
 end
@@ -503,7 +505,7 @@ function draw_player(pnum)
   end
 
   -- draw player sprite
-  spr(sprn,p.x*8+xoffset+m.sx,p.y*8+m.sy,1,1,p.flip_x)
+  spr(sprn,p.x*8+xoffset+arena.sx,p.y*8+arena.sy,1,1,p.flip_x)
   draw_player_dir(p)
   pal()
 end
@@ -576,7 +578,7 @@ end
 
 function _draw()
   cls()
-  draw_map()
+  draw_arena()
   draw_player(1)
   draw_player(2)
   draw_lines()
