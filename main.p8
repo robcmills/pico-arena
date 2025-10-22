@@ -1,5 +1,9 @@
 -- utils
 
+function log(str)
+  printh(str, "p8log.txt")
+end
+
 -- random weighted choice
 function rndw(choices)
   local total=0
@@ -15,6 +19,7 @@ end
 -- constants
 dmg_anim_time=0.1-- seconds player damage animation lasts
 energy_pickup_amount=8 -- amount of energy per energy pickup
+energy_respawn_time=15 -- seconds until energy respawns
 energy_spr=33 -- sprite index for energy pickups
 is_solid_flag=0 -- flag for map sprites that are solid (can not be walked through)
 line_delay=0.2 -- seconds between weapon fires
@@ -42,10 +47,36 @@ arenas={
   }
 }
 
-function init_arena(m)
-  arena=m
+function init_energy_pickups(a)
+  for x=1,arena.celw do
+    for y=1,arena.celh do
+      if mget(x,y)==energy_spr then
+        local key=x..","..y
+        entities[key]={
+          last_collected_time=nil,
+          type="energy",
+          x=x,
+          y=y,
+        }
+      end
+    end
+  end
+end
+
+-- build stateful entities table from arena map
+-- pico8 map editor is limited to only boolean flags on map tile sprites
+-- we need moar
+function init_entities(a)
+  entities={}
+  init_energy_pickups(a)
+end
+
+function init_arena(a)
+  arena=a
+  -- calculate offset to center map
   arena.sx=flr((screen_size-tile_size*arena.celw)/2)
   arena.sy=flr((screen_size-tile_size*arena.celh)/2)
+  init_entities(arena)
 end
 
 function spawn_player(p)
@@ -102,7 +133,8 @@ end
 
 function _init()
   arena=nil -- active arena (map)
-  debug=0
+  entities={}
+  debug=""
   game_type="versus"
   now=0
   p1 = {
@@ -163,25 +195,18 @@ function move_player(p,z)
   -- target destination
   local to_x=p.x+dx
   local to_y=p.y+dy
-  -- arena collisions
+  -- check for collisions that would prevent movement
+  -- solid tiles
   local to_spr=mget(to_x,to_y) -- target map sprite
   if fget(to_spr,is_solid_flag) then
     -- TODO: play solid bump sound
     return
   end
-  -- player collisions
+  -- other player collisions
   local other_p=p.id==1 and p2 or p1
   if other_p.x==to_x and other_p.y==to_y and other_p.hp>0 then
     -- TODO: play player bump sound
     return
-  end
-  -- energy pickup
-  if to_spr==energy_spr then
-    p.energy+=energy_pickup_amount
-    if p.energy>player_max_energy then p.energy=player_max_energy end
-    -- TODO: play energy pickup sound
-    -- TODO: flash player energy bar white
-    -- TODO: start energy respawn timer
   end
   -- move player
   p.x=to_x
@@ -363,6 +388,31 @@ function update_player_particles(player)
   end
 end
 
+function update_player_entity_collisions(p)
+  local entity=entities[p.x..","..p.y]
+  -- energy pickup
+  if entity and entity.type=="energy" and entity.last_collected_time==nil then
+    p.energy+=energy_pickup_amount
+    if p.energy>player_max_energy then p.energy=player_max_energy end
+    entity.last_collected_time=now
+    -- TODO: play energy pickup sound
+    -- TODO: flash player energy bar white
+    -- TODO: start energy respawn timer
+  end
+end
+
+function update_entities()
+  for _,e in pairs(entities) do
+    if e.type=="energy" and e.last_collected_time~=nil then
+      if now-e.last_collected_time>energy_respawn_time then
+	e.last_collected_time=nil
+      end
+    end
+  end
+  update_player_entity_collisions(p1)
+  update_player_entity_collisions(p2)
+end
+
 -- btn() returns a bitfield of all 12 button states for players 1 & 2
 -- p1: bits 0..5  p2: bits 8..13
 -- p1_mask=111111 p2_mask=11111100000000
@@ -383,6 +433,7 @@ p2_move_mask=3840
 p2_fire_mask=4096
 
 function update_players()
+  -- process player input
   local bits=btn()
 
   -- p1 movement
@@ -436,12 +487,32 @@ end
 
 function _update()
   now=time()
+  update_entities()
   update_players()
   update_lines()
 end
 
 function draw_arena()
   map(arena.celx,arena.cely,arena.sx,arena.sy,arena.celw,arena.celh)
+end
+
+function draw_energy_entity(e)
+  if e.last_collected_time==nil then return end
+  local x=e.x*tile_size+arena.sx
+  local y=e.y*tile_size+arena.sy
+  pal(yellow,dark_gray)
+  clip(x,y,tile_size,tile_size-2-flr((now-e.last_collected_time)/3))
+  spr(energy_spr,x,y)
+  clip()
+  pal()
+end
+
+function draw_entities()
+  for _,e in pairs(entities) do
+    if e.type=="energy" then
+      draw_energy_entity(e)
+    end
+  end
 end
 
 function draw_player_dir(p) -- draw direction reticle
@@ -516,7 +587,7 @@ function draw_hp(p)
   if p.hp>0 then rect(x,9,x+p.hp*3,10,p.c) end -- hp
 end
 
-function draw_energy(p)
+function draw_energy_hud(p)
   local x=p.id==1 and 1 or 128/2+13
   rect(x,12,x+player_max_energy*3,13,dark_gray) -- background
   if p.energy>0 then rect(x,12,x+p.energy*3,13,yellow) end -- energy
@@ -555,8 +626,8 @@ function draw_hud()
   draw_hp(p1)
   draw_hp(p2)
   -- energy
-  draw_energy(p1)
-  draw_energy(p2)
+  draw_energy_hud(p1)
+  draw_energy_hud(p2)
   -- scores
   local p1_score_pad=tostr(p1.score<10 and "0" or "")..tostr(p1.score)
   local p1_score_hud="\#"..int_to_p8hex(p1.c).."\f7"..p1_score_pad
@@ -579,6 +650,7 @@ end
 function _draw()
   cls()
   draw_arena()
+  draw_entities()
   draw_player(1)
   draw_player(2)
   draw_lines()

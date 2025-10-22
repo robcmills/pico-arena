@@ -5,6 +5,7 @@
 
 # TODO
 
+- [ ] Namespace all globals (game.x)
 - [ ] Refactor naming (longer, more explicit, more scalable)
 - [x] Prevent fragged player from colliding
 - [x] Respawn fragged player
@@ -46,3 +47,5 @@
   - [ ] single player
   - [ ] cooperative multiplayer
   - [ ] ctf
+- [ ] Add arena "backgrounds" ?
+  - [ ] bleachers with audience/crowd/spectators/fans
