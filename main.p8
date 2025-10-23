@@ -291,8 +291,8 @@ function explode_player(player,dir)
       vy=-sin(angle)*speed
     }
     particle.update=function()
-      particle.x+=p.vx
-      particle.y+=p.vy
+      particle.x+=particle.vx
+      particle.y+=particle.vy
     end
     add(player.explode_particles,particle)
   end
