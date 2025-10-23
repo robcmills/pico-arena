@@ -7,6 +7,7 @@
 
 - [ ] Refactor movement
 - [ ] Add "dash" move
+- [ ] Add blocking (energy shield)
 - [ ] Namespace all globals (game.x)
 - [ ] Refactor naming (longer, more explicit, more scalable)
 - [x] Prevent fragged player from colliding
@@ -36,6 +37,8 @@
   - [ ] water
   - [ ] ice
   - [ ] fire
+  - [ ] shiny/reflective floors/walls
+  - [ ] "alive" tiles with animations responsive to player movement
 - [ ] Add more weapons
   - [ ] shield
   - [ ] rockets
@@ -44,6 +47,7 @@
   - [ ] corners
   - [ ] path finders
   - [ ] tetris
+  - [ ] tron lightcycle
 - [ ] Add more maps
 - [ ] Add splash start screen
 - [ ] Add more game types
