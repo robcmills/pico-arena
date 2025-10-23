@@ -254,7 +254,12 @@ end
 
 function push_player(p, dir)
   -- TODO: enable pushing to interrupt existing movement
+  local prev_flip_x=p.flip_x
+  local prev_z=p.z
   move_player(p,dir)
+  -- prevent changing player direction
+  p.flip_x=prev_flip_x
+  p.z=prev_z
   -- return true if moved
   return p.last_move_time~=nil
 end
