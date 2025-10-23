@@ -5,9 +5,14 @@
 
 # TODO
 
+- [ ] Add draw methods to particles?
 - [ ] Refactor movement
 - [ ] Add "dash" move
 - [ ] Add blocking (energy shield)
+- [ ] rock, paper, scissor mechanic
+    - shield beats laser
+    - dash attack beats shield
+    - laser beats dash
 - [ ] Namespace all globals (game.x)
 - [ ] Refactor naming (longer, more explicit, more scalable)
 - [x] Prevent fragged player from colliding
