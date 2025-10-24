@@ -17,7 +17,7 @@ function rndw(choices)
 end
 
 -- constants
-dmg_anim_time=0.1-- seconds player damage animation lasts
+dmg_anim_time=0.16-- seconds player damage animation lasts
 energy_pickup_amount=8 -- amount of energy per energy pickup
 energy_respawn_time=15 -- seconds until energy respawns
 line_delay=0.2 -- seconds between weapon fires
@@ -215,7 +215,18 @@ function _init()
   spawn_player(p2)
 end
 
--- move player in direction z
+-- move player in direction z until they collide with something
+-- deal damage if applicable
+function dash_player(player,z)
+  if player.energy<=0 then
+    -- TODO: play empty energy sound
+    -- TODO: flash player energy bar light_gray
+    move_player(player,z)
+    return
+  end
+end
+
+-- move player in direction z one tile
 function move_player(player,z)
   if player.last_move_time~=nil then return end
 
@@ -304,6 +315,32 @@ function explode_player(player,dir)
   end
 end
 
+function raycast(from_tile,dir)
+  local target={x=from_tile.x,y=from_tile.y}
+  -- walk in dir until hitting a solid tile, player or screen edge
+  local c=0
+  while c<16 do
+    c+=1
+    if dir==0 then target.x+=1 end
+    if dir==180 then target.x-=1 end
+    if dir==90 then target.y+=1 end
+    if dir==-90 then target.y-=1 end
+    -- check for solid tile
+    local to_spr=mget(target.x,target.y)
+    if fget(to_spr,is_solid_flag) then
+      return {type='tile',x=target.x,y=target.y}
+    end
+    -- check for player
+    for p in all({p1,p2}) do
+      if p.tile_x==target.x and p.tile_y==target.y and p.hp>0 then
+        return {type='player',p=p,x=target.x,y=target.y}
+      end
+    end
+    -- TODO: check for offscreen
+  end
+  return {type='offscreen',x=target.x,y=target.y}
+end
+
 function fire_line(p)
   if p.energy<=0 then
     -- TODO: play empty energy sound
@@ -311,44 +348,26 @@ function fire_line(p)
     return
   end
 
-  local collider=nil -- entity colliding with line (if any)
-  local collider_pushed=false -- entity colliding with line was pushed
   local s={x=p.tile_x,y=p.tile_y} -- start tile
-  local t={x=s.x,y=s.y} -- target tile
-  -- walk in dir until hitting a solid tile, player or screen edge
-  local c=0
-  while c<128 do
-    c+=1
-    if p.z==0 then t.x+=1 end
-    if p.z==180 then t.x-=1 end
-    if p.z==90 then t.y+=1 end
-    if p.z==-90 then t.y-=1 end
-    -- check for solid tile
-    local to_spr=mget(t.x,t.y)
-    if fget(to_spr,0) then
-      collider='tile'
-      break
-    end
-    -- check for player
-    local other_p=p.id==1 and p2 or p1
-    if other_p.tile_x==t.x and other_p.tile_y==t.y and other_p.hp>0 then
-      collider='player'
-      dmg_player(other_p,line_dmg)
-      if other_p.hp>0 then
-        collider_pushed=push_player(other_p,p.z)
-      elseif #other_p.explode_particles==0 then
-        explode_player(other_p,p.z)
-        p.score+=1
-      end
-      break
+  local collider=raycast(s,p.z)
+  local collider_pushed=false -- entity colliding with line was pushed
+  local t=collider -- target tile
+
+  if collider.type=='player' then
+    dmg_player(collider.p,line_dmg)
+    if collider.p.hp>0 then
+      collider_pushed=push_player(collider.p,p.z)
+    elseif #collider.p.explode_particles==0 then
+      explode_player(collider.p,p.z)
+      p.score+=1
     end
   end
 
   -- convert tile pos to pixel pos + map offset
-  s.x=s.x*8+arena.sx
-  s.y=s.y*8+arena.sy
-  t.x=t.x*8+arena.sx
-  t.y=t.y*8+arena.sy
+  s.x=tile_to_pixel(s.x,"x")
+  s.y=tile_to_pixel(s.y,"y")
+  t.x=tile_to_pixel(t.x,"x")
+  t.y=tile_to_pixel(t.y,"y")
   -- account for player direction and reticle offset (start pos)
   if p.z==0 then s.x+=10 end
   if p.z==180 then s.x-=4 end
@@ -363,12 +382,12 @@ function fire_line(p)
     t.x+=3
   end
   -- account for solid tile and player body offset (target pos)
-  if collider=='tile' then
+  if collider.type=='tile' then
     if p.z==0 then t.x-=1 end
     if p.z==180 then t.x+=7 end
     if p.z==90 then t.y-=1 end
     if p.z==-90 then t.y+=7 end
-  elseif collider=='player' then
+  elseif collider.type=='player' then
     if p.z==180 then t.x+=6 end
     if p.z==-90 then t.y+=6 end
   end
@@ -501,7 +520,8 @@ function update_players()
   local p1_down=bits&8~=0
   local p1_x=bits&16~=0
   local p1_o=bits&32~=0
-  if p1_left then move_player(p1,180)
+  if p1_left and p1_o then dash_player(p1,180)
+  elseif p1_left then move_player(p1,180)
   elseif p1_right then move_player(p1,0)
   elseif p1_up then move_player(p1,-90)
   elseif p1_down then move_player(p1,90) end
