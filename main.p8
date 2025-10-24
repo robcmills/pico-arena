@@ -484,10 +484,8 @@ end
 --                                | 512
 --                                |1024
 --                                2048
-p1_move_mask=15
-p1_fire_mask=16
-p2_move_mask=3840
-p2_fire_mask=4096
+p1_x_btn_mask=16
+p2_x_btn_mask=4096
 
 function update_players()
   update_player_movement(p1)
@@ -497,34 +495,38 @@ function update_players()
   local bits=btn()
 
   -- p1 movement
-  --local p1_move_bits=bits&p1_move_mask
-  --if p1_move_bits~=p1.last_move_bits or now-p1.last_move_time>player_speed then
-  if bits&1~=0 then move_player(p1,180)
-  elseif bits&2~=0 then move_player(p1,0)
-  elseif bits&4~=0 then move_player(p1,-90)
-  elseif bits&8~=0 then move_player(p1,90) end
-  --p1.last_move_bits=p1_move_bits
-  --p1.last_move_time=now
+  local p1_left=bits&1~=0
+  local p1_right=bits&2~=0
+  local p1_up=bits&4~=0
+  local p1_down=bits&8~=0
+  local p1_x=bits&16~=0
+  local p1_o=bits&32~=0
+  if p1_left then move_player(p1,180)
+  elseif p1_right then move_player(p1,0)
+  elseif p1_up then move_player(p1,-90)
+  elseif p1_down then move_player(p1,90) end
 
   -- p2 movement
-  --local p2_move_bits=bits&p2_move_mask
-  --if p2_move_bits~=p2.last_move_bits or now-p2.last_move_time>player_speed then
-  if bits&256~=0 then move_player(p2,180)
-  elseif bits&512~=0 then move_player(p2,0)
-  elseif bits&1024~=0 then move_player(p2,-90)
-  elseif bits&2048~=0 then move_player(p2,90) end
-  --p2.last_move_bits=p2_move_bits
-  --p2.last_move_time=now
+  local p2_left=bits&256~=0
+  local p2_right=bits&512~=0
+  local p2_up=bits&1024~=0
+  local p2_down=bits&2048~=0
+  local p2_x=bits&4096~=0
+  local p2_o=bits&8192~=0
+  if p2_left then move_player(p2,180)
+  elseif p2_right then move_player(p2,0)
+  elseif p2_up then move_player(p2,-90)
+  elseif p2_down then move_player(p2,90) end
 
   -- weapon fire
-  local p1_fire_bits=bits&p1_fire_mask
+  local p1_fire_bits=bits&p1_x_btn_mask
   if p1_fire_bits~=0 and (p1_fire_bits~=p1.last_fire_bits or now-p1.last_fire_time>line_delay) then
     fire_weapon(p1)
     p1.last_fire_bits=p1_fire_bits
     p1.last_fire_time=now
   end
 
-  local p2_fire_bits=bits&p2_fire_mask
+  local p2_fire_bits=bits&p2_x_btn_mask
   if p2_fire_bits~=0 and (p2_fire_bits~=p2.last_fire_bits or now-p2.last_fire_time>line_delay) then
     fire_weapon(p2)
     p2.last_fire_bits=p2_fire_bits
