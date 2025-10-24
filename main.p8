@@ -459,7 +459,7 @@ function update_player_movement(p)
   p.tile_x=flr((p.pixel_x+tile_size/2-arena.sx)/tile_size)
   p.tile_y=flr((p.pixel_y+tile_size/2-arena.sy)/tile_size)
 
-  if p.last_move_time~=nil and now-p.last_move_time>player_speed then
+  if p.last_move_time~=nil and now-p.last_move_time>=player_speed then
     p.last_move_time=nil
     p.pixel_x=p.to_x*tile_size+arena.sx
     p.pixel_y=p.to_y*tile_size+arena.sy
@@ -490,6 +490,9 @@ p2_move_mask=3840
 p2_fire_mask=4096
 
 function update_players()
+  update_player_movement(p1)
+  update_player_movement(p2)
+
   -- process player input
   local bits=btn()
 
@@ -512,9 +515,6 @@ function update_players()
   elseif bits&2048~=0 then move_player(p2,90) end
   --p2.last_move_bits=p2_move_bits
   --p2.last_move_time=now
-
-  update_player_movement(p1)
-  update_player_movement(p2)
 
   -- weapon fire
   local p1_fire_bits=bits&p1_fire_mask
