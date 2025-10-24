@@ -24,7 +24,8 @@ line_delay=0.2 -- seconds between weapon fires
 line_dmg=1
 line_life=0.1 -- seconds
 line_push=1 -- number of tiles a line collision pushes the player
-player_speed=0.1 -- seconds between allowed moves
+player_dash_velocity=0.02
+player_velocity=0.1 -- default velocity in seconds per tile (8 pixels)
 player_max_energy=16
 player_max_hp=16
 player_fire_anim_time=0.3 -- seconds player fire animation lasts
@@ -178,6 +179,7 @@ function _init()
     from_y=nil, -- movement starting y position in tile coordinates
     to_x=nil, -- movement target x position in tile coordinates
     to_y=nil, -- movement target y position in tile coordinates
+    velocity=0, -- movement velocity in seconds per tile (8 pixels)
     z=0, -- facing direction in degrees clockwise (0=East,90=South)
   }
   p2 = {
@@ -204,6 +206,7 @@ function _init()
     from_y=nil,
     to_x=nil,
     to_y=nil,
+    velocity=0,
     z=180,
   }
   lines={} -- line weapon "tracers"
@@ -246,6 +249,7 @@ function dash_player(player,z)
   player.to_y=target.y
   player.from_x=player.tile_x
   player.from_y=player.tile_y
+  player.velocity=player_dash_velocity
 end
 
 -- move player in direction z one tile
@@ -279,6 +283,7 @@ function move_player(player,z)
   player.to_y=to_y
   player.from_x=player.tile_x
   player.from_y=player.tile_y
+  player.velocity=player_velocity
 end
 
 function dmg_player(p, dmg)
@@ -487,23 +492,27 @@ function update_entities()
 end
 
 function update_player_movement(p)
-  if p.last_move_time~=nil then
-    local dir=p.from_x<p.to_x and 0 or p.from_x>p.to_x and 180 or p.from_y<p.to_y and 90 or -90
-    local dt=now-p.last_move_time
-    if dir==0 or dir==180 then
-      local dx=(p.from_x*tile_size-p.to_x*tile_size)*dt/player_speed
-      p.pixel_x=p.from_x*tile_size-dx+arena.sx
-    elseif dir==90 or dir==-90 then
-      local dy=(p.from_y*tile_size-p.to_y*tile_size)*dt/player_speed
-      p.pixel_y=p.from_y*tile_size-dy+arena.sy
-    end
+  if p.last_move_time==nil then return end
+
+  local dir=p.from_x<p.to_x and 0 or p.from_x>p.to_x and 180 or p.from_y<p.to_y and 90 or -90
+  local dtime=now-p.last_move_time
+  local dtiles=(dir==0 or dir==180) and p.to_x-p.from_x or p.to_y-p.from_y
+  local total_time=abs(dtiles)*p.velocity
+  local interpolation=min(dtime/total_time,1)
+  local dpixels=dtiles*tile_size*interpolation
+
+  if dir==0 or dir==180 then
+    p.pixel_x=p.from_x*tile_size+dpixels+arena.sx
+  elseif dir==90 or dir==-90 then
+    p.pixel_y=p.from_y*tile_size+dpixels+arena.sy
   end
 
   -- update current tile position based on pixel position
   p.tile_x=flr((p.pixel_x+tile_size/2-arena.sx)/tile_size)
   p.tile_y=flr((p.pixel_y+tile_size/2-arena.sy)/tile_size)
 
-  if p.last_move_time~=nil and now-p.last_move_time>=player_speed then
+  -- are we done moving?
+  if interpolation==1 then
     p.last_move_time=nil
     p.pixel_x=p.to_x*tile_size+arena.sx
     p.pixel_y=p.to_y*tile_size+arena.sy
@@ -511,6 +520,7 @@ function update_player_movement(p)
     p.from_y=nil
     p.to_x=nil
     p.to_y=nil
+    p.velocity=0
   end
 end
 
