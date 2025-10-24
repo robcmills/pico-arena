@@ -215,17 +215,18 @@ function _init()
   spawn_player(p2)
 end
 
-function move_player(p,z)
-  if p.last_move_time~=nil then return end
+-- move player in direction z
+function move_player(player,z)
+  if player.last_move_time~=nil then return end
 
   local dx=z==0 and 1 or z==180 and -1 or 0
   local dy=z==90 and 1 or z==-90 and -1 or 0
-  if z==0 then p.flip_x=false end
-  if z==180 then p.flip_x=true end
-  p.z=z
+  if z==0 then player.flip_x=false end
+  if z==180 then player.flip_x=true end
+  player.z=z
   -- destination
-  local to_x=p.tile_x+dx
-  local to_y=p.tile_y+dy
+  local to_x=player.tile_x+dx
+  local to_y=player.tile_y+dy
   -- check for collisions that would prevent movement
   -- solid tiles
   local to_spr=mget(to_x,to_y) -- target map sprite
@@ -234,17 +235,17 @@ function move_player(p,z)
     return
   end
   -- other player collisions
-  local other_p=p.id==1 and p2 or p1
-  if other_p.tile_x==to_x and other_p.tile_y==to_y and other_p.hp>0 then
+  local other_player=player.id==1 and p2 or p1
+  if other_player.tile_x==to_x and other_player.tile_y==to_y and other_player.hp>0 then
     -- TODO: play player bump sound
     return
   end
   -- move player
-  p.last_move_time=now
-  p.to_x=to_x
-  p.to_y=to_y
-  p.from_x=p.tile_x
-  p.from_y=p.tile_y
+  player.last_move_time=now
+  player.to_x=to_x
+  player.to_y=to_y
+  player.from_x=player.tile_x
+  player.from_y=player.tile_y
 end
 
 function dmg_player(p, dmg)

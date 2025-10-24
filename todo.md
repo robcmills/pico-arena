@@ -6,7 +6,7 @@
 # TODO
 
 - [ ] Add draw methods to particles?
-- [ ] Refactor movement
+- [x] Refactor movement
 - [ ] Add "dash" move
 - [ ] Add blocking (energy shield)
 - [ ] rock, paper, scissor mechanic
