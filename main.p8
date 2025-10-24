@@ -218,24 +218,46 @@ end
 -- move player in direction z until they collide with something
 -- deal damage if applicable
 function dash_player(player,z)
+  -- check if can dash
+  if player.last_move_time~=nil then return end
   if player.energy<=0 then
     -- TODO: play empty energy sound
     -- TODO: flash player energy bar light_gray
     move_player(player,z)
     return
   end
+  local collider=raycast({x=player.tile_x,y=player.tile_y},z,true)
+  local target={x=collider.x,y=collider.y}
+  -- get adjacent tile
+  if z==0 then target.x-=1
+  elseif z==180 then target.x+=1
+  elseif z==90 then target.y-=1
+  elseif z==-90 then target.y+=1 end
+  -- cannot dash if already adjacent to collider
+  if target.x==player.tile_x and target.y==player.tile_y then return end
+  -- dash is happening
+  -- update player flip state and z dir
+  if z==0 then player.flip_x=false end
+  if z==180 then player.flip_x=true end
+  player.z=z
+  -- move player
+  player.last_move_time=now
+  player.to_x=target.x
+  player.to_y=target.y
+  player.from_x=player.tile_x
+  player.from_y=player.tile_y
 end
 
 -- move player in direction z one tile
 function move_player(player,z)
   if player.last_move_time~=nil then return end
-
-  local dx=z==0 and 1 or z==180 and -1 or 0
-  local dy=z==90 and 1 or z==-90 and -1 or 0
+  -- Update player flip state and z dir
   if z==0 then player.flip_x=false end
   if z==180 then player.flip_x=true end
   player.z=z
   -- destination
+  local dx=z==0 and 1 or z==180 and -1 or 0
+  local dy=z==90 and 1 or z==-90 and -1 or 0
   local to_x=player.tile_x+dx
   local to_y=player.tile_y+dy
   -- check for collisions that would prevent movement
@@ -315,9 +337,10 @@ function explode_player(player,dir)
   end
 end
 
-function raycast(from_tile,dir)
+function raycast(from_tile,dir,intersect_void)
+  intersect_void=intersect_void==nil and false or intersect_void
   local target={x=from_tile.x,y=from_tile.y}
-  -- walk in dir until hitting a solid tile, player or screen edge
+  -- walk in dir until hitting a solid tile, player or go offscreen
   local c=0
   while c<16 do
     c+=1
@@ -327,6 +350,9 @@ function raycast(from_tile,dir)
     if dir==-90 then target.y-=1 end
     -- check for solid tile
     local to_spr=mget(target.x,target.y)
+    if to_spr==0 and intersect_void then
+      return {type='void',x=target.x,y=target.y}
+    end
     if fget(to_spr,is_solid_flag) then
       return {type='tile',x=target.x,y=target.y}
     end
@@ -336,7 +362,6 @@ function raycast(from_tile,dir)
         return {type='player',p=p,x=target.x,y=target.y}
       end
     end
-    -- TODO: check for offscreen
   end
   return {type='offscreen',x=target.x,y=target.y}
 end
@@ -522,8 +547,11 @@ function update_players()
   local p1_o=bits&32~=0
   if p1_left and p1_o then dash_player(p1,180)
   elseif p1_left then move_player(p1,180)
+  elseif p1_right and p1_o then dash_player(p1,0)
   elseif p1_right then move_player(p1,0)
+  elseif p1_up and p1_o then dash_player(p1,-90)
   elseif p1_up then move_player(p1,-90)
+  elseif p1_down and p1_o then dash_player(p1,90)
   elseif p1_down then move_player(p1,90) end
 
   -- p2 movement
@@ -533,9 +561,13 @@ function update_players()
   local p2_down=bits&2048~=0
   local p2_x=bits&4096~=0
   local p2_o=bits&8192~=0
-  if p2_left then move_player(p2,180)
+  if p2_left and p2_o then dash_player(p2,180)
+  elseif p2_left then move_player(p2,180)
+  elseif p2_right and p2_o then dash_player(p2,0)
   elseif p2_right then move_player(p2,0)
+  elseif p2_up and p2_o then dash_player(p2,-90)
   elseif p2_up then move_player(p2,-90)
+  elseif p2_down and p2_o then dash_player(p2,90)
   elseif p2_down then move_player(p2,90) end
 
   -- weapon fire
@@ -749,4 +781,5 @@ function _draw()
   draw_player(2)
   draw_lines()
   draw_hud()
+  debug_print(debug)
 end
