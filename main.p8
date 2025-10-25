@@ -24,7 +24,7 @@ line_delay=0.2 -- seconds between weapon fires
 line_dmg=1
 line_life=0.1 -- seconds
 line_push=1 -- number of tiles a line collision pushes the player
-player_dash_velocity=0.02
+player_dash_velocity=0.03
 player_velocity=0.1 -- default velocity in seconds per tile (8 pixels)
 player_max_energy=16
 player_max_hp=16
@@ -530,20 +530,19 @@ function update_player_movement(p)
   end
 end
 
+function update_player_x(p, x_pressed)
+  if x_pressed and now-p.last_fire_time>line_delay then
+    fire_weapon(p)
+    p.last_fire_time=now
+  end
+end
+
+function update_player_o(p, o_pressed)
+  p.shield=o_pressed and p.velocity==0 and p.energy>0
+end
+
 -- btn() returns a bitfield of all 12 button states for players 1 & 2
 -- p1: bits 0..5  p2: bits 8..13
--- p1_mask=111111 p2_mask=11111100000000
--- o,x,down,up,right,left
--- p1_move_mask=1111 p2_move_mask=111100000000
---                                |  |    8421
---                                |  |   16
---                                |  |  32
---                                |  | 64
---                                |  |128
---                                |  256
---                                | 512
---                                |1024
---                                2048
 function update_player_input(p)
   local bits=btn()
   local shift=(p.id-1)*8
@@ -563,10 +562,8 @@ function update_player_input(p)
   elseif p_down and p_o then dash_player(p,90)
   elseif p_down then move_player(p,90)
   end
-  if p_x and now-p1.last_fire_time>line_delay then
-    fire_weapon(p)
-    p.last_fire_time=now
-  end
+  update_player_x(p, p_x)
+  update_player_o(p, p_o)
 end
 
 function update_player(p)
@@ -640,13 +637,14 @@ function draw_player_dir(p)
   local y_tile_offset=p.z==90 and -1 or 0
   local y=p.pixel_y+y_offset*8+y_tile_offset
   local sprn=x_offset==0 and 21 or 20
+  if p.velocity==player_dash_velocity then
+    sprn=x_offset==0 and 25 or 24
+  end
   spr(sprn,x,y,1,1,x_offset<0,y_offset<0)
 end
 
-function draw_player(pnum)
-  local p=pnum==1 and p1 or p2
-
-  if pnum==2 then
+function draw_player(p)
+  if p.id==2 then
     pal(p1.c,p2.c) -- swap p1 -> p2 color (reuse same sprite)
   end
 
@@ -685,8 +683,8 @@ function draw_player(pnum)
     if sprn==19 then sprn=23 end
   end
 
-  -- taking damage
-  if p.last_dmg_time>0 and now-p.last_dmg_time<dmg_anim_time then
+  -- yellow while taking damage or dashing
+  if (p.last_dmg_time>0 and now-p.last_dmg_time<dmg_anim_time) or p.velocity==player_dash_velocity then
     if sprn==17 then sprn=22 end -- use "squinting" sprites
     if sprn==19 then sprn=23 end
     pal(p1.c,10) -- swap p1 color -> yellow
@@ -694,7 +692,13 @@ function draw_player(pnum)
 
   -- draw player sprite
   spr(sprn,p.pixel_x+xoffset,p.pixel_y,1,1,p.flip_x)
-  draw_player_dir(p)
+
+  -- shield or aim reticle
+  if p.shield then
+    circ(p.pixel_x+3,p.pixel_y+3,3,yellow)
+  else
+    draw_player_dir(p)
+  end
   pal()
 end
 
@@ -768,8 +772,8 @@ function _draw()
   cls()
   draw_arena()
   draw_entities()
-  draw_player(1)
-  draw_player(2)
+  draw_player(p1)
+  draw_player(p2)
   draw_lines()
   draw_hud()
   debug_print(debug)

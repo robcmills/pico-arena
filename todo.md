@@ -8,7 +8,10 @@
 - [ ] Add draw methods to particles?
 - [x] Refactor movement
 - [ ] Add "dash" move
+  - [ ] add swirling particle trail
+  - [ ] drain energy when dashing
 - [ ] Add blocking (energy shield)
+  - [ ] drain energy while shielding
 - [ ] rock, paper, scissor mechanic
     - shield beats laser
     - dash attack beats shield
