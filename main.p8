@@ -163,7 +163,6 @@ function _init()
     id=1,
     flip_x=false,
     last_dmg_time=0,
-    last_fire_bits=0,
     last_fire_time=0,
     last_move_bits=0,
     last_move_time=nil,
@@ -191,7 +190,6 @@ function _init()
     id=2,
     flip_x=true,
     last_dmg_time=0,
-    last_fire_bits=0,
     last_fire_time=0,
     last_move_bits=0,
     last_move_time=nil,
@@ -250,6 +248,9 @@ function dash_player(player,z)
   player.from_x=player.tile_x
   player.from_y=player.tile_y
   player.velocity=player_dash_velocity
+  -- TODO: damage collider
+  -- TODO: play dash sound
+  -- TODO: play dash animation
 end
 
 -- move player in direction z one tile
@@ -284,6 +285,11 @@ function move_player(player,z)
   player.from_x=player.tile_x
   player.from_y=player.tile_y
   player.velocity=player_velocity
+end
+
+function shield_player(player)
+  if player.energy<=0 then return end
+  player.shield=true
 end
 
 function dmg_player(p, dmg)
@@ -538,65 +544,40 @@ end
 --                                | 512
 --                                |1024
 --                                2048
-p1_x_btn_mask=16
-p2_x_btn_mask=4096
+function update_player_input(p)
+  local bits=btn()
+  local shift=(p.id-1)*8
+  local b=bits>>shift
+  local p_left=b&1~=0
+  local p_right=b&2~=0
+  local p_up=b&4~=0
+  local p_down=b&8~=0
+  local p_x=b&16~=0
+  local p_o=b&32~=0
+  if p_left and p_o then dash_player(p,180)
+  elseif p_left then move_player(p,180)
+  elseif p_right and p_o then dash_player(p,0)
+  elseif p_right then move_player(p,0)
+  elseif p_up and p_o then dash_player(p,-90)
+  elseif p_up then move_player(p,-90)
+  elseif p_down and p_o then dash_player(p,90)
+  elseif p_down then move_player(p,90)
+  end
+  if p_x and now-p1.last_fire_time>line_delay then
+    fire_weapon(p)
+    p.last_fire_time=now
+  end
+end
+
+function update_player(p)
+  update_player_movement(p)
+  update_player_input(p)
+  update_player_particles(p)
+end
 
 function update_players()
-  update_player_movement(p1)
-  update_player_movement(p2)
-
-  -- process player input
-  local bits=btn()
-
-  -- p1 movement
-  local p1_left=bits&1~=0
-  local p1_right=bits&2~=0
-  local p1_up=bits&4~=0
-  local p1_down=bits&8~=0
-  local p1_x=bits&16~=0
-  local p1_o=bits&32~=0
-  if p1_left and p1_o then dash_player(p1,180)
-  elseif p1_left then move_player(p1,180)
-  elseif p1_right and p1_o then dash_player(p1,0)
-  elseif p1_right then move_player(p1,0)
-  elseif p1_up and p1_o then dash_player(p1,-90)
-  elseif p1_up then move_player(p1,-90)
-  elseif p1_down and p1_o then dash_player(p1,90)
-  elseif p1_down then move_player(p1,90) end
-
-  -- p2 movement
-  local p2_left=bits&256~=0
-  local p2_right=bits&512~=0
-  local p2_up=bits&1024~=0
-  local p2_down=bits&2048~=0
-  local p2_x=bits&4096~=0
-  local p2_o=bits&8192~=0
-  if p2_left and p2_o then dash_player(p2,180)
-  elseif p2_left then move_player(p2,180)
-  elseif p2_right and p2_o then dash_player(p2,0)
-  elseif p2_right then move_player(p2,0)
-  elseif p2_up and p2_o then dash_player(p2,-90)
-  elseif p2_up then move_player(p2,-90)
-  elseif p2_down and p2_o then dash_player(p2,90)
-  elseif p2_down then move_player(p2,90) end
-
-  -- weapon fire
-  local p1_fire_bits=bits&p1_x_btn_mask
-  if p1_fire_bits~=0 and (p1_fire_bits~=p1.last_fire_bits or now-p1.last_fire_time>line_delay) then
-    fire_weapon(p1)
-    p1.last_fire_bits=p1_fire_bits
-    p1.last_fire_time=now
-  end
-
-  local p2_fire_bits=bits&p2_x_btn_mask
-  if p2_fire_bits~=0 and (p2_fire_bits~=p2.last_fire_bits or now-p2.last_fire_time>line_delay) then
-    fire_weapon(p2)
-    p2.last_fire_bits=p2_fire_bits
-    p2.last_fire_time=now
-  end
-
-  update_player_particles(p1)
-  update_player_particles(p2)
+  update_player(p1)
+  update_player(p2)
 end
 
 function update_lines()
