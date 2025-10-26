@@ -9,6 +9,7 @@
 - [x] Refactor movement
 - [ ] Add "dash" move
   - [ ] dmg collider and push back
+  - [ ] dash player collisions should push back 1 tile or more? into void?
   - [x] add particle trail
   - [ ] drain energy when dashing
 - [ ] Add blocking (energy shield)
@@ -17,6 +18,7 @@
     - shield beats laser
     - dash attack beats shield
     - laser beats dash
+- [ ] Add "fall" into void tiles
 - [ ] Namespace all globals (game.x)
 - [ ] Refactor naming (longer, more explicit, more scalable)
 - [x] Prevent fragged player from colliding

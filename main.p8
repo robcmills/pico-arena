@@ -17,6 +17,7 @@ function rndw(choices)
 end
 
 -- constants
+dash_damage=1
 dmg_anim_time=0.16-- seconds player damage animation lasts
 energy_pickup_amount=8 -- amount of energy per energy pickup
 energy_respawn_time=15 -- seconds until energy respawns
@@ -251,9 +252,28 @@ function dash_player(player,z)
   player.from_x=player.tile_x
   player.from_y=player.tile_y
   player.velocity=player_dash_velocity
-  -- TODO: damage collider
   -- TODO: play dash sound
-  -- TODO: play dash animation
+end
+
+function player_dash_collision(player)
+  local other_player=player.id==1 and p2 or p1
+  local target={x=player.to_x,y=player.to_y}
+  -- get adjacent tile
+  if player.z==0 then target.x+=1
+  elseif player.z==180 then target.x-=1
+  elseif player.z==90 then target.y+=1
+  elseif player.z==-90 then target.y-=1 end
+  -- check if other player is occupying adjacent tile
+  if target.x==other_player.tile_x and target.y==other_player.tile_y then
+    -- damage collider
+    dmg_player(other_player,dash_damage)
+    if other_player.hp>0 then
+      collider_pushed=push_player(other_player,player.z)
+    elseif #other_player.explode_particles==0 then
+      explode_player(other_player,player.z)
+      player.score+=1
+    end
+  end
 end
 
 -- move player in direction z one tile
@@ -548,6 +568,10 @@ function update_player_movement(p)
 
   -- are we done moving?
   if interpolation==1 then
+    -- if we are ending a dash, do collision check
+    if p.velocity==player_dash_velocity then
+      player_dash_collision(p)
+    end
     p.last_move_time=nil
     p.pixel_x=p.to_x*tile_size+arena.sx
     p.pixel_y=p.to_y*tile_size+arena.sy
