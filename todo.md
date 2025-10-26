@@ -5,10 +5,11 @@
 
 # TODO
 
-- [ ] Add draw methods to particles?
+- [x] Use _update60
 - [x] Refactor movement
 - [ ] Add "dash" move
-  - [ ] add swirling particle trail
+  - [ ] dmg collider and push back
+  - [x] add particle trail
   - [ ] drain energy when dashing
 - [ ] Add blocking (energy shield)
   - [ ] drain energy while shielding

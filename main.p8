@@ -24,7 +24,8 @@ line_delay=0.2 -- seconds between weapon fires
 line_dmg=1
 line_life=0.1 -- seconds
 line_push=1 -- number of tiles a line collision pushes the player
-player_dash_velocity=0.03
+player_dash_particle_lifetime=0.2 -- seconds a dash particle lasts
+player_dash_velocity=0.02 -- seconds per tile of movement (lower is faster)
 player_velocity=0.1 -- default velocity in seconds per tile (8 pixels)
 player_max_energy=16
 player_max_hp=16
@@ -156,6 +157,7 @@ function _init()
   now=0
   p1 = {
     c=blue, -- color
+    dash_particles={},
     energy=player_max_energy,
     explode_particles={},
     score=0,
@@ -183,6 +185,7 @@ function _init()
   }
   p2 = {
     c=red,
+    dash_particles={},
     energy=player_max_energy,
     explode_particles={},
     score=0,
@@ -471,6 +474,32 @@ function update_player_particles(player)
       end
     end
   end
+
+  -- spawn dash particles
+  if player.velocity==player_dash_velocity then
+    local last_dash_particle=#player.dash_particles>0 and player.dash_particles[#player.dash_particles] or nil
+    local particle_x=tile_to_pixel(player.tile_x,'x')+3
+    local particle_y=tile_to_pixel(player.tile_y,'y')+3
+    if last_dash_particle==nil or (last_dash_particle~=nil and (last_dash_particle.x~=particle_x or last_dash_particle.y~=particle_y)) then
+      local dash_particle={
+        c=yellow,
+        end_time=now+player_dash_particle_lifetime,
+        size=2,
+        x=particle_x,
+        y=particle_y,
+      }
+      add(player.dash_particles,dash_particle)
+    end
+  end
+
+  -- update dash particles
+  if #player.dash_particles>0 then
+    for particle in all(player.dash_particles) do
+      if particle.end_time<now then
+        del(player.dash_particles,particle)
+      end
+    end
+  end
 end
 
 function update_player_entity_collisions(p)
@@ -585,7 +614,7 @@ function update_lines()
   end
 end
 
-function _update()
+function _update60()
   now=time()
   update_entities()
   update_players()
@@ -664,6 +693,13 @@ function draw_player(p)
     end
     pal()
     return
+  end
+
+  if #p.dash_particles>0 then
+    -- draw dash particles
+    for par in all(p.dash_particles) do
+      circfill(par.x,par.y,par.size,par.c)
+    end
   end
 
   if p.hp<=0 then
