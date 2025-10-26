@@ -150,11 +150,12 @@ function spawn_player(p)
   end
 end
 
-function _init()
+function init_game(game_type, a)
+  -- init global state
   arena=nil -- active arena (map)
   entities={}
   debug=""
-  game_type="versus"
+  game_type=game_type
   now=0
   p1 = {
     c=blue, -- color
@@ -214,10 +215,14 @@ function _init()
   lines={} -- line weapon "tracers"
   screen_size=128
   tile_size=8
-
-  init_arena(arenas.arena1)
+  -- init functions
+  init_arena(a)
   spawn_player(p1)
   spawn_player(p2)
+end
+
+function _init()
+  init_game("versus", arenas.arena1)
 end
 
 -- move player in direction z until they collide with something
