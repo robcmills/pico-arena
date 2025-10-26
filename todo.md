@@ -20,7 +20,7 @@
     - dash attack beats shield
     - laser beats dash
 - [ ] Add "fall" into void tiles
-- [ ] Namespace all globals (game.x)
+- [x] Namespace all game state globals (game.x)
 - [ ] Refactor naming (longer, more explicit, more scalable)
 - [x] Prevent fragged player from colliding
 - [x] Respawn fragged player

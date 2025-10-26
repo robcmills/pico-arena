@@ -1,20 +1,5 @@
--- utils
-
-function log(str)
-  printh(str, "p8log.txt")
-end
-
--- random weighted choice
-function rndw(choices)
-  local total=0
-  for c in all(choices) do total+=c.w end
-  local r=rnd(total)
-  local run=0
-  for c in all(choices) do
-    run+=c.w
-    if r<run then return c.v end
-  end
-end
+-- global game state
+g={}
 
 -- constants
 dash_damage=1
@@ -65,11 +50,11 @@ arenas={
 }
 
 function init_energy_pickups(a)
-  for x=1,arena.celw do
-    for y=1,arena.celh do
+  for x=1,g.arena.celw do
+    for y=1,g.arena.celh do
       if mget(x,y)==energy_spr then
         local key=x..","..y
-        entities[key]={
+        g.entities[key]={
           last_collected_time=nil,
           type="energy",
           x=x,
@@ -84,24 +69,24 @@ end
 -- pico8 map editor is limited to only boolean flags on map tile sprites
 -- we need moar
 function init_entities(a)
-  entities={}
+  g.entities={}
   init_energy_pickups(a)
 end
 
-function init_arena(a)
-  arena=a
+function init_arena(arena)
+  g.arena=arena
   -- calculate offset to center map
-  arena.sx=flr((screen_size-tile_size*arena.celw)/2)
-  arena.sy=flr((screen_size-tile_size*arena.celh)/2)
-  init_entities(arena)
+  g.arena.sx=flr((g.screen_size-g.tile_size*g.arena.celw)/2)
+  g.arena.sy=flr((g.screen_size-g.tile_size*g.arena.celh)/2)
+  init_entities(g.arena)
 end
 
 function spawn_player(p)
   -- collect valid spawn points
   local spawns={}
-  local other_p=p.id==1 and p2 or p1
-  for x=1,arena.celw do
-    for y=1,arena.celh do
+  local other_p=p.id==1 and g.p2 or g.p1
+  for x=1,g.arena.celw do
+    for y=1,g.arena.celh do
       if mget(x,y)==spawn_spr and other_p.tile_x~=x and other_p.tile_y~=y then
         add(spawns,{x=x,y=y})
       end
@@ -112,12 +97,12 @@ function spawn_player(p)
   local s=rnd(spawns)
   p.tile_x=s.x
   p.tile_y=s.y
-  p.pixel_x=s.x*tile_size+arena.sx
-  p.pixel_y=s.y*tile_size+arena.sy
+  p.pixel_x=s.x*g.tile_size+g.arena.sx
+  p.pixel_y=s.y*g.tile_size+g.arena.sy
   p.z=rnd({0,180})
   p.flip_x=p.z==180
   p.hp=player_max_hp
-  p.last_spawn_time=now
+  p.last_spawn_time=g.now
 
   -- spawn particles
   p.spawn_particles={}
@@ -131,16 +116,16 @@ function spawn_player(p)
     local particle={
       c=rndw({{v=p.c,w=0.6},{v=white,w=0.1},{v=yellow,w=0.3}}),
       duration=duration,
-      end_time=now+duration,
+      end_time=g.now+duration,
       size=size,
-      start_time=now,
+      start_time=g.now,
       start_y=start_y,
       target_y=target_y,
       x=start_x,
       y=start_y,
     }
     particle.update=function()
-      local t=(now-particle.start_time)/particle.duration
+      local t=(g.now-particle.start_time)/particle.duration
       if t<0 then t=0 end
       if t>1 then t=1 end
       local eased=1-(1-t)^2 -- ease out slowdown
@@ -151,74 +136,76 @@ function spawn_player(p)
 end
 
 function init_game(game_type, a)
-  -- init global state
-  arena=nil -- active arena (map)
-  entities={}
-  debug=""
-  game_type=game_type
-  now=0
-  p1 = {
-    c=blue, -- color
-    dash_particles={},
-    energy=player_max_energy,
-    explode_particles={},
-    score=0,
-    hp=player_max_hp,
-    id=1,
-    flip_x=false,
-    last_dmg_time=0,
-    last_fire_time=0,
-    last_move_bits=0,
-    last_move_time=nil,
-    last_spawn_time=0,
-    spawn_particles={},
-    w=1, -- selected weapon (1=line)
-    -- position state (of top-left corner of 8x8 sprite)
-    pixel_x=0, -- current x position in pixels, relative to arena origin (top left)
-    pixel_y=0, -- current y position in pixels, relative to arena origin (top left)
-    tile_x=0, -- current x position in tile coordinates, relative to arena origin (top left)
-    tile_y=0, -- current y position in tiles coordinates, relative to arena origin (top left)
-    from_x=nil, -- movement starting x position in tile coordinates
-    from_y=nil, -- movement starting y position in tile coordinates
-    to_x=nil, -- movement target x position in tile coordinates
-    to_y=nil, -- movement target y position in tile coordinates
-    velocity=0, -- movement velocity in seconds per tile (8 pixels)
-    z=0, -- facing direction in degrees clockwise (0=East,90=South)
+  g={
+    -- init global state
+    arena=nil, -- active arena (map)
+    entities={},
+    debug="",
+    game_type=game_type,
+    now=0,
+    p1={
+      c=blue, -- color
+      dash_particles={},
+      energy=player_max_energy,
+      explode_particles={},
+      score=0,
+      hp=player_max_hp,
+      id=1,
+      flip_x=false,
+      last_dmg_time=0,
+      last_fire_time=0,
+      last_move_bits=0,
+      last_move_time=nil,
+      last_spawn_time=0,
+      spawn_particles={},
+      w=1, -- selected weapon (1=line)
+      -- position state (of top-left corner of 8x8 sprite)
+      pixel_x=0, -- current x position in pixels, relative to arena origin (top left)
+      pixel_y=0, -- current y position in pixels, relative to arena origin (top left)
+      tile_x=0, -- current x position in tile coordinates, relative to arena origin (top left)
+      tile_y=0, -- current y position in tiles coordinates, relative to arena origin (top left)
+      from_x=nil, -- movement starting x position in tile coordinates
+      from_y=nil, -- movement starting y position in tile coordinates
+      to_x=nil, -- movement target x position in tile coordinates
+      to_y=nil, -- movement target y position in tile coordinates
+      velocity=0, -- movement velocity in seconds per tile (8 pixels)
+      z=0, -- facing direction in degrees clockwise (0=East,90=South)
+    },
+    p2={
+      c=red,
+      dash_particles={},
+      energy=player_max_energy,
+      explode_particles={},
+      score=0,
+      hp=player_max_hp,
+      id=2,
+      flip_x=true,
+      last_dmg_time=0,
+      last_fire_time=0,
+      last_move_bits=0,
+      last_move_time=nil,
+      last_spawn_time=0,
+      spawn_particles={},
+      w=1,
+      pixel_x=0,
+      pixel_y=0,
+      tile_x=0,
+      tile_y=0,
+      from_x=nil,
+      from_y=nil,
+      to_x=nil,
+      to_y=nil,
+      velocity=0,
+      z=180,
+    },
+    lines={}, -- line weapon "tracers"
+    screen_size=128,
+    tile_size=8,
   }
-  p2 = {
-    c=red,
-    dash_particles={},
-    energy=player_max_energy,
-    explode_particles={},
-    score=0,
-    hp=player_max_hp,
-    id=2,
-    flip_x=true,
-    last_dmg_time=0,
-    last_fire_time=0,
-    last_move_bits=0,
-    last_move_time=nil,
-    last_spawn_time=0,
-    spawn_particles={},
-    w=1,
-    pixel_x=0,
-    pixel_y=0,
-    tile_x=0,
-    tile_y=0,
-    from_x=nil,
-    from_y=nil,
-    to_x=nil,
-    to_y=nil,
-    velocity=0,
-    z=180,
-  }
-  lines={} -- line weapon "tracers"
-  screen_size=128
-  tile_size=8
   -- init functions
   init_arena(a)
-  spawn_player(p1)
-  spawn_player(p2)
+  spawn_player(g.p1)
+  spawn_player(g.p2)
 end
 
 function _init()
@@ -253,7 +240,7 @@ function dash_player(player,z)
   -- drain energy
   player.energy-=1
   -- move player
-  player.last_move_time=now
+  player.last_move_time=g.now
   player.to_x=target.x
   player.to_y=target.y
   player.from_x=player.tile_x
@@ -263,7 +250,7 @@ function dash_player(player,z)
 end
 
 function player_dash_collision(player)
-  local other_player=player.id==1 and p2 or p1
+  local other_player=player.id==1 and g.p2 or g.p1
   local target={x=player.to_x,y=player.to_y}
   -- get adjacent tile
   if player.z==0 then target.x+=1
@@ -303,13 +290,13 @@ function move_player(player,z)
     return
   end
   -- other player collisions
-  local other_player=player.id==1 and p2 or p1
+  local other_player=player.id==1 and g.p2 or g.p1
   if other_player.tile_x==to_x and other_player.tile_y==to_y and other_player.hp>0 then
     -- TODO: play player bump sound
     return
   end
   -- move player
-  player.last_move_time=now
+  player.last_move_time=g.now
   player.to_x=to_x
   player.to_y=to_y
   player.from_x=player.tile_x
@@ -324,7 +311,7 @@ end
 
 function dmg_player(p, dmg)
   p.hp-=dmg
-  p.last_dmg_time=now
+  p.last_dmg_time=g.now
 end
 
 function push_player(p,dir)
@@ -340,7 +327,7 @@ function push_player(p,dir)
 end
 
 function tile_to_pixel(tile,xy)
-  return tile*8+(xy=="x" and arena.sx or arena.sy)
+  return tile*8+(xy=="x" and g.arena.sx or g.arena.sy)
 end
 
 function explode_player(player,dir)
@@ -363,7 +350,7 @@ function explode_player(player,dir)
     -- particle
     local particle={
       c=rnd({player.c,yellow,white}),
-      end_time=now+0.5+rnd(0.5),
+      end_time=g.now+0.5+rnd(0.5),
       size=size,
       x=cx+cos(spawn_angle)*spawn_radius,
       y=cy+sin(spawn_angle)*spawn_radius,
@@ -398,7 +385,7 @@ function raycast(from_tile,dir,intersect_void)
       return {type='tile',x=target.x,y=target.y}
     end
     -- check for player
-    for p in all({p1,p2}) do
+    for p in all({g.p1,g.p2}) do
       if p.tile_x==target.x and p.tile_y==target.y and p.hp>0 then
         return {type='player',p=p,x=target.x,y=target.y}
       end
@@ -460,16 +447,16 @@ function fire_line(p)
 
   -- extend line if collider was pushed
   if collider_pushed then
-    if p.z==0 then t.x+=line_push*tile_size end
-    if p.z==180 then t.x-=line_push*tile_size end
-    if p.z==90 then t.y+=line_push*tile_size end
-    if p.z==-90 then t.y-=line_push*tile_size end
+    if p.z==0 then t.x+=line_push*g.tile_size end
+    if p.z==180 then t.x-=line_push*g.tile_size end
+    if p.z==90 then t.y+=line_push*g.tile_size end
+    if p.z==-90 then t.y-=line_push*g.tile_size end
   end
 
-  add(lines,{start_pos=s,target_pos=t,start_time=now,p=p.id})
+  add(g.lines,{start_pos=s,target_pos=t,start_time=g.now,p=p.id})
 
   if p.energy>0 then p.energy-=1 end
-  p.last_fire_time=now -- player fire animation
+  p.last_fire_time=g.now -- player fire animation
 end
 
 function fire_weapon(p)
@@ -480,7 +467,7 @@ function update_player_particles(player)
   -- spawn particles
   if #player.spawn_particles>0 then
     for particle in all(player.spawn_particles) do
-      if particle.end_time<now then
+      if particle.end_time<g.now then
         del(player.spawn_particles,particle)
       else
         particle.update()
@@ -491,9 +478,9 @@ function update_player_particles(player)
   -- explosion particles
   if #player.explode_particles>0 then
     for particle in all(player.explode_particles) do
-      if particle.end_time<now then
+      if particle.end_time<g.now then
         del(player.explode_particles,particle)
-        if #player.explode_particles==0 and game_type=="versus" then
+        if #player.explode_particles==0 and g.game_type=="versus" then
           spawn_player(player)
         end
       else
@@ -510,7 +497,7 @@ function update_player_particles(player)
     if last_dash_particle==nil or (last_dash_particle~=nil and (last_dash_particle.x~=particle_x or last_dash_particle.y~=particle_y)) then
       local dash_particle={
         c=yellow,
-        end_time=now+player_dash_particle_lifetime,
+        end_time=g.now+player_dash_particle_lifetime,
         size=2,
         x=particle_x,
         y=particle_y,
@@ -522,7 +509,7 @@ function update_player_particles(player)
   -- update dash particles
   if #player.dash_particles>0 then
     for particle in all(player.dash_particles) do
-      if particle.end_time<now then
+      if particle.end_time<g.now then
         del(player.dash_particles,particle)
       end
     end
@@ -530,48 +517,48 @@ function update_player_particles(player)
 end
 
 function update_player_entity_collisions(p)
-  local entity=entities[p.tile_x..","..p.tile_y]
+  local entity=g.entities[p.tile_x..","..p.tile_y]
   -- energy pickup
   if entity and entity.type=="energy" and entity.last_collected_time==nil and p.energy<player_max_energy then
     p.energy+=energy_pickup_amount
     if p.energy>player_max_energy then p.energy=player_max_energy end
-    entity.last_collected_time=now
+    entity.last_collected_time=g.now
     -- TODO: play energy pickup sound
     -- TODO: flash player energy bar white
   end
 end
 
 function update_entities()
-  for _,e in pairs(entities) do
+  for _,e in pairs(g.entities) do
     if e.type=="energy" and e.last_collected_time~=nil then
-      if now-e.last_collected_time>energy_respawn_time then
+      if g.now-e.last_collected_time>energy_respawn_time then
 	e.last_collected_time=nil
       end
     end
   end
-  update_player_entity_collisions(p1)
-  update_player_entity_collisions(p2)
+  update_player_entity_collisions(g.p1)
+  update_player_entity_collisions(g.p2)
 end
 
 function update_player_movement(p)
   if p.last_move_time==nil then return end
 
   local dir=p.from_x<p.to_x and 0 or p.from_x>p.to_x and 180 or p.from_y<p.to_y and 90 or -90
-  local dtime=now-p.last_move_time
+  local dtime=g.now-p.last_move_time
   local dtiles=(dir==0 or dir==180) and p.to_x-p.from_x or p.to_y-p.from_y
   local total_time=abs(dtiles)*p.velocity
   local interpolation=min(dtime/total_time,1)
-  local dpixels=dtiles*tile_size*interpolation
+  local dpixels=dtiles*g.tile_size*interpolation
 
   if dir==0 or dir==180 then
-    p.pixel_x=p.from_x*tile_size+dpixels+arena.sx
+    p.pixel_x=p.from_x*g.tile_size+dpixels+g.arena.sx
   elseif dir==90 or dir==-90 then
-    p.pixel_y=p.from_y*tile_size+dpixels+arena.sy
+    p.pixel_y=p.from_y*g.tile_size+dpixels+g.arena.sy
   end
 
   -- update current tile position based on pixel position
-  p.tile_x=flr((p.pixel_x+tile_size/2-arena.sx)/tile_size)
-  p.tile_y=flr((p.pixel_y+tile_size/2-arena.sy)/tile_size)
+  p.tile_x=flr((p.pixel_x+g.tile_size/2-g.arena.sx)/g.tile_size)
+  p.tile_y=flr((p.pixel_y+g.tile_size/2-g.arena.sy)/g.tile_size)
 
   -- are we done moving?
   if interpolation==1 then
@@ -580,8 +567,8 @@ function update_player_movement(p)
       player_dash_collision(p)
     end
     p.last_move_time=nil
-    p.pixel_x=p.to_x*tile_size+arena.sx
-    p.pixel_y=p.to_y*tile_size+arena.sy
+    p.pixel_x=p.to_x*g.tile_size+g.arena.sx
+    p.pixel_y=p.to_y*g.tile_size+g.arena.sy
     p.from_x=nil
     p.from_y=nil
     p.to_x=nil
@@ -591,9 +578,9 @@ function update_player_movement(p)
 end
 
 function update_player_x(p, x_pressed)
-  if x_pressed and now-p.last_fire_time>line_delay then
+  if x_pressed and g.now-p.last_fire_time>line_delay then
     fire_weapon(p)
-    p.last_fire_time=now
+    p.last_fire_time=g.now
   end
 end
 
@@ -633,33 +620,33 @@ function update_player(p)
 end
 
 function update_players()
-  update_player(p1)
-  update_player(p2)
+  update_player(g.p1)
+  update_player(g.p2)
 end
 
 function update_lines()
-  for i,l in pairs(lines) do
-    if now-l.start_time>line_life then
-      deli(lines,i)
+  for i,l in pairs(g.lines) do
+    if g.now-l.start_time>line_life then
+      deli(g.lines,i)
     end
   end
 end
 
 function _update60()
-  now=time()
+  g.now=time()
   update_entities()
   update_players()
   update_lines()
 end
 
 function draw_arena()
-  map(arena.celx,arena.cely,arena.sx,arena.sy,arena.celw,arena.celh)
+  map(g.arena.celx,g.arena.cely,g.arena.sx,g.arena.sy,g.arena.celw,g.arena.celh)
 end
 
 function draw_energy_sprite(e,x,y)
   spr(energy_spr,x,y)
   pal(yellow,dark_gray)
-  clip(x,y,tile_size,tile_size-2-flr((now-e.last_collected_time)/3))
+  clip(x,y,g.tile_size,g.tile_size-2-flr((g.now-e.last_collected_time)/3))
   spr(energy_spr,x,y)
   clip()
   pal()
@@ -669,19 +656,19 @@ function draw_energy_entity(e)
   if e.last_collected_time==nil then return end
   -- if a player is "on top" of the energy pickup it will be obscured,
   -- so draw it in hud instead (so player can see respawn timing)
-  if p1.tile_x==e.x and p1.tile_y==e.y then
+  if g.p1.tile_x==e.x and g.p1.tile_y==e.y then
     draw_energy_sprite(e,1,14)
-  elseif p2.tile_x==e.x and p2.tile_y==e.y then
+  elseif g.p2.tile_x==e.x and g.p2.tile_y==e.y then
     draw_energy_sprite(e,128-8,14)
   else
-    local x=e.x*tile_size+arena.sx
-    local y=e.y*tile_size+arena.sy
+    local x=e.x*g.tile_size+g.arena.sx
+    local y=e.y*g.tile_size+g.arena.sy
     draw_energy_sprite(e,x,y)
   end
 end
 
 function draw_entities()
-  for _,e in pairs(entities) do
+  for _,e in pairs(g.entities) do
     if e.type=="energy" then
       draw_energy_entity(e)
     end
@@ -705,7 +692,7 @@ end
 
 function draw_player(p)
   if p.id==2 then
-    pal(p1.c,p2.c) -- swap p1 -> p2 color (reuse same sprite)
+    pal(g.p1.c,g.p2.c) -- swap p1 -> p2 color (reuse same sprite)
   end
 
   if #p.spawn_particles>0 then
@@ -745,16 +732,16 @@ function draw_player(p)
   local xoffset=p.flip_x and -1 or 0 -- account for off-center sprites
 
   -- player fire animation
-  if p.last_fire_time>0 and now-p.last_fire_time<player_fire_anim_time then
+  if p.last_fire_time>0 and g.now-p.last_fire_time<player_fire_anim_time then
     if sprn==17 then sprn=22 end -- use "squinting" sprites
     if sprn==19 then sprn=23 end
   end
 
   -- yellow while taking damage or dashing
-  if (p.last_dmg_time>0 and now-p.last_dmg_time<dmg_anim_time) or p.velocity==player_dash_velocity then
+  if (p.last_dmg_time>0 and g.now-p.last_dmg_time<dmg_anim_time) or p.velocity==player_dash_velocity then
     if sprn==17 then sprn=22 end -- use "squinting" sprites
     if sprn==19 then sprn=23 end
-    pal(p1.c,10) -- swap p1 color -> yellow
+    pal(g.p1.c,10) -- swap p1 color -> yellow
   end
 
   -- draw player sprite
@@ -782,7 +769,7 @@ function draw_energy_hud(p)
 end
 
 function draw_lines()
-  for l in all(lines) do
+  for l in all(g.lines) do
     line(
       l.start_pos.x,
       l.start_pos.y,
@@ -807,24 +794,24 @@ end
 
 function draw_hud()
   -- names
-  print("player 1",1,2,p1.c)
+  print("player 1",1,2,g.p1.c)
   local p2hud_w=print("player 2",0,-16)
-  print("player 2",screen_size-p2hud_w-1,2,p2.c)
+  print("player 2",g.screen_size-p2hud_w-1,2,g.p2.c)
   -- hp
-  draw_hp(p1)
-  draw_hp(p2)
+  draw_hp(g.p1)
+  draw_hp(g.p2)
   -- energy
-  draw_energy_hud(p1)
-  draw_energy_hud(p2)
+  draw_energy_hud(g.p1)
+  draw_energy_hud(g.p2)
   -- scores
-  local p1_score_pad=tostr(p1.score<10 and "0" or "")..tostr(p1.score)
-  local p1_score_hud="\#"..int_to_p8hex(p1.c).."\f7"..p1_score_pad
-  print(p1_score_hud,screen_size/2-22,2)
-  local p2_score_pad=tostr(p2.score<10 and "0" or "")..tostr(p2.score)
-  local p2_score_hud="\#"..int_to_p8hex(p2.c).."\f7"..p2_score_pad
-  print(p2_score_hud,screen_size/2+14,2)
+  local p1_score_pad=tostr(g.p1.score<10 and "0" or "")..tostr(g.p1.score)
+  local p1_score_hud="\#"..int_to_p8hex(g.p1.c).."\f7"..p1_score_pad
+  print(p1_score_hud,g.screen_size/2-22,2)
+  local p2_score_pad=tostr(g.p2.score<10 and "0" or "")..tostr(g.p2.score)
+  local p2_score_hud="\#"..int_to_p8hex(g.p2.c).."\f7"..p2_score_pad
+  print(p2_score_hud,g.screen_size/2+14,2)
   -- game clock
-  print(format_time(now),screen_size/2-10,2)
+  print(format_time(g.now),g.screen_size/2-10,2)
 end
 
 function to_bin(n)
@@ -839,9 +826,27 @@ function _draw()
   cls()
   draw_arena()
   draw_entities()
-  draw_player(p1)
-  draw_player(p2)
+  draw_player(g.p1)
+  draw_player(g.p2)
   draw_lines()
   draw_hud()
-  debug_print(debug)
+  debug_print(g.debug)
+end
+
+-- utils
+
+function log(str)
+  printh(str, "p8log.txt")
+end
+
+-- random weighted choice
+function rndw(choices)
+  local total=0
+  for c in all(choices) do total+=c.w end
+  local r=rnd(total)
+  local run=0
+  for c in all(choices) do
+    run+=c.w
+    if r<run then return c.v end
+  end
 end
