@@ -35,10 +35,15 @@ arenas={
   }
 }
 
+-- get sprite number of arena tile
+function aget(x,y)
+  return mget(g.arena.celx+x,g.arena.cely+y)
+end
+
 function init_energy_pickups()
   for x=1,g.arena.celw do
     for y=1,g.arena.celh do
-      if mget(x,y)==g.sprites.energy_spr then
+      if aget(x,y)==g.sprites.energy_spr then
         local key=x..","..y
         g.entities[key]={
           last_collected_time=nil,
@@ -71,7 +76,7 @@ function spawn_player(p)
   local other_p=p.id==1 and g.p2 or g.p1
   for x=0,g.arena.celw do
     for y=0,g.arena.celh do
-      if mget(g.arena.celx+x,g.arena.cely+y)==g.sprites.spawn_spr and (other_p.tile_x~=x or other_p.tile_y~=y) then
+      if aget(x,y)==g.sprites.spawn_spr and (other_p.tile_x~=x or other_p.tile_y~=y) then
         add(spawns,{x=x,y=y})
       end
     end
@@ -298,7 +303,7 @@ function move_player(player,z)
   local to_y=player.tile_y+dy
   -- check for collisions that would prevent movement
   -- solid tiles
-  local to_spr=mget(to_x,to_y) -- target map sprite
+  local to_spr=aget(to_x,to_y) -- target arena sprite
   if fget(to_spr,g.sprites.is_solid) then
     -- TODO: play solid bump sound
     return
@@ -391,7 +396,7 @@ function raycast(from_tile,dir,intersect_void)
     if dir==90 then target.y+=1 end
     if dir==-90 then target.y-=1 end
     -- check for solid tile
-    local to_spr=mget(target.x,target.y)
+    local to_spr=aget(target.x,target.y)
     if to_spr==0 and intersect_void then
       return {type='void',x=target.x,y=target.y}
     end
