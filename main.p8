@@ -1,23 +1,7 @@
 -- global game state
 g={}
 
--- constants
-dash_damage=1
-dmg_anim_time=0.16-- seconds player damage animation lasts
-energy_pickup_amount=8 -- amount of energy per energy pickup
-energy_respawn_time=15 -- seconds until energy respawns
-line_delay=0.2 -- seconds between weapon fires
-line_dmg=1
-line_life=0.1 -- seconds
-line_push=1 -- number of tiles a line collision pushes the player
-player_dash_particle_lifetime=0.2 -- seconds a dash particle lasts
-player_dash_velocity=0.02 -- seconds per tile of movement (lower is faster)
-player_velocity=0.1 -- default velocity in seconds per tile (8 pixels)
-player_max_energy=16
-player_max_hp=16
-player_fire_anim_time=0.3 -- seconds player fire animation lasts
-
--- colors
+-- pico8 colors
 black=0
 dark_blue=1
 dark_purple=2
@@ -49,7 +33,7 @@ arenas={
   }
 }
 
-function init_energy_pickups(a)
+function init_energy_pickups()
   for x=1,g.arena.celw do
     for y=1,g.arena.celh do
       if mget(x,y)==energy_spr then
@@ -68,17 +52,15 @@ end
 -- build stateful entities table from arena map
 -- pico8 map editor is limited to only boolean flags on map tile sprites
 -- we need moar
-function init_entities(a)
-  g.entities={}
-  init_energy_pickups(a)
+function init_entities()
+  init_energy_pickups()
 end
 
-function init_arena(arena)
-  g.arena=arena
+function init_arena()
   -- calculate offset to center map
   g.arena.sx=flr((g.screen_size-g.tile_size*g.arena.celw)/2)
   g.arena.sy=flr((g.screen_size-g.tile_size*g.arena.celh)/2)
-  init_entities(g.arena)
+  init_entities()
 end
 
 function spawn_player(p)
@@ -101,7 +83,7 @@ function spawn_player(p)
   p.pixel_y=s.y*g.tile_size+g.arena.sy
   p.z=rnd({0,180})
   p.flip_x=p.z==180
-  p.hp=player_max_hp
+  p.hp=g.settings.player_max_hp
   p.last_spawn_time=g.now
 
   -- spawn particles
@@ -135,10 +117,10 @@ function spawn_player(p)
   end
 end
 
-function init_game(game_type, a)
+function init_game(game_type, arena)
   g={
     -- init global state
-    arena=nil, -- active arena (map)
+    arena=arena, -- active arena (map)
     entities={},
     debug="",
     game_type=game_type,
@@ -146,10 +128,10 @@ function init_game(game_type, a)
     p1={
       c=blue, -- color
       dash_particles={},
-      energy=player_max_energy,
+      energy=0,
       explode_particles={},
       score=0,
-      hp=player_max_hp,
+      hp=0,
       id=1,
       flip_x=false,
       last_dmg_time=0,
@@ -174,10 +156,10 @@ function init_game(game_type, a)
     p2={
       c=red,
       dash_particles={},
-      energy=player_max_energy,
+      energy=0,
       explode_particles={},
       score=0,
-      hp=player_max_hp,
+      hp=0,
       id=2,
       flip_x=true,
       last_dmg_time=0,
@@ -201,9 +183,31 @@ function init_game(game_type, a)
     lines={}, -- line weapon "tracers"
     screen_size=128,
     tile_size=8,
+    settings={
+      dash_damage=1,
+      dmg_anim_time=0.16, -- seconds player damage animation lasts
+      energy_pickup_amount=8,  -- amount of energy per energy pickup
+      energy_respawn_time=15,  -- seconds until energy respawns
+      line_delay=0.2,  -- seconds between weapon fires
+      line_dmg=1,
+      line_life=0.1,  -- seconds
+      line_push=1,  -- number of tiles a line collision pushes the player
+      player_dash_particle_lifetime=0.2,  -- seconds a dash particle lasts
+      player_dash_velocity=0.02,  -- seconds per tile of movement (lower is faster)
+      player_velocity=0.1,  -- default velocity in seconds per tile (8 pixels)
+      player_max_energy=16,
+      player_max_hp=16,
+      player_fire_anim_time=0.3,  -- seconds player fire animation lasts
+    },
   }
-  -- init functions
-  init_arena(a)
+  -- init game state that depends on settings
+  g.p1.energy=g.settings.player_max_energy
+  g.p2.energy=g.settings.player_max_energy
+  g.p1.hp=g.settings.player_max_hp
+  g.p2.hp=g.settings.player_max_hp
+  -- init arena
+  init_arena()
+  -- spawn players
   spawn_player(g.p1)
   spawn_player(g.p2)
 end
@@ -245,7 +249,7 @@ function dash_player(player,z)
   player.to_y=target.y
   player.from_x=player.tile_x
   player.from_y=player.tile_y
-  player.velocity=player_dash_velocity
+  player.velocity=g.settings.player_dash_velocity
   -- TODO: play dash sound
 end
 
@@ -260,7 +264,7 @@ function player_dash_collision(player)
   -- check if other player is occupying adjacent tile
   if target.x==other_player.tile_x and target.y==other_player.tile_y then
     -- damage collider
-    dmg_player(other_player,dash_damage)
+    dmg_player(other_player,g.settings.dash_damage)
     if other_player.hp>0 then
       collider_pushed=push_player(other_player,player.z)
     elseif #other_player.explode_particles==0 then
@@ -301,7 +305,7 @@ function move_player(player,z)
   player.to_y=to_y
   player.from_x=player.tile_x
   player.from_y=player.tile_y
-  player.velocity=player_velocity
+  player.velocity=g.settings.player_velocity
 end
 
 function shield_player(player)
@@ -407,7 +411,7 @@ function fire_line(p)
   local t=collider -- target tile
 
   if collider.type=='player' then
-    dmg_player(collider.p,line_dmg)
+    dmg_player(collider.p,g.settings.line_dmg)
     if collider.p.hp>0 then
       collider_pushed=push_player(collider.p,p.z)
     elseif #collider.p.explode_particles==0 then
@@ -447,10 +451,10 @@ function fire_line(p)
 
   -- extend line if collider was pushed
   if collider_pushed then
-    if p.z==0 then t.x+=line_push*g.tile_size end
-    if p.z==180 then t.x-=line_push*g.tile_size end
-    if p.z==90 then t.y+=line_push*g.tile_size end
-    if p.z==-90 then t.y-=line_push*g.tile_size end
+    if p.z==0 then t.x+=g.settings.line_push*g.tile_size end
+    if p.z==180 then t.x-=g.settings.line_push*g.tile_size end
+    if p.z==90 then t.y+=g.settings.line_push*g.tile_size end
+    if p.z==-90 then t.y-=g.settings.line_push*g.tile_size end
   end
 
   add(g.lines,{start_pos=s,target_pos=t,start_time=g.now,p=p.id})
@@ -490,14 +494,14 @@ function update_player_particles(player)
   end
 
   -- spawn dash particles
-  if player.velocity==player_dash_velocity then
+  if player.velocity==g.settings.player_dash_velocity then
     local last_dash_particle=#player.dash_particles>0 and player.dash_particles[#player.dash_particles] or nil
     local particle_x=tile_to_pixel(player.tile_x,'x')+3
     local particle_y=tile_to_pixel(player.tile_y,'y')+3
     if last_dash_particle==nil or (last_dash_particle~=nil and (last_dash_particle.x~=particle_x or last_dash_particle.y~=particle_y)) then
       local dash_particle={
         c=yellow,
-        end_time=g.now+player_dash_particle_lifetime,
+        end_time=g.now+g.settings.player_dash_particle_lifetime,
         size=2,
         x=particle_x,
         y=particle_y,
@@ -519,9 +523,9 @@ end
 function update_player_entity_collisions(p)
   local entity=g.entities[p.tile_x..","..p.tile_y]
   -- energy pickup
-  if entity and entity.type=="energy" and entity.last_collected_time==nil and p.energy<player_max_energy then
-    p.energy+=energy_pickup_amount
-    if p.energy>player_max_energy then p.energy=player_max_energy end
+  if entity and entity.type=="energy" and entity.last_collected_time==nil and p.energy<g.settings.player_max_energy then
+    p.energy+=g.settings.energy_pickup_amount
+    if p.energy>g.settings.player_max_energy then p.energy=g.settings.player_max_energy end
     entity.last_collected_time=g.now
     -- TODO: play energy pickup sound
     -- TODO: flash player energy bar white
@@ -531,8 +535,8 @@ end
 function update_entities()
   for _,e in pairs(g.entities) do
     if e.type=="energy" and e.last_collected_time~=nil then
-      if g.now-e.last_collected_time>energy_respawn_time then
-	e.last_collected_time=nil
+      if g.now-e.last_collected_time>g.settings.energy_respawn_time then
+        e.last_collected_time=nil
       end
     end
   end
@@ -563,7 +567,7 @@ function update_player_movement(p)
   -- are we done moving?
   if interpolation==1 then
     -- if we are ending a dash, do collision check
-    if p.velocity==player_dash_velocity then
+    if p.velocity==g.settings.player_dash_velocity then
       player_dash_collision(p)
     end
     p.last_move_time=nil
@@ -578,7 +582,7 @@ function update_player_movement(p)
 end
 
 function update_player_x(p, x_pressed)
-  if x_pressed and g.now-p.last_fire_time>line_delay then
+  if x_pressed and g.now-p.last_fire_time>g.settings.line_delay then
     fire_weapon(p)
     p.last_fire_time=g.now
   end
@@ -626,7 +630,7 @@ end
 
 function update_lines()
   for i,l in pairs(g.lines) do
-    if g.now-l.start_time>line_life then
+    if g.now-l.start_time>g.settings.line_life then
       deli(g.lines,i)
     end
   end
@@ -684,7 +688,7 @@ function draw_player_dir(p)
   local y_tile_offset=p.z==90 and -1 or 0
   local y=p.pixel_y+y_offset*8+y_tile_offset
   local sprn=x_offset==0 and 21 or 20
-  if p.velocity==player_dash_velocity then
+  if p.velocity==g.settings.player_dash_velocity then
     sprn=x_offset==0 and 25 or 24
   end
   spr(sprn,x,y,1,1,x_offset<0,y_offset<0)
@@ -732,13 +736,15 @@ function draw_player(p)
   local xoffset=p.flip_x and -1 or 0 -- account for off-center sprites
 
   -- player fire animation
-  if p.last_fire_time>0 and g.now-p.last_fire_time<player_fire_anim_time then
+  if p.last_fire_time>0 and g.now-p.last_fire_time<g.settings.player_fire_anim_time then
     if sprn==17 then sprn=22 end -- use "squinting" sprites
     if sprn==19 then sprn=23 end
   end
 
   -- yellow while taking damage or dashing
-  if (p.last_dmg_time>0 and g.now-p.last_dmg_time<dmg_anim_time) or p.velocity==player_dash_velocity then
+  if (
+    p.last_dmg_time>0 and g.now-p.last_dmg_time<g.settings.dmg_anim_time
+  ) or p.velocity==g.settings.player_dash_velocity then
     if sprn==17 then sprn=22 end -- use "squinting" sprites
     if sprn==19 then sprn=23 end
     pal(g.p1.c,10) -- swap p1 color -> yellow
@@ -758,13 +764,13 @@ end
 
 function draw_hp(p)
   local x=p.id==1 and 1 or 128/2+13
-  rect(x,9,x+player_max_hp*3,10,1) -- background
+  rect(x,9,x+g.settings.player_max_hp*3,10,1) -- background
   if p.hp>0 then rect(x,9,x+p.hp*3,10,p.c) end -- hp
 end
 
 function draw_energy_hud(p)
   local x=p.id==1 and 1 or 128/2+13
-  rect(x,12,x+player_max_energy*3,13,dark_gray) -- background
+  rect(x,12,x+g.settings.player_max_energy*3,13,dark_gray) -- background
   if p.energy>0 then rect(x,12,x+p.energy*3,13,yellow) end -- energy
 end
 
