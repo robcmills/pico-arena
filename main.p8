@@ -245,6 +245,8 @@ function dash_player(player,z)
   if z==0 then player.flip_x=false end
   if z==180 then player.flip_x=true end
   player.z=z
+  -- drain energy
+  player.energy-=1
   -- move player
   player.last_move_time=now
   player.to_x=target.x
@@ -320,7 +322,7 @@ function dmg_player(p, dmg)
   p.last_dmg_time=now
 end
 
-function push_player(p, dir)
+function push_player(p,dir)
   -- TODO: enable pushing to interrupt existing movement
   local prev_flip_x=p.flip_x
   local prev_z=p.z

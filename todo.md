@@ -8,10 +8,11 @@
 - [x] Use _update60
 - [x] Refactor movement
 - [ ] Add "dash" move
-  - [ ] dmg collider and push back
+  - [x] dmg collider and push back
   - [ ] dash player collisions should push back 1 tile or more? into void?
   - [x] add particle trail
-  - [ ] drain energy when dashing
+  - [x] drain energy when dashing
+  - [ ] cancel dash if hit with line weapon
 - [ ] Add blocking (energy shield)
   - [ ] drain energy while shielding
 - [ ] rock, paper, scissor mechanic
