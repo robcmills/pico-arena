@@ -1,6 +1,3 @@
--- global game state
-g={}
-
 -- pico8 colors
 black=0
 dark_blue=1
@@ -19,11 +16,10 @@ indigo=13
 pink=14
 peach=15
 
--- sprites
-is_solid_flag=0 -- flag for map sprites that are solid (can not be walked through)
-energy_spr=33 -- sprite index for energy pickups
-spawn_spr=4
+-- global game state
+g={}
 
+-- maps
 arenas={
   arena1={
     celx=0,
@@ -36,7 +32,7 @@ arenas={
 function init_energy_pickups()
   for x=1,g.arena.celw do
     for y=1,g.arena.celh do
-      if mget(x,y)==energy_spr then
+      if mget(x,y)==g.sprites.energy_spr then
         local key=x..","..y
         g.entities[key]={
           last_collected_time=nil,
@@ -69,7 +65,7 @@ function spawn_player(p)
   local other_p=p.id==1 and g.p2 or g.p1
   for x=1,g.arena.celw do
     for y=1,g.arena.celh do
-      if mget(x,y)==spawn_spr and other_p.tile_x~=x and other_p.tile_y~=y then
+      if mget(x,y)==g.sprites.spawn_spr and other_p.tile_x~=x and other_p.tile_y~=y then
         add(spawns,{x=x,y=y})
       end
     end
@@ -199,6 +195,13 @@ function init_game(game_type, arena)
       player_max_hp=16,
       player_fire_anim_time=0.3,  -- seconds player fire animation lasts
     },
+    sprites={
+      flags={
+        is_solid=0, -- block movement
+      },
+      energy_spr=33, -- sprite index for energy pickups
+      spawn_spr=4,
+    },
   }
   -- init game state that depends on settings
   g.p1.energy=g.settings.player_max_energy
@@ -289,7 +292,7 @@ function move_player(player,z)
   -- check for collisions that would prevent movement
   -- solid tiles
   local to_spr=mget(to_x,to_y) -- target map sprite
-  if fget(to_spr,is_solid_flag) then
+  if fget(to_spr,g.sprites.is_solid) then
     -- TODO: play solid bump sound
     return
   end
@@ -385,7 +388,7 @@ function raycast(from_tile,dir,intersect_void)
     if to_spr==0 and intersect_void then
       return {type='void',x=target.x,y=target.y}
     end
-    if fget(to_spr,is_solid_flag) then
+    if fget(to_spr,g.sprites.is_solid) then
       return {type='tile',x=target.x,y=target.y}
     end
     -- check for player
@@ -648,10 +651,10 @@ function draw_arena()
 end
 
 function draw_energy_sprite(e,x,y)
-  spr(energy_spr,x,y)
+  spr(g.sprites.energy_spr,x,y)
   pal(yellow,dark_gray)
   clip(x,y,g.tile_size,g.tile_size-2-flr((g.now-e.last_collected_time)/3))
-  spr(energy_spr,x,y)
+  spr(g.sprites.energy_spr,x,y)
   clip()
   pal()
 end
