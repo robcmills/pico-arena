@@ -26,6 +26,12 @@ arenas={
     cely=0,
     celh=10,
     celw=10,
+  },
+  test1={
+    celx=119,
+    cely=55,
+    celh=9,
+    celw=9,
   }
 }
 
@@ -63,9 +69,9 @@ function spawn_player(p)
   -- collect valid spawn points
   local spawns={}
   local other_p=p.id==1 and g.p2 or g.p1
-  for x=1,g.arena.celw do
-    for y=1,g.arena.celh do
-      if mget(x,y)==g.sprites.spawn_spr and other_p.tile_x~=x and other_p.tile_y~=y then
+  for x=0,g.arena.celw do
+    for y=0,g.arena.celh do
+      if mget(g.arena.celx+x,g.arena.cely+y)==g.sprites.spawn_spr and (other_p.tile_x~=x or other_p.tile_y~=y) then
         add(spawns,{x=x,y=y})
       end
     end
@@ -216,7 +222,8 @@ function init_game(game_type, arena)
 end
 
 function _init()
-  init_game("versus", arenas.arena1)
+  --init_game("versus", arenas.arena1)
+  init_game("test", arenas.test1)
 end
 
 -- move player in direction z until they collide with something
@@ -858,4 +865,15 @@ function rndw(choices)
     run+=c.w
     if r<run then return c.v end
   end
+end
+
+function stringify(tbl)
+  if type(tbl)~="table" then return tostring(tbl) end
+  local s="{"
+  for k,v in pairs(tbl) do
+    local key=tostring(k)
+    local val=stringify(v)
+    s=s..key.."="..val..","
+  end
+  return s.."}"
 end

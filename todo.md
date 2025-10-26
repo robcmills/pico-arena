@@ -1,12 +1,12 @@
 # Bugs
 
-- player eyes turn yellow when over energy sprite because they are "black" which is transparent
 
 
 # TODO
 
 - [x] Use _update60
 - [x] Refactor movement
+- [ ] Add "tests"
 - [ ] Add "dash" move
   - [x] dmg collider and push back
   - [ ] dash player collisions should push back 1 tile or more? into void?
@@ -68,3 +68,5 @@
   - [ ] ctf
 - [ ] Add arena "backgrounds" ?
   - [ ] bleachers with audience/crowd/spectators/fans
+- [ ] Add arena validation
+  - [ ] ensure at least two spawn points
