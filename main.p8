@@ -16,8 +16,27 @@ indigo=13
 pink=14
 peach=15
 
+-- pico8 input bit masks
+input={
+  p1_left=1,
+  p1_right=2,
+  p1_up=4,
+  p1_down=8,
+  p1_x=16,
+  p1_o=32,
+  p2_left=256,
+  p2_right=512,
+  p2_up=1024,
+  p2_down=2048,
+  p2_x=4096,
+  p2_o=9192,
+}
+
 -- global game state
 g={}
+
+-- global test state
+test={}
 
 -- maps
 arenas={
@@ -214,6 +233,7 @@ function init_game(game_type, arena)
       energy_spr=33, -- sprite index for energy pickups
       spawn_spr=4,
     },
+    test=nil,
   }
   -- init game state that depends on settings
   g.p1.energy=g.settings.player_max_energy
@@ -229,6 +249,10 @@ end
 
 function init_test()
   init_game("versus", arenas.test1)
+  g.test=1
+  test={
+    last_action_time=nil,
+  }
 end
 
 function _init()
@@ -601,23 +625,24 @@ function update_player_movement(p)
   end
 end
 
-function update_player_x(p, x_pressed)
+function update_player_x(p,x_pressed)
   if x_pressed and g.now-p.last_fire_time>g.settings.line_delay then
     fire_weapon(p)
     p.last_fire_time=g.now
   end
 end
 
-function update_player_o(p, o_pressed)
+function update_player_o(p,o_pressed)
   p.shield=o_pressed and p.velocity==0 and p.energy>0
 end
 
--- btn() returns a bitfield of all 12 button states for players 1 & 2
+-- @param p player state
+-- @param btn_bits btn() return value
+-- (a bitfield of all 12 button states for players 1 & 2)
 -- p1: bits 0..5  p2: bits 8..13
-function update_player_input(p)
-  local bits=btn()
+function update_player_input(p,btn_bits)
   local shift=(p.id-1)*8
-  local b=bits>>shift
+  local b=btn_bits>>shift
   local p_left=b&1~=0
   local p_right=b&2~=0
   local p_up=b&4~=0
@@ -633,13 +658,13 @@ function update_player_input(p)
   elseif p_down and p_o then dash_player(p,90)
   elseif p_down then move_player(p,90)
   end
-  update_player_x(p, p_x)
-  update_player_o(p, p_o)
+  update_player_x(p,p_x)
+  update_player_o(p,p_o)
 end
 
 function update_player(p)
   update_player_movement(p)
-  update_player_input(p)
+  update_player_input(p,btn())
   update_player_particles(p)
 end
 
@@ -656,11 +681,24 @@ function update_lines()
   end
 end
 
+function update_test1()
+  if test.last_action_time==nil then
+    test.last_action_time=g.now
+    update_player_input(g.p1,input.p1_x)
+  end
+end
+
+function update_test()
+  if g.test==nil then return end
+  if g.test==1 then update_test1() end
+end
+
 function _update60()
   g.now=time()
   update_entities()
   update_players()
   update_lines()
+  update_test()
 end
 
 function draw_arena()
