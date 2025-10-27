@@ -88,7 +88,8 @@ function spawn_player(p)
   p.tile_y=s.y
   p.pixel_x=s.x*g.tile_size+g.arena.sx
   p.pixel_y=s.y*g.tile_size+g.arena.sy
-  p.z=rnd({0,180})
+  -- set dir towards map center
+  p.z=p.tile_x<g.arena.celw/2 and 0 or 180
   p.flip_x=p.z==180
   p.hp=g.settings.player_max_hp
   p.last_spawn_time=g.now
@@ -226,9 +227,13 @@ function init_game(game_type, arena)
   spawn_player(g.p2)
 end
 
+function init_test()
+  init_game("versus", arenas.test1)
+end
+
 function _init()
   --init_game("versus", arenas.arena1)
-  init_game("test", arenas.test1)
+  init_test()
 end
 
 -- move player in direction z until they collide with something

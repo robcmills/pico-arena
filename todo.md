@@ -12,6 +12,7 @@
   - [ ] dash player collisions should push back 1 tile or more? into void?
   - [x] add particle trail
   - [x] drain energy when dashing
+  - [ ] handle dash vs dash collision (cancel)
   - [ ] cancel dash if hit with line weapon
 - [ ] Add blocking (energy shield)
   - [ ] drain energy while shielding
@@ -70,3 +71,5 @@
   - [ ] bleachers with audience/crowd/spectators/fans
 - [ ] Add arena validation
   - [ ] ensure at least two spawn points
+- [ ] Add two types of spawn tiles, initial and regular
+- [ ] Make players face each other on first spawn
