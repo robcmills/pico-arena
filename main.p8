@@ -35,9 +35,6 @@ input={
 -- global game state
 g={}
 
--- global test state
-test={}
-
 -- maps
 arenas={
   arena1={
@@ -53,6 +50,38 @@ arenas={
     celw=9,
   }
 }
+
+-- start tests
+-- global test state
+test={
+  index=1,
+}
+tests={{
+  init=function()
+    init_game("versus", arenas.test1)
+    test.last_action_time=nil
+    test.end_time=0.1
+  end,
+  update=function()
+    log("test.update now="..g.now)
+    if test.last_action_time==nil then
+      test.last_action_time=g.now
+      update_player_input(g.p1,input.p1_x)
+    elseif g.now>=test.end_time then
+      -- TODO: make assertions and report
+      extcmd("shutdown")
+    end
+  end,
+}}
+
+function init_tests()
+  tests[test.index].init()
+end
+
+function update_tests()
+  tests[test.index].update()
+end
+-- end tests
 
 -- get sprite number of arena tile
 function aget(x,y)
@@ -233,7 +262,6 @@ function init_game(game_type, arena)
       energy_spr=33, -- sprite index for energy pickups
       spawn_spr=4,
     },
-    test=nil,
   }
   -- init game state that depends on settings
   g.p1.energy=g.settings.player_max_energy
@@ -247,17 +275,9 @@ function init_game(game_type, arena)
   spawn_player(g.p2)
 end
 
-function init_test()
-  init_game("versus", arenas.test1)
-  g.test=1
-  test={
-    last_action_time=nil,
-  }
-end
-
 function _init()
   --init_game("versus", arenas.arena1)
-  init_test()
+  init_tests()
 end
 
 -- move player in direction z until they collide with something
@@ -681,24 +701,12 @@ function update_lines()
   end
 end
 
-function update_test1()
-  if test.last_action_time==nil then
-    test.last_action_time=g.now
-    update_player_input(g.p1,input.p1_x)
-  end
-end
-
-function update_test()
-  if g.test==nil then return end
-  if g.test==1 then update_test1() end
-end
-
 function _update60()
   g.now=time()
   update_entities()
   update_players()
   update_lines()
-  update_test()
+  update_tests()
 end
 
 function draw_arena()
