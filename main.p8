@@ -59,16 +59,19 @@ test={
 tests={{
   init=function()
     init_game("versus", arenas.test1)
-    test.last_action_time=nil
-    test.end_time=0.1
+    test.end_frame=1
   end,
-  update=function()
-    log("test.update now="..g.now)
-    if test.last_action_time==nil then
-      test.last_action_time=g.now
+  update_pre=function()
+    if g.frame==1 then
+      -- press x while player is still spawning
       update_player_input(g.p1,input.p1_x)
-    elseif g.now>=test.end_time then
-      -- TODO: make assertions and report
+    end
+  end,
+  update_post=function()
+    if g.frame>=test.end_frame then
+      -- line was not fired
+      assertTrue(g.p1.energy==g.settings.player_max_energy,"player energy still full")
+      assertTrue(g.p2.hp==g.settings.player_max_hp, "player 2 hp still full")
       extcmd("shutdown")
     end
   end,
@@ -77,9 +80,11 @@ tests={{
 function init_tests()
   tests[test.index].init()
 end
-
-function update_tests()
-  tests[test.index].update()
+function update_tests_pre()
+  tests[test.index].update_pre()
+end
+function update_tests_post()
+  tests[test.index].update_post()
 end
 -- end tests
 
@@ -179,6 +184,7 @@ function init_game(game_type, arena)
     arena=arena, -- active arena (map)
     entities={},
     debug="",
+    frame=0,
     game_type=game_type,
     now=0,
     p1={
@@ -702,11 +708,12 @@ function update_lines()
 end
 
 function _update60()
+  g.frame+=1
   g.now=time()
+  update_tests_pre()
   update_entities()
   update_players()
   update_lines()
-  update_tests()
 end
 
 function draw_arena()
@@ -903,9 +910,16 @@ function _draw()
   draw_lines()
   draw_hud()
   debug_print(g.debug)
+  update_tests_post()
 end
 
 -- utils
+
+function assertTrue(condition,msg)
+  print(msg.." "..(condition
+    and ("\f"..int_to_p8hex(green).."pass\f6")
+    or ("\f"..int_to_p8hex(red).."fail\f6")))
+end
 
 function log(str)
   printh(str, "p8log.txt")
