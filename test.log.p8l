@@ -6,3 +6,9 @@ player x input ignored while spawning
   press x after line delay
   o player 1 energy still full after line_delay
   o player 2 hp still full after line_delay
+  press x before spawn
+  o player 1 energy still full before spawn
+  o player 2 hp still full before spawn
+  press x after spawn
+  o player 1 energy not full after spawn
+  o player 2 hp not full after spawn
