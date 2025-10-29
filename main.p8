@@ -56,33 +56,70 @@ arenas={
 test={
   enabled=false,
   index=1,
+  start_time=0,
 }
 tests={{
   init=function()
-    logt("player inputs ignored while spawning")
+    logt("player x input ignored while spawning")
     init_game("versus", arenas.test1)
   end,
   update_pre=function()
     test.p1_tile_x=g.p1.tile_x -- save previous spawn position
     if g.frame==1 then
-      logt("  press x,o,right while player is still spawning")
-      update_player_input(g.p1,input.p1_x|input.p1_o|input.p1_right)
+      update_player_input(g.p1,input.p1_x)
     end
   end,
   update_post=function()
     if g.frame==1 then
-      -- line/shield unused
-      assertTrue(g.p1.energy==g.settings.player_max_energy,"player energy still full")
+      -- line unused
+      assertTrue(g.p1.energy==g.settings.player_max_energy,"player 1 energy still full")
       assertTrue(g.p2.hp==g.settings.player_max_hp, "player 2 hp still full")
+      return true -- test finished
+    end
+  end,
+},{
+  init=function()
+    logt("player o input ignored while spawning")
+    init_game("versus", arenas.test1)
+  end,
+  update_pre=function()
+    if g.frame==1 then
+      logt("  press o while player is still spawning")
+      update_player_input(g.p1,input.p1_o)
+    end
+  end,
+  update_post=function()
+    if g.frame>=1 then
+      -- shield unused
+      assertTrue(g.p1.energy==g.settings.player_max_energy,"player 1 energy still full")
+      return true
+    end
+  end,
+},{
+  init=function()
+    logt("player directional input ignored while spawning")
+    init_game("versus", arenas.test1)
+  end,
+  update_pre=function()
+    test.p1_tile_x=g.p1.tile_x -- save previous spawn position
+    if g.frame==1 then
+      logt("  press right while player is still spawning")
+      update_player_input(g.p1,input.p1_right)
+    end
+  end,
+  update_post=function()
+    if g.frame==1 then
       -- player not moved
-      assertTrue(g.p1.tile_x==test.p1_tile_x, "player position unchanged")
-      extcmd("shutdown")
+      assertTrue(g.p1.tile_x==test.p1_tile_x, "player 1 position unchanged")
+      return true
     end
   end,
 }}
 
 function init_tests()
+  logt("") -- separate tests with a blank line
   test.enabled=true
+  test.start_time=time()
   tests[test.index].init()
 end
 function update_tests_pre()
@@ -91,7 +128,14 @@ function update_tests_pre()
 end
 function update_tests_post()
   if not test.enabled then return end
-  tests[test.index].update_post()
+  if tests[test.index].update_post() then
+    test.index+=1
+    if tests[test.index]==nil then
+      extcmd("shutdown")
+    else
+      init_tests()
+    end
+  end
 end
 -- end tests
 
@@ -128,6 +172,10 @@ function init_arena()
   g.arena.sx=flr((g.screen_size-g.tile_size*g.arena.celw)/2)
   g.arena.sy=flr((g.screen_size-g.tile_size*g.arena.celh)/2)
   init_entities()
+end
+
+function is_spawning(p)
+  return #p.spawn_particles>0
 end
 
 function spawn_player(p)
@@ -667,7 +715,7 @@ function update_player_x(p,x_pressed)
 end
 
 function update_player_o(p,o_pressed)
-  p.shield=o_pressed and p.velocity==0 and p.energy>0
+  p.shield=o_pressed and p.velocity==0 and p.energy>0 and not is_spawning(p)
 end
 
 -- @param p player state
@@ -717,7 +765,7 @@ end
 
 function _update60()
   g.frame+=1
-  g.now=time()
+  g.now=get_time()
   update_tests_pre()
   update_entities()
   update_players()
@@ -921,6 +969,10 @@ end
 
 function debug_print(str)
   print(str,1,120,6)
+end
+
+function get_time()
+  return test.enabled and time()-test.start_time or time()
 end
 
 function log(str)
