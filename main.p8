@@ -56,24 +56,34 @@ arenas={
 test={
   enabled=false,
   index=1,
+  run_all=false,
   start_time=0,
 }
 tests={{
   init=function()
     logt("player x input ignored while spawning")
+    test.line_delay_frame=nil
     init_game("versus", arenas.test1)
   end,
   update_pre=function()
     test.p1_tile_x=g.p1.tile_x -- save previous spawn position
     if g.frame==1 then
       update_player_input(g.p1,input.p1_x)
+      logt("  press x on frame 1")
+    elseif g.now>g.settings.line_delay and test.line_delay_frame==nil then
+      test.line_delay_frame=g.frame
+      update_player_input(g.p1,input.p1_x)
+      logt("  press x after line delay")
     end
   end,
   update_post=function()
     if g.frame==1 then
       -- line unused
-      assertTrue(g.p1.energy==g.settings.player_max_energy,"player 1 energy still full")
-      assertTrue(g.p2.hp==g.settings.player_max_hp, "player 2 hp still full")
+      assertTrue(g.p1.energy==g.settings.player_max_energy,"player 1 energy still full after 1 frame")
+      assertTrue(g.p2.hp==g.settings.player_max_hp, "player 2 hp still full after 1 frame")
+    elseif test.line_delay_frame~=nil and g.frame>test.line_delay_frame+1 then
+      assertTrue(g.p1.energy==g.settings.player_max_energy,"player 1 energy still full after line_delay")
+      assertTrue(g.p2.hp==g.settings.player_max_hp, "player 2 hp still full after line_delay")
       return true -- test finished
     end
   end,
@@ -130,7 +140,7 @@ function update_tests_post()
   if not test.enabled then return end
   if tests[test.index].update_post() then
     test.index+=1
-    if tests[test.index]==nil then
+    if not test.run_all or tests[test.index]==nil then
       extcmd("shutdown")
     else
       init_tests()
@@ -338,7 +348,7 @@ function init_game(game_type, arena)
 end
 
 function _init()
-  --init_game("versus", arenas.arena1)
+  --init_game("versus", arenas.test1)
   init_tests()
 end
 
