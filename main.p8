@@ -54,36 +54,43 @@ arenas={
 -- start tests
 -- global test state
 test={
+  enabled=false,
   index=1,
 }
 tests={{
   init=function()
+    logt("player inputs ignored while spawning")
     init_game("versus", arenas.test1)
-    test.end_frame=1
   end,
   update_pre=function()
+    test.p1_tile_x=g.p1.tile_x -- save previous spawn position
     if g.frame==1 then
-      -- press x while player is still spawning
-      update_player_input(g.p1,input.p1_x)
+      logt("  press x,o,right while player is still spawning")
+      update_player_input(g.p1,input.p1_x|input.p1_o|input.p1_right)
     end
   end,
   update_post=function()
-    if g.frame>=test.end_frame then
-      -- line was not fired
+    if g.frame==1 then
+      -- line/shield unused
       assertTrue(g.p1.energy==g.settings.player_max_energy,"player energy still full")
       assertTrue(g.p2.hp==g.settings.player_max_hp, "player 2 hp still full")
+      -- player not moved
+      assertTrue(g.p1.tile_x==test.p1_tile_x, "player position unchanged")
       extcmd("shutdown")
     end
   end,
 }}
 
 function init_tests()
+  test.enabled=true
   tests[test.index].init()
 end
 function update_tests_pre()
+  if not test.enabled then return end
   tests[test.index].update_pre()
 end
 function update_tests_post()
+  if not test.enabled then return end
   tests[test.index].update_post()
 end
 -- end tests
@@ -155,7 +162,7 @@ function spawn_player(p)
     local start_x=target_x
     local start_y=target_y-rnd(24)
     local size=rnd(2)
-    local duration=0.32+rnd(0.32)
+    local duration=g.settings.player_spawn_duration
     local particle={
       c=rndw({{v=p.c,w=0.6},{v=white,w=0.1},{v=yellow,w=0.3}}),
       duration=duration,
@@ -260,6 +267,7 @@ function init_game(game_type, arena)
       player_max_energy=16,
       player_max_hp=16,
       player_fire_anim_time=0.3,  -- seconds player fire animation lasts
+      player_spawn_duration=0.64, -- seconds player spawn animation lasts
     },
     sprites={
       flags={
@@ -893,14 +901,6 @@ function draw_hud()
   print(format_time(g.now),g.screen_size/2-10,2)
 end
 
-function to_bin(n)
-  return n==0 and "0" or to_bin(flr(n/2))..(n%2)
-end
-
-function debug_print(str)
-  print(str,1,120,6)
-end
-
 function _draw()
   cls()
   draw_arena()
@@ -916,13 +916,19 @@ end
 -- utils
 
 function assertTrue(condition,msg)
-  print(msg.." "..(condition
-    and ("\f"..int_to_p8hex(green).."pass\f6")
-    or ("\f"..int_to_p8hex(red).."fail\f6")))
+  logt("  "..(condition and "o" or "x").." "..msg)
+end
+
+function debug_print(str)
+  print(str,1,120,6)
 end
 
 function log(str)
   printh(str, "p8log.txt")
+end
+
+function logt(str)
+  printh(str, "test.log")
 end
 
 -- random weighted choice
@@ -946,4 +952,8 @@ function stringify(tbl)
     s=s..key.."="..val..","
   end
   return s.."}"
+end
+
+function to_bin(n)
+  return n==0 and "0" or to_bin(flr(n/2))..(n%2)
 end

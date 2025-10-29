@@ -1,0 +1,5 @@
+player inputs ignored while spawning
+  press x,o,right while player is still spawning
+  x player energy still full
+  o player 2 hp still full
+  o player position unchanged
