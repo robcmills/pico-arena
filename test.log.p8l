@@ -4,5 +4,5 @@ player x input ignored while spawning
   o player 1 energy still full after 1 frame
   o player 2 hp still full after 1 frame
   press x after line delay
-  x player 1 energy still full after line_delay
-  x player 2 hp still full after line_delay
+  o player 1 energy still full after line_delay
+  o player 2 hp still full after line_delay

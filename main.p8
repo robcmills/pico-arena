@@ -718,7 +718,7 @@ function update_player_movement(p)
 end
 
 function update_player_x(p,x_pressed)
-  if x_pressed and g.now-p.last_fire_time>g.settings.line_delay then
+  if x_pressed and g.now-p.last_fire_time>g.settings.line_delay and not is_spawning(p) then
     fire_weapon(p)
     p.last_fire_time=g.now
   end
