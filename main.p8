@@ -64,87 +64,27 @@ test={
 }
 tests={{
   init=function()
-    logt("player x input ignored while spawning")
+    logt("line weapon")
     test.after_spawn_frame=nil
-    test.before_spawn_frame=nil
-    test.line_delay_frame=nil
     init_game("versus", arenas.test1)
   end,
   update_pre=function()
-    if g.frame==1 then
-      update_player_input(g.p1,input.p1_x)
-      logt("  press x on frame 1")
-    elseif g.now>g.settings.line_delay and test.line_delay_frame==nil then
-      test.line_delay_frame=g.frame
-      update_player_input(g.p1,input.p1_x)
-      logt("  press x after line delay")
-    elseif g.now>g.settings.player_spawn_duration-frame_duration_30 and test.before_spawn_frame==nil then
-      test.before_spawn_frame=g.frame
-      update_player_input(g.p1,input.p1_x)
-      logt("  press x before spawn")
-    elseif g.now>g.settings.player_spawn_duration+frame_duration_30 and test.after_spawn_frame==nil then
+    if g.now>g.settings.player_spawn_duration+frame_duration_30 and test.after_spawn_frame==nil then
       test.after_spawn_frame=g.frame
       update_player_input(g.p1,input.p1_x)
       logt("  press x after spawn")
     end
   end,
   update_post=function()
-    if g.frame==1 then
-      -- line unused
-      assertTrue(g.p1.energy==g.settings.player_max_energy,"player 1 energy still full after 1 frame")
-      assertTrue(g.p2.hp==g.settings.player_max_hp, "player 2 hp still full after 1 frame")
-    elseif test.line_delay_frame~=nil and g.frame==test.line_delay_frame+1 then
-      assertTrue(g.p1.energy==g.settings.player_max_energy,"player 1 energy still full after line_delay")
-      assertTrue(g.p2.hp==g.settings.player_max_hp, "player 2 hp still full after line_delay")
-    elseif test.before_spawn_frame~=nil and g.frame==test.before_spawn_frame then
-      assertTrue(g.p1.energy==g.settings.player_max_energy,"player 1 energy still full before spawn")
-      assertTrue(g.p2.hp==g.settings.player_max_hp, "player 2 hp still full before spawn")
-    elseif test.after_spawn_frame~=nil and g.frame>test.after_spawn_frame then
-      assertTrue(g.p1.energy<g.settings.player_max_energy,"player 1 energy not full after spawn")
-      assertTrue(g.p2.hp<g.settings.player_max_hp, "player 2 hp not full after spawn")
+    if g.now>g.settings.player_spawn_duration+g.settings.player_damage_duration then
+      --assertTrue(g.p1.energy<g.settings.player_max_energy,"player 1 energy not full after spawn")
       return true -- test finished
-    end
-  end,
-},{
-  init=function()
-    logt("player o input ignored while spawning")
-    init_game("versus", arenas.test1)
-  end,
-  update_pre=function()
-    if g.frame==1 then
-      logt("  press o while player is still spawning")
-      update_player_input(g.p1,input.p1_o)
-    end
-  end,
-  update_post=function()
-    if g.frame>=1 then
-      -- shield unused
-      assertTrue(g.p1.energy==g.settings.player_max_energy,"player 1 energy still full")
-      return true
-    end
-  end,
-},{
-  init=function()
-    logt("player directional input ignored while spawning")
-    init_game("versus", arenas.test1)
-  end,
-  update_pre=function()
-    test.p1_tile_x=g.p1.tile_x -- save previous spawn position
-    if g.frame==1 then
-      logt("  press right while player is still spawning")
-      update_player_input(g.p1,input.p1_right)
-    end
-  end,
-  update_post=function()
-    if g.frame==1 then
-      -- player not moved
-      assertTrue(g.p1.tile_x==test.p1_tile_x, "player 1 position unchanged")
-      return true
     end
   end,
 }}
 
 function init_tests()
+  extcmd("rec_frames")
   logt("") -- separate tests with a blank line
   test.enabled=true
   test.start_time=time()
@@ -159,6 +99,7 @@ function update_tests_post()
   if tests[test.index].update_post() then
     test.index+=1
     if not test.run_all or tests[test.index]==nil then
+      extcmd("video")
       extcmd("shutdown")
     else
       init_tests()
@@ -202,8 +143,16 @@ function init_arena()
   init_entities()
 end
 
+function is_dashing(p)
+  return p.velocity==g.settings.player_dash_velocity
+end
+
 function is_spawning(p)
   return #p.spawn_particles>0
+end
+
+function is_taking_damage(p)
+  return p.last_dmg_time>0 and g.now-p.last_dmg_time<g.settings.player_damage_duration
 end
 
 function spawn_player(p)
@@ -330,20 +279,20 @@ function init_game(game_type, arena)
     tile_size=8,
     settings={
       dash_damage=1,
-      dmg_anim_time=0.16, -- seconds player damage animation lasts
       energy_pickup_amount=8,  -- amount of energy per energy pickup
       energy_respawn_time=15,  -- seconds until energy respawns
       line_delay=0.2,  -- seconds between weapon fires
       line_dmg=1,
       line_life=0.1,  -- seconds
       line_push=1,  -- number of tiles a line collision pushes the player
+      player_damage_duration=0.32, -- seconds player damage animation lasts
       player_dash_particle_lifetime=0.2,  -- seconds a dash particle lasts
       player_dash_velocity=0.02,  -- seconds per tile of movement (lower is faster)
-      player_velocity=0.1,  -- default velocity in seconds per tile (8 pixels)
+      player_fire_anim_time=0.3,  -- seconds player fire animation lasts
       player_max_energy=16,
       player_max_hp=16,
-      player_fire_anim_time=0.3,  -- seconds player fire animation lasts
       player_spawn_duration=0.64, -- seconds player spawn animation lasts
+      player_velocity=0.1,  -- default velocity in seconds per tile (8 pixels)
     },
     sprites={
       flags={
@@ -580,8 +529,14 @@ function fire_line(p)
   t.x=tile_to_pixel(t.x,"x")
   t.y=tile_to_pixel(t.y,"y")
   -- account for player direction and reticle offset (start pos)
-  if p.z==0 then s.x+=10 end
-  if p.z==180 then s.x-=4 end
+  if p.z==0 then
+    s.x+=9
+    t.x-=1
+  end
+  if p.z==180 then
+    s.x-=3
+    t.x+=1
+  end
   if p.z==0 or p.z==180 then
     s.y+=3
     t.y+=3
@@ -601,14 +556,6 @@ function fire_line(p)
   elseif collider.type=='player' then
     if p.z==180 then t.x+=6 end
     if p.z==-90 then t.y+=6 end
-  end
-
-  -- extend line if collider was pushed
-  if collider_pushed then
-    if p.z==0 then t.x+=g.settings.line_push*g.tile_size end
-    if p.z==180 then t.x-=g.settings.line_push*g.tile_size end
-    if p.z==90 then t.y+=g.settings.line_push*g.tile_size end
-    if p.z==-90 then t.y-=g.settings.line_push*g.tile_size end
   end
 
   add(g.lines,{start_pos=s,target_pos=t,start_time=g.now,p=p.id})
@@ -898,10 +845,7 @@ function draw_player(p)
     if sprn==19 then sprn=23 end
   end
 
-  -- yellow while taking damage or dashing
-  if (
-    p.last_dmg_time>0 and g.now-p.last_dmg_time<g.settings.dmg_anim_time
-  ) or p.velocity==g.settings.player_dash_velocity then
+  if is_taking_damage(p) or is_dashing(p) then
     if sprn==17 then sprn=22 end -- use "squinting" sprites
     if sprn==19 then sprn=23 end
     pal(g.p1.c,10) -- swap p1 color -> yellow

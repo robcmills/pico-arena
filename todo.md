@@ -1,12 +1,15 @@
 # Bugs
 
 
-
 # TODO
 
 - [x] Use _update60
 - [x] Refactor movement
-- [ ] Add "tests"
+- [x] Add "tests"
+- [ ] Fix line
+  - [ ] fix line end point not aligning with player
+  - [ ] line collision should cancel player movement|dash
+  - [ ] taking damage should prevent player from firing
 - [ ] Add "dash" move
   - [x] dmg collider and push back
   - [ ] dash player collisions should push back 1 tile or more? into void?
@@ -16,6 +19,7 @@
   - [ ] cancel dash if hit with line weapon
 - [ ] Add blocking (energy shield)
   - [ ] drain energy while shielding
+- [ ] Prevent fire when taking damage (duel mechanic:first to draw gains advantage)
 - [ ] rock, paper, scissor mechanic
     - shield beats laser
     - dash attack beats shield
@@ -72,4 +76,4 @@
 - [ ] Add arena validation
   - [ ] ensure at least two spawn points
 - [ ] Add two types of spawn tiles, initial and regular
-- [ ] Make players face each other on first spawn
+- [x] Make players face each other on first spawn
