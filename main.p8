@@ -64,7 +64,7 @@ test={
 }
 tests={{
   init=function()
-    logt("line weapon")
+    logt("both players fire line at each other at same time")
     test.after_spawn_frame=nil
     init_game("versus", arenas.test1)
   end,
@@ -72,14 +72,16 @@ tests={{
     if g.frame==1 then
       -- enable firing immediately
       g.p1.last_fire_time=-g.settings.line_delay
+      g.p2.last_fire_time=-g.settings.line_delay
       -- disable spawn animation
       g.p1.spawn_particles={}
       g.p2.spawn_particles={}
       set_player_pos(g.p1,2,4,0)
-      set_player_pos(g.p2,6,4,90)
+      set_player_pos(g.p2,6,4,180)
     elseif g.frame==2 then
       update_player_input(g.p1,input.p1_x)
-      logt("  press x facing right, collider facing away")
+      update_player_input(g.p2,input.p2_x)
+      logt("  both players press x")
     end
   end,
   update_post=function()
@@ -960,6 +962,14 @@ function draw_hud()
   print(format_time(g.now),g.screen_size/2-10,2)
 end
 
+function draw_debug()
+  if test.enabled then
+    debug_print("f:"..g.frame.." t:"..g.now)
+  else
+    debug_print(g.debug)
+  end
+end
+
 function _draw()
   cls()
   draw_arena()
@@ -968,7 +978,7 @@ function _draw()
   draw_player(g.p2)
   draw_lines()
   draw_hud()
-  debug_print(g.debug)
+  draw_debug()
   update_tests_post()
 end
 
@@ -979,7 +989,7 @@ function assertTrue(condition,msg)
 end
 
 function debug_print(str)
-  print(str,1,120,6)
+  print(str,2,120,6)
 end
 
 function get_time()

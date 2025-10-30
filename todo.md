@@ -7,7 +7,7 @@
 - [x] Refactor movement
 - [x] Add "tests"
 - [ ] Fix line
-  - [ ] fix line end point not aligning with player
+  - [x] fix line end point not aligning with player
   - [ ] line collision should cancel player movement|dash
   - [ ] taking damage should prevent player from firing
 - [ ] Add "dash" move
