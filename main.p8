@@ -69,14 +69,21 @@ tests={{
     init_game("versus", arenas.test1)
   end,
   update_pre=function()
-    if g.now>g.settings.player_spawn_duration+frame_duration_30 and test.after_spawn_frame==nil then
-      test.after_spawn_frame=g.frame
+    if g.frame==1 then
+      -- enable firing immediately
+      g.p1.last_fire_time=-g.settings.line_delay
+      -- disable spawn animation
+      g.p1.spawn_particles={}
+      g.p2.spawn_particles={}
+      set_player_pos(g.p1,2,4,0)
+      set_player_pos(g.p2,6,4,90)
+    elseif g.frame==2 then
       update_player_input(g.p1,input.p1_x)
-      logt("  press x after spawn")
+      logt("  press x facing right, collider facing away")
     end
   end,
   update_post=function()
-    if g.now>g.settings.player_spawn_duration+g.settings.player_damage_duration then
+    if g.now>g.settings.player_damage_duration then
       --assertTrue(g.p1.energy<g.settings.player_max_energy,"player 1 energy not full after spawn")
       return true -- test finished
     end
@@ -171,8 +178,9 @@ function spawn_player(p)
   local s=rnd(spawns)
   p.tile_x=s.x
   p.tile_y=s.y
-  p.pixel_x=s.x*g.tile_size+g.arena.sx
-  p.pixel_y=s.y*g.tile_size+g.arena.sy
+  p.pixel_x=tile_to_pixel(s.x,"x")
+  p.pixel_y=tile_to_pixel(s.y,"y")
+
   -- set dir towards map center
   p.z=p.tile_x<g.arena.celw/2 and 0 or 180
   p.flip_x=p.z==180
@@ -411,6 +419,15 @@ function move_player(player,z)
   player.velocity=g.settings.player_velocity
 end
 
+function set_player_pos(player,x,y,z)
+  player.tile_x=x
+  player.tile_y=y
+  player.pixel_x=tile_to_pixel(x,"x")
+  player.pixel_y=tile_to_pixel(y,"y")
+  player.z=z
+  player.flip_x=z==180
+end
+
 function shield_player(player)
   if player.energy<=0 then return end
   player.shield=true
@@ -434,7 +451,7 @@ function push_player(p,dir)
 end
 
 function tile_to_pixel(tile,xy)
-  return tile*8+(xy=="x" and g.arena.sx or g.arena.sy)
+  return tile*g.tile_size+(xy=="x" and g.arena.sx or g.arena.sy)
 end
 
 function explode_player(player,dir)
@@ -529,36 +546,39 @@ function fire_line(p)
   t.x=tile_to_pixel(t.x,"x")
   t.y=tile_to_pixel(t.y,"y")
   -- account for player direction and reticle offset (start pos)
-  if p.z==0 then
-    s.x+=9
-    t.x-=1
-  end
-  if p.z==180 then
-    s.x-=3
-    t.x+=1
-  end
+  if p.z==0 then s.x+=9 end
+  if p.z==180 then s.x-=3 end
   if p.z==0 or p.z==180 then
     s.y+=3
     t.y+=3
   end
-  if p.z==-90 then s.y-=4 end
-  if p.z==90 then s.y+=10 end
+  if p.z==-90 then s.y-=3 end
+  if p.z==90 then s.y+=9 end
   if p.z==-90 or p.z==90 then
     s.x+=3
     t.x+=3
   end
   -- account for solid tile and player body offset (target pos)
   if collider.type=='tile' then
-    if p.z==0 then t.x-=1 end
-    if p.z==180 then t.x+=7 end
-    if p.z==90 then t.y-=1 end
-    if p.z==-90 then t.y+=7 end
+    if p.z==0 then t.x-=1
+    elseif p.z==180 then t.x+=7
+    elseif p.z==90 then t.y-=1
+    elseif p.z==-90 then t.y+=7 end
   elseif collider.type=='player' then
-    if p.z==180 then t.x+=6 end
-    if p.z==-90 then t.y+=6 end
+    if p.z==0 then t.x-=1
+    elseif p.z==180 then t.x+=7
+    elseif p.z==90 then t.y-=1
+    elseif p.z==-90 then t.y+=6 end
   end
 
-  add(g.lines,{start_pos=s,target_pos=t,start_time=g.now,p=p.id})
+  add(g.lines,{
+    collider=collider,
+    p=p.id,
+    start_pos=s,
+    start_time=g.now,
+    target_pos=t,
+    z=p.z,
+  })
 
   if p.energy>0 then p.energy-=1 end
   p.last_fire_time=g.now -- player fire animation
@@ -734,6 +754,25 @@ function update_lines()
   for i,l in pairs(g.lines) do
     if g.now-l.start_time>g.settings.line_life then
       deli(g.lines,i)
+    end
+    -- if collider is a player, update line end point to track their movement
+    -- as they are pushed back (else line disconnects from player)
+    if l.collider.type=="player" then
+      -- offset depends on whether collider player is facing towards line
+      -- because drawing line through reticle is ugly
+      if l.z==0 then
+        local is_facing=l.collider.p.z==180
+        l.target_pos.x=l.collider.p.pixel_x-(is_facing and 1 or 0)
+      elseif l.z==180 then
+        local is_facing=l.collider.p.z==0
+        l.target_pos.x=l.collider.p.pixel_x+(is_facing and 7 or 6)
+      elseif l.z==90 then
+        local is_facing=l.collider.p.z==-90
+        l.target_pos.y=l.collider.p.pixel_y-(is_facing and 1 or 0)
+      elseif l.z==-90 then
+        local is_facing=l.collider.p.z==90
+        l.target_pos.y=l.collider.p.pixel_y+(is_facing and 7 or 6)
+      end
     end
   end
 end
