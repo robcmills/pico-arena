@@ -4,12 +4,220 @@ function logt() end
 function set_player_pos() end
 function update_player_input() end
 arenas={}
-frame_duration_30=1
+frame_duration_30=1/30
+frame_duration_60=1/60
 input={}
 g={}
 test={}
 
 tests={{
+  init=function()
+    logt("line cancels player horizontal movement")
+    test.p1_fire_time=0
+    test.p2_move_time=0
+    test.p2_start_x=6
+    test.p2_start_y=4
+    init_game("versus", arenas.test1)
+  end,
+  update_pre=function()
+    if g.frame==1 then
+      -- enable firing immediately
+      g.p1.last_fire_time=-g.settings.line_delay
+      -- disable spawn animation
+      g.p1.spawn_particles={}
+      g.p2.spawn_particles={}
+      set_player_pos(g.p1,2,4,0)
+      set_player_pos(g.p2,test.p2_start_x,test.p2_start_y,180)
+    elseif g.frame==2 then
+      update_player_input(g.p2,input.p2_left)
+      test.p2_move_time=g.now
+      logt("  player 2 moves left")
+    elseif g.p2.tile_x==test.p2_start_x-1 and test.p1_fire_time==0 then
+      test.p1_fire_time=g.now
+      update_player_input(g.p1,input.p1_x)
+      logt("  player 1 fires just after player 2 tile position changes")
+    end
+  end,
+  update_post=function()
+    if g.now>(test.p1_fire_time+g.settings.player_velocity+frame_duration_60) then
+      assertTrue(g.p2.hp<g.settings.player_max_hp,"player 2 hp not full")
+      assertTrue(g.p2.tile_x==test.p2_start_x,"player 2 pushed horizontally")
+      return true -- test finished
+    end
+  end,
+},{
+  init=function()
+    logt("line cancels player horizontal movement")
+    test.p1_fire_time=0
+    test.p2_move_time=0
+    test.p2_start_x=6
+    test.p2_start_y=4
+    init_game("versus", arenas.test1)
+  end,
+  update_pre=function()
+    if g.frame==1 then
+      -- enable firing immediately
+      g.p1.last_fire_time=-g.settings.line_delay
+      -- disable spawn animation
+      g.p1.spawn_particles={}
+      g.p2.spawn_particles={}
+      set_player_pos(g.p1,2,4,0)
+      set_player_pos(g.p2,test.p2_start_x,test.p2_start_y,180)
+    elseif g.frame==2 then
+      update_player_input(g.p2,input.p2_left)
+      test.p2_move_time=g.now
+      logt("  player 2 moves left")
+    elseif g.now>=test.p2_move_time+g.settings.player_velocity/2 and test.p1_fire_time==0 then
+      test.p1_fire_time=g.now
+      update_player_input(g.p1,input.p1_x)
+      logt("  player 1 fires just before player 2 tile position changes")
+    end
+  end,
+  update_post=function()
+    if g.now>(test.p1_fire_time+g.settings.player_velocity+frame_duration_60) then
+      assertTrue(g.p2.hp<g.settings.player_max_hp,"player 2 hp not full")
+      assertTrue(g.p2.tile_x==test.p2_start_x+1,"player 2 pushed horizontally")
+      return true -- test finished
+    end
+  end,
+},{
+  init=function()
+    logt("line cancels player perpendicular movement")
+    test.p1_fire_time=0
+    test.p2_move_time=0
+    test.p2_start_x=6
+    test.p2_start_y=4
+    init_game("versus", arenas.test1)
+  end,
+  update_pre=function()
+    if g.frame==1 then
+      -- enable firing immediately
+      g.p1.last_fire_time=-g.settings.line_delay
+      -- disable spawn animation
+      g.p1.spawn_particles={}
+      g.p2.spawn_particles={}
+      set_player_pos(g.p1,2,4,0)
+      set_player_pos(g.p2,test.p2_start_x,test.p2_start_y,90)
+    elseif g.frame==2 then
+      update_player_input(g.p2,input.p2_up)
+      test.p2_move_time=g.now
+      logt("  player 2 moves up")
+    elseif g.now>=test.p2_move_time+g.settings.player_velocity/2 and test.p1_fire_time==0 then
+      test.p1_fire_time=g.now
+      update_player_input(g.p1,input.p1_x)
+      logt("  player 1 fires just before player 2 tile position changes")
+    end
+  end,
+  update_post=function()
+    if g.now>(test.p1_fire_time+g.settings.player_velocity+frame_duration_60) then
+      assertTrue(g.p2.hp<g.settings.player_max_hp,"player 2 hp not full")
+      assertTrue(g.p2.tile_x==test.p2_start_x+1,"player 2 pushed horizontally")
+      assertTrue(g.p2.tile_y==test.p2_start_y,"player 2 vertical movement cancelled")
+      return true -- test finished
+    end
+  end,
+},{
+  init=function()
+    logt("line miss does not cancel player movement")
+    test.p1_fire_time=0
+    test.p2_move_time=0
+    test.p2_start_x=6
+    test.p2_start_y=4
+    init_game("versus", arenas.test1)
+  end,
+  update_pre=function()
+    if g.frame==1 then
+      -- enable firing immediately
+      g.p1.last_fire_time=-g.settings.line_delay
+      -- disable spawn animation
+      g.p1.spawn_particles={}
+      g.p2.spawn_particles={}
+      set_player_pos(g.p1,2,4,0)
+      set_player_pos(g.p2,test.p2_start_x,test.p2_start_y,90)
+    elseif g.frame==2 then
+      update_player_input(g.p2,input.p2_down)
+      test.p2_move_time=g.now
+      logt("  player 2 moves down")
+    elseif g.p2.tile_y==test.p2_start_y+1 and test.p1_fire_time==0 then
+      test.p1_fire_time=g.now
+      update_player_input(g.p1,input.p1_x)
+      logt("  player 1 fires just after player 2 tile position changes")
+    end
+  end,
+  update_post=function()
+    if g.now>(test.p2_move_time+g.settings.player_velocity+frame_duration_60) then
+      assertTrue(g.p2.hp==g.settings.player_max_hp,"player 2 hp full")
+      assertTrue(g.p2.tile_x==test.p2_start_x,"player 2 not pushed horizontally")
+      assertTrue(g.p2.tile_y==test.p2_start_y+1,"player 2 vertical movement completed")
+      return true -- test finished
+    end
+  end,
+},{
+  init=function()
+    logt("line cancels player perpendicular movement")
+    test.p1_fire_time=0
+    test.p2_move_time=0
+    test.p2_start_x=6
+    test.p2_start_y=4
+    init_game("versus", arenas.test1)
+  end,
+  update_pre=function()
+    if g.frame==1 then
+      -- enable firing immediately
+      g.p1.last_fire_time=-g.settings.line_delay
+      -- disable spawn animation
+      g.p1.spawn_particles={}
+      g.p2.spawn_particles={}
+      set_player_pos(g.p1,2,4,0)
+      set_player_pos(g.p2,test.p2_start_x,test.p2_start_y,90)
+    elseif g.frame==2 then
+      update_player_input(g.p2,input.p2_down)
+      test.p2_move_time=g.now
+      logt("  player 2 moves down")
+    elseif g.now>=test.p2_move_time+g.settings.player_velocity/2 and test.p1_fire_time==0 then
+      test.p1_fire_time=g.now
+      update_player_input(g.p1,input.p1_x)
+      logt("  player 1 fires just before player 2 tile position changes")
+    end
+  end,
+  update_post=function()
+    if g.now>(test.p1_fire_time+g.settings.player_velocity+frame_duration_60) then
+      assertTrue(g.p2.hp<g.settings.player_max_hp,"player 2 hp not full")
+      assertTrue(g.p2.tile_x==test.p2_start_x+1,"player 2 pushed horizontally")
+      assertTrue(g.p2.tile_y==test.p2_start_y,"player 2 vertical movement cancelled")
+      return true -- test finished
+    end
+  end,
+},{
+  init=function()
+    logt("line cancels player movement at start")
+    test.after_spawn_frame=nil
+    init_game("versus", arenas.test1)
+  end,
+  update_pre=function()
+    if g.frame==1 then
+      -- enable firing immediately
+      g.p1.last_fire_time=-g.settings.line_delay
+      g.p2.last_fire_time=-g.settings.line_delay
+      -- disable spawn animation
+      g.p1.spawn_particles={}
+      g.p2.spawn_particles={}
+      set_player_pos(g.p1,2,4,0)
+      set_player_pos(g.p2,6,4,90)
+    elseif g.frame==2 then
+      update_player_input(g.p2,input.p2_down)
+      logt("  player 2 moves down")
+    elseif g.frame==3 then
+      update_player_input(g.p1,input.p1_x)
+      logt("  player 1 fires")
+    end
+  end,
+  update_post=function()
+    if g.now>(g.settings.player_velocity+frame_duration_30*2) then
+      return true -- test finished
+    end
+  end,
+},{
   init=function()
     logt("line weapon")
     test.after_spawn_frame=nil

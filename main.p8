@@ -64,32 +64,36 @@ test={
 }
 tests={{
   init=function()
-    logt("both players fire line at each other at same time while not moving")
-    test.after_spawn_frame=nil
+    logt("line cancels player horizontal movement")
+    test.p1_fire_time=0
+    test.p2_move_time=0
+    test.p2_start_x=6
+    test.p2_start_y=4
     init_game("versus", arenas.test1)
   end,
   update_pre=function()
     if g.frame==1 then
       -- enable firing immediately
       g.p1.last_fire_time=-g.settings.line_delay
-      g.p2.last_fire_time=-g.settings.line_delay
       -- disable spawn animation
       g.p1.spawn_particles={}
       g.p2.spawn_particles={}
       set_player_pos(g.p1,2,4,0)
-      set_player_pos(g.p2,6,4,180)
+      set_player_pos(g.p2,test.p2_start_x,test.p2_start_y,180)
     elseif g.frame==2 then
+      update_player_input(g.p2,input.p2_right)
+      test.p2_move_time=g.now
+      logt("  player 2 moves right")
+    elseif g.now>=test.p2_move_time+g.settings.player_velocity/2 and test.p1_fire_time==0 then
+      test.p1_fire_time=g.now
       update_player_input(g.p1,input.p1_x)
-      update_player_input(g.p2,input.p2_x)
-      logt("  both players press x")
+      logt("  player 1 fires just after player 2 tile position changes")
     end
   end,
   update_post=function()
-    if g.now>g.settings.player_damage_duration then
-      assertTrue(g.p1.energy<g.settings.player_max_energy,"player 1 energy not full")
-      assertTrue(g.p2.energy<g.settings.player_max_energy,"player 2 energy not full")
-      assertTrue(g.p1.hp<g.settings.player_max_hp,"player 1 hp not full")
+    if g.now>(test.p1_fire_time+g.settings.player_velocity+frame_duration_60) then
       assertTrue(g.p2.hp<g.settings.player_max_hp,"player 2 hp not full")
+      assertTrue(g.p2.tile_x==test.p2_start_x+1,"player 2 pushed horizontally")
       return true -- test finished
     end
   end,
@@ -392,7 +396,6 @@ end
 
 -- move player in direction z one tile
 function move_player(player,z)
-  if player.last_move_time~=nil then return end
   -- Update player flip state and z dir
   if z==0 then player.flip_x=false end
   if z==180 then player.flip_x=true end
@@ -407,13 +410,13 @@ function move_player(player,z)
   local to_spr=aget(to_x,to_y) -- target arena sprite
   if fget(to_spr,g.sprites.is_solid) then
     -- TODO: play solid bump sound
-    return
+    return false
   end
   -- other player collisions
   local other_player=player.id==1 and g.p2 or g.p1
   if other_player.tile_x==to_x and other_player.tile_y==to_y and other_player.hp>0 then
     -- TODO: play player bump sound
-    return
+    return false
   end
   -- move player
   player.last_move_time=g.now
@@ -422,6 +425,7 @@ function move_player(player,z)
   player.from_x=player.tile_x
   player.from_y=player.tile_y
   player.velocity=g.settings.player_velocity
+  return true
 end
 
 function set_player_pos(player,x,y,z)
@@ -444,11 +448,10 @@ function dmg_player(p, dmg)
 end
 
 function push_player(p,dir)
-  -- TODO: enable pushing to interrupt existing movement
+  -- prevent changing player direction
   local prev_flip_x=p.flip_x
   local prev_z=p.z
   move_player(p,dir)
-  -- prevent changing player direction
   p.flip_x=prev_flip_x
   p.z=prev_z
   -- return true if moved
@@ -681,9 +684,13 @@ function update_player_movement(p)
   local dpixels=dtiles*g.tile_size*interpolation
 
   if dir==0 or dir==180 then
-    p.pixel_x=p.from_x*g.tile_size+dpixels+g.arena.sx
+    p.pixel_x=tile_to_pixel(p.from_x,"x")+dpixels
+    -- if existing perpendicular partially interpolated movement then
+    -- cancel it by "snapping" to new movement direction
+    p.pixel_y=tile_to_pixel(p.to_y,"y")
   elseif dir==90 or dir==-90 then
-    p.pixel_y=p.from_y*g.tile_size+dpixels+g.arena.sy
+    p.pixel_y=tile_to_pixel(p.from_y,"y")+dpixels
+    p.pixel_x=tile_to_pixel(p.to_x,"x")
   end
 
   -- update current tile position based on pixel position
@@ -731,6 +738,9 @@ function update_player_input(p,btn_bits)
   local p_down=b&8~=0
   local p_x=b&16~=0
   local p_o=b&32~=0
+  update_player_x(p,p_x)
+  update_player_o(p,p_o)
+  if p.last_move_time~=nil then return end
   if p_left and p_o then dash_player(p,180)
   elseif p_left then move_player(p,180)
   elseif p_right and p_o then dash_player(p,0)
@@ -740,8 +750,6 @@ function update_player_input(p,btn_bits)
   elseif p_down and p_o then dash_player(p,90)
   elseif p_down then move_player(p,90)
   end
-  update_player_x(p,p_x)
-  update_player_o(p,p_o)
 end
 
 function update_player(p)
