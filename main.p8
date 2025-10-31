@@ -64,7 +64,7 @@ test={
 }
 tests={{
   init=function()
-    logt("both players fire line at each other at same time")
+    logt("both players fire line at each other at same time while not moving")
     test.after_spawn_frame=nil
     init_game("versus", arenas.test1)
   end,
@@ -86,7 +86,10 @@ tests={{
   end,
   update_post=function()
     if g.now>g.settings.player_damage_duration then
-      --assertTrue(g.p1.energy<g.settings.player_max_energy,"player 1 energy not full after spawn")
+      assertTrue(g.p1.energy<g.settings.player_max_energy,"player 1 energy not full")
+      assertTrue(g.p2.energy<g.settings.player_max_energy,"player 2 energy not full")
+      assertTrue(g.p1.hp<g.settings.player_max_hp,"player 1 hp not full")
+      assertTrue(g.p2.hp<g.settings.player_max_hp,"player 2 hp not full")
       return true -- test finished
     end
   end,

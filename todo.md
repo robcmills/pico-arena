@@ -6,23 +6,31 @@
 - [x] Use _update60
 - [x] Refactor movement
 - [x] Add "tests"
+- [ ] find missing frame 2
 - [ ] Fix line
   - [x] fix line end point not aligning with player
   - [ ] line collision should cancel player movement|dash
-  - [ ] taking damage should prevent player from firing
+- [ ] taking damage
+  - [ ] prevent player from firing
+  - [ ] prevent player from dashing
+  - [ ] prevent player from moving
+  - [ ] prevent player from taking additional damage
+- [ ] Prevent fire when taking damage (duel mechanic:first to draw gains advantage)
 - [ ] Add "dash" move
   - [x] dmg collider and push back
   - [ ] dash player collisions should push back 1 tile or more? into void?
   - [x] add particle trail
+  - [ ] change dash trail color
   - [x] drain energy when dashing
   - [ ] handle dash vs dash collision (cancel)
   - [ ] cancel dash if hit with line weapon
+  - [ ] enable adjacent dash
 - [ ] Add blocking (energy shield)
   - [ ] drain energy while shielding
-- [ ] Prevent fire when taking damage (duel mechanic:first to draw gains advantage)
+  - [ ] reflect line shots
 - [ ] rock, paper, scissor mechanic
     - shield beats laser
-    - dash attack beats shield
+    - dash beats shield
     - laser beats dash
 - [ ] Add "fall" into void tiles
 - [x] Namespace all game state globals (game.x)
@@ -51,7 +59,7 @@
   - [ ] bridges
   - [ ] platforms
   - [ ] lava
-  - [ ] water
+  - [ ] water (slows movement)
   - [ ] ice
   - [ ] fire
   - [ ] shiny/reflective floors/walls
