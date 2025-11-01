@@ -85,7 +85,7 @@ tests={{
     end
   end,
   update_post=function()
-    if g.now>test.p1_dash_time+g.settings.player_dash_velocity*3+g.settings.player_velocity+frame_duration_60 then
+    if g.now>test.p1_dash_time+g.settings.player_dash_velocity*5+g.settings.player_velocity+frame_duration_60 then
       assertTrue(g.p2.hp==g.settings.player_max_hp,"player 2 hp full")
       return true -- test finished
     end
@@ -330,15 +330,18 @@ function _init()
 end
 
 -- move player in direction z until they collide with something
--- deal damage if applicable
-function dash_player(player,z)
-  -- check if can dash
-  if player.last_move_time~=nil then return end
-  if player.energy<=0 then
-    -- TODO: play empty energy sound
-    -- TODO: flash player energy bar light_gray
-    move_player(player,z)
-    return
+-- is_continue is true if we are continuing existing dash
+function dash_player(player,z,is_continue)
+  is_continue=is_continue==nil and false or is_continue
+  if not is_continue then
+    -- check if can dash
+    if player.last_move_time~=nil then return end
+    if player.energy<=0 then
+      -- TODO: play empty energy sound
+      -- TODO: flash player energy bar light_gray
+      move_player(player,z)
+      return
+    end
   end
   local collider=raycast({x=player.tile_x,y=player.tile_y},z,true)
   local target={x=collider.x,y=collider.y}
@@ -354,8 +357,10 @@ function dash_player(player,z)
   if z==0 then player.flip_x=false end
   if z==180 then player.flip_x=true end
   player.z=z
-  -- drain energy
-  player.energy-=1
+  if not is_continue then
+    -- drain energy
+    player.energy-=1
+  end
   -- move player
   player.last_move_time=g.now
   player.to_x=target.x
@@ -366,6 +371,10 @@ function dash_player(player,z)
   -- TODO: play dash sound
 end
 
+-- check if player dash is still colliding
+-- necessary to enable continued dashing if collider moved out of the way
+-- returns true if collider is still occupying adjacent tile
+-- returns false if path is clear to continue dashing
 function player_dash_collision(player)
   local other_player=player.id==1 and g.p2 or g.p1
   local target={x=player.to_x,y=player.to_y}
@@ -374,7 +383,7 @@ function player_dash_collision(player)
   elseif player.z==180 then target.x-=1
   elseif player.z==90 then target.y+=1
   elseif player.z==-90 then target.y-=1 end
-  -- check if other player is occupying adjacent tile
+  -- check if other player is still occupying adjacent tile
   if target.x==other_player.tile_x and target.y==other_player.tile_y then
     -- damage collider
     dmg_player(other_player,g.settings.dash_damage)
@@ -384,7 +393,14 @@ function player_dash_collision(player)
       explode_player(other_player,player.z)
       player.score+=1
     end
+    return true
   end
+  -- check if collider is still occupying adjacent tile
+  local collider=raycast({x=player.tile_x,y=player.tile_y},player.z,true)
+  if collider.x==target.x and collider.y==target.y then
+    return true
+  end
+  return false
 end
 
 -- move player in direction z one tile
@@ -704,7 +720,12 @@ function update_player_movement(p)
   if interpolation==1 then
     -- if we are ending a dash, do collision check
     if p.velocity==g.settings.player_dash_velocity then
-      player_dash_collision(p)
+      if not player_dash_collision(p) then
+        -- if no collision (e.g. other player moved out of the way)
+        -- then continue dashing
+        dash_player(p,p.z,true)
+        return
+      end
     end
     p.last_move_time=nil
     p.pixel_x=p.to_x*g.tile_size+g.arena.sx
