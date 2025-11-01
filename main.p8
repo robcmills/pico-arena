@@ -880,6 +880,12 @@ function get_dash_particle_color(p)
   return t<0.33 and white or t<0.66 and light_gray or dark_gray
 end
 
+function draw_player_dash_particles(p)
+  for _,par in pairs(p.dash_particles) do
+    circfill(par.x,par.y,par.size,get_dash_particle_color(par))
+  end
+end
+
 function draw_player(p)
   if p.id==2 then
     pal(g.p1.c,g.p2.c) -- swap p1 -> p2 color (reuse same sprite)
@@ -901,11 +907,6 @@ function draw_player(p)
     end
     pal()
     return
-  end
-
-  -- draw dash particles
-  for _,par in pairs(p.dash_particles) do
-    circfill(par.x,par.y,par.size,get_dash_particle_color(par))
   end
 
   if p.hp<=0 then
@@ -1013,6 +1014,8 @@ function _draw()
   cls()
   draw_arena()
   draw_entities()
+  draw_player_dash_particles(g.p1)
+  draw_player_dash_particles(g.p2)
   draw_player(g.p1)
   draw_player(g.p2)
   draw_lines()
