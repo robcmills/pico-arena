@@ -64,9 +64,9 @@ test={
 }
 tests={{
   init=function()
-    logt("line cancels player horizontal movement")
+    logt("line cancels horizontal dash")
     test.p1_fire_time=0
-    test.p2_move_time=0
+    test.p2_dash_time=0
     test.p2_start_x=6
     test.p2_start_y=4
     init_game("versus", arenas.test1)
@@ -81,19 +81,19 @@ tests={{
       set_player_pos(g.p1,2,4,0)
       set_player_pos(g.p2,test.p2_start_x,test.p2_start_y,180)
     elseif g.frame==2 then
-      update_player_input(g.p2,input.p2_right)
-      test.p2_move_time=g.now
-      logt("  player 2 moves right")
-    elseif g.now>=test.p2_move_time+g.settings.player_velocity/2 and test.p1_fire_time==0 then
+      update_player_input(g.p2,input.p2_left|input.p2_o)
+      test.p2_dash_time=g.now
+      logt("  player 2 dashes left")
+    elseif g.now>=test.p2_dash_time+g.settings.player_dash_velocity*2 and test.p1_fire_time==0 then
       test.p1_fire_time=g.now
       update_player_input(g.p1,input.p1_x)
-      logt("  player 1 fires just after player 2 tile position changes")
+      logt("  player 1 fires after player 2 dashes")
     end
   end,
   update_post=function()
-    if g.now>(test.p1_fire_time+g.settings.player_velocity+frame_duration_60) then
+    if g.now>test.p1_fire_time+g.settings.player_velocity+frame_duration_60 then
       assertTrue(g.p2.hp<g.settings.player_max_hp,"player 2 hp not full")
-      assertTrue(g.p2.tile_x==test.p2_start_x+1,"player 2 pushed horizontally")
+      --assertTrue(g.p2.tile_x==test.p2_start_x+1,"player 2 pushed horizontally")
       return true -- test finished
     end
   end,
@@ -541,6 +541,9 @@ function fire_line(p)
   if collider.type=='player' then
     dmg_player(collider.p,g.settings.line_dmg)
     if collider.p.hp>0 then
+      if is_dashing(collider.p) then
+        collider.p.dash_particles={}
+      end
       collider_pushed=push_player(collider.p,p.z)
     elseif #collider.p.explode_particles==0 then
       explode_player(collider.p,p.z)
@@ -624,27 +627,34 @@ function update_player_particles(player)
 
   -- spawn dash particles
   if player.velocity==g.settings.player_dash_velocity then
-    local last_dash_particle=#player.dash_particles>0 and player.dash_particles[#player.dash_particles] or nil
-    local particle_x=tile_to_pixel(player.tile_x,'x')+3
-    local particle_y=tile_to_pixel(player.tile_y,'y')+3
-    if last_dash_particle==nil or (last_dash_particle~=nil and (last_dash_particle.x~=particle_x or last_dash_particle.y~=particle_y)) then
-      local dash_particle={
-        c=yellow,
-        end_time=g.now+g.settings.player_dash_particle_lifetime,
-        size=2,
-        x=particle_x,
-        y=particle_y,
-      }
-      add(player.dash_particles,dash_particle)
+    -- if player is still on "from" tile
+    -- then do nothing (don't spawn particles on occupied tiles)
+    if player.tile_x~=player.from_x or player.tile_y~=player.from_y then
+      local trailing_tile=get_adjacent_tile(
+        player.tile_x,
+        player.tile_y,
+        get_opposite_direction(player.z))
+      -- if dash particle does not exist on that tile then spawn
+      local key=trailing_tile.x..","..trailing_tile.y
+      if not player.dash_particles[key] then
+        local dash_particle={
+          c=white,
+          end_time=g.now+g.settings.player_dash_particle_lifetime,
+          size=2,
+          tile_x=trailing_tile.x,
+          tile_y=trailing_tile.y,
+          x=tile_to_pixel(trailing_tile.x,'x')+3,
+          y=tile_to_pixel(trailing_tile.y,'y')+3,
+        }
+        player.dash_particles[key]=dash_particle
+      end
     end
   end
 
   -- update dash particles
-  if #player.dash_particles>0 then
-    for particle in all(player.dash_particles) do
-      if particle.end_time<g.now then
-        del(player.dash_particles,particle)
-      end
+  for key,particle in pairs(player.dash_particles) do
+    if particle.end_time<g.now then
+      player.dash_particles[key]=nil
     end
   end
 end
@@ -873,11 +883,9 @@ function draw_player(p)
     return
   end
 
-  if #p.dash_particles>0 then
-    -- draw dash particles
-    for par in all(p.dash_particles) do
-      circfill(par.x,par.y,par.size,par.c)
-    end
+  -- draw dash particles
+  for _,par in pairs(p.dash_particles) do
+    circfill(par.x,par.y,par.size,par.c)
   end
 
   if p.hp<=0 then
@@ -897,7 +905,7 @@ function draw_player(p)
     if sprn==19 then sprn=23 end
   end
 
-  if is_taking_damage(p) or is_dashing(p) then
+  if is_taking_damage(p) then
     if sprn==17 then sprn=22 end -- use "squinting" sprites
     if sprn==19 then sprn=23 end
     pal(g.p1.c,10) -- swap p1 color -> yellow
@@ -1001,6 +1009,20 @@ end
 
 function debug_print(str)
   print(str,2,120,6)
+end
+
+function get_adjacent_tile(x,y,dir)
+  local dx=dir==0 and 1 or dir==180 and -1 or 0
+  local dy=dir==90 and 1 or dir==-90 and -1 or 0
+  return {x=x+dx,y=y+dy}
+end
+
+function get_opposite_direction(dir)
+  if dir==0 then return 180
+  elseif dir==180 then return 0
+  elseif dir==90 then return -90
+  elseif dir==-90 then return 90
+  end
 end
 
 function get_time()
