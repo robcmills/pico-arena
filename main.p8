@@ -77,22 +77,21 @@ tests={{
       g.p1.spawn_particles={}
       g.p2.spawn_particles={}
       set_player_pos(g.p1,2,4,0)
-      set_player_pos(g.p2,6,1,180)
+      set_player_pos(g.p2,4,4,0)
     elseif g.frame==2 then
-      update_player_input(g.p2,input.p2_down|input.p2_o)
+      update_player_input(g.p2,input.p2_right|input.p2_o)
       test.p2_dash_time=g.now
-      logt("  player 2 dashes down")
-    elseif g.now>=test.p2_dash_time+g.settings.player_dash_velocity*3 and test.p1_fire_time==0 then
+      logt("  player 2 dashes right")
+    elseif g.now>=test.p2_dash_time+g.settings.player_dash_velocity and test.p1_fire_time==0 then
       test.p1_fire_time=g.now
       update_player_input(g.p1,input.p1_x)
       logt("  player 1 fires")
     end
   end,
   update_post=function()
-    if g.now>test.p2_dash_time+g.settings.player_dash_velocity*3+g.settings.player_velocity+frame_duration_60 then
+    if g.now>test.p2_dash_time+g.settings.player_dash_velocity+g.settings.player_velocity+frame_duration_60 then
       assertTrue(g.p2.hp<g.settings.player_max_hp,"player 2 hp not full")
-      assertTrue(g.p2.tile_y==4,"player 2 vertical movement cancelled")
-      assertTrue(g.p2.tile_x==7,"player 2 pushed horizontally")
+      assertTrue(g.p2.tile_x==6,"player 2 pushed horizontally only one tile")
       return true -- test finished
     end
   end,

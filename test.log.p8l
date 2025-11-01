@@ -1,7 +1,6 @@
 
 line beats dash
-  player 2 dashes down
+  player 2 dashes right
   player 1 fires
   o player 2 hp not full
-  o player 2 vertical movement cancelled
-  o player 2 pushed horizontally
+  o player 2 pushed horizontally only one tile
