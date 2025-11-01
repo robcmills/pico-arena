@@ -29,7 +29,7 @@ input={
   p2_up=1024,
   p2_down=2048,
   p2_x=4096,
-  p2_o=9192,
+  p2_o=8192,
 }
 
 frame_duration_30=1/30
@@ -64,11 +64,8 @@ test={
 }
 tests={{
   init=function()
-    logt("line cancels horizontal dash")
-    test.p1_fire_time=0
-    test.p2_dash_time=0
-    test.p2_start_x=6
-    test.p2_start_y=4
+    logt("player dash polish")
+    test.p1_dash_time=0
     init_game("versus", arenas.test1)
   end,
   update_pre=function()
@@ -79,21 +76,17 @@ tests={{
       g.p1.spawn_particles={}
       g.p2.spawn_particles={}
       set_player_pos(g.p1,2,4,0)
-      set_player_pos(g.p2,test.p2_start_x,test.p2_start_y,180)
+      set_player_pos(g.p2,6,4,180)
     elseif g.frame==2 then
-      update_player_input(g.p2,input.p2_left|input.p2_o)
-      test.p2_dash_time=g.now
-      logt("  player 2 dashes left")
-    elseif g.now>=test.p2_dash_time+g.settings.player_dash_velocity*2 and test.p1_fire_time==0 then
-      test.p1_fire_time=g.now
-      update_player_input(g.p1,input.p1_x)
-      logt("  player 1 fires after player 2 dashes")
+      update_player_input(g.p1,input.p1_right|input.p1_o)
+      update_player_input(g.p2,input.p2_down|input.p2_o)
+      test.p1_dash_time=g.now
+      logt("  player 1 dashes right and player 2 dashes down")
     end
   end,
   update_post=function()
-    if g.now>test.p1_fire_time+g.settings.player_velocity+frame_duration_60 then
-      assertTrue(g.p2.hp<g.settings.player_max_hp,"player 2 hp not full")
-      --assertTrue(g.p2.tile_x==test.p2_start_x+1,"player 2 pushed horizontally")
+    if g.now>test.p1_dash_time+g.settings.player_dash_velocity*3+g.settings.player_velocity+frame_duration_60 then
+      assertTrue(g.p2.hp==g.settings.player_max_hp,"player 2 hp full")
       return true -- test finished
     end
   end,
@@ -860,6 +853,12 @@ function draw_player_dir(p)
   spr(sprn,x,y,1,1,x_offset<0,y_offset<0)
 end
 
+function get_dash_particle_color(p)
+  local age=g.now-(p.end_time-g.settings.player_dash_particle_lifetime)
+  local t=age/g.settings.player_dash_particle_lifetime  -- 0 = just spawned, 1 = about to end
+  return t<0.33 and white or t<0.66 and light_gray or dark_gray
+end
+
 function draw_player(p)
   if p.id==2 then
     pal(g.p1.c,g.p2.c) -- swap p1 -> p2 color (reuse same sprite)
@@ -885,7 +884,7 @@ function draw_player(p)
 
   -- draw dash particles
   for _,par in pairs(p.dash_particles) do
-    circfill(par.x,par.y,par.size,par.c)
+    circfill(par.x,par.y,par.size,get_dash_particle_color(par))
   end
 
   if p.hp<=0 then
