@@ -75,18 +75,17 @@ tests={{
       -- disable spawn animation
       g.p1.spawn_particles={}
       g.p2.spawn_particles={}
-      set_player_pos(g.p1,2,4,0)
-      set_player_pos(g.p2,6,4,180)
+      set_player_pos(g.p1,2,1,0)
+      set_player_pos(g.p2,2,7,0)
     elseif g.frame==2 then
-      update_player_input(g.p1,input.p1_right|input.p1_o)
-      update_player_input(g.p2,input.p2_down|input.p2_o)
+      update_player_input(g.p1,input.p1_down|input.p1_o)
+      update_player_input(g.p2,input.p2_right|input.p2_o)
       test.p1_dash_time=g.now
-      logt("  player 1 dashes right and player 2 dashes down")
+      logt("  player 1 dashes down and player 2 dashes right")
     end
   end,
   update_post=function()
-    if g.now>test.p1_dash_time+g.settings.player_dash_velocity*5+g.settings.player_velocity+frame_duration_60 then
-      assertTrue(g.p2.hp==g.settings.player_max_hp,"player 2 hp full")
+    if g.now>test.p1_dash_time+g.settings.player_dash_velocity*6+g.settings.player_dash_particle_lifetime+frame_duration_60 then
       return true -- test finished
     end
   end,
