@@ -607,8 +607,7 @@ function fire_weapon(p)
   if p.w==1 then fire_line(p) end
 end
 
-function update_player_particles(player)
-  -- spawn particles
+function update_player_spawn_particles(player)
   if #player.spawn_particles>0 then
     for particle in all(player.spawn_particles) do
       if particle.end_time<g.now then
@@ -618,8 +617,9 @@ function update_player_particles(player)
       end
     end
   end
+end
 
-  -- explosion particles
+function update_player_explode_particles(player)
   if #player.explode_particles>0 then
     for particle in all(player.explode_particles) do
       if particle.end_time<g.now then
@@ -632,39 +632,44 @@ function update_player_particles(player)
       end
     end
   end
+end
 
-  -- spawn dash particles
-  if player.velocity==g.settings.player_dash_velocity then
-    -- if player is still on "from" tile
-    -- then do nothing (don't spawn particles on occupied tiles)
-    if player.tile_x~=player.from_x or player.tile_y~=player.from_y then
-      local trailing_tile=get_adjacent_tile(
-        player.tile_x,
-        player.tile_y,
-        get_opposite_direction(player.z))
-      -- if dash particle does not exist on that tile then spawn
-      local key=trailing_tile.x..","..trailing_tile.y
-      if not player.dash_particles[key] then
-        local dash_particle={
-          c=white,
-          end_time=g.now+g.settings.player_dash_particle_lifetime,
-          size=2,
-          tile_x=trailing_tile.x,
-          tile_y=trailing_tile.y,
-          x=tile_to_pixel(trailing_tile.x,'x')+3,
-          y=tile_to_pixel(trailing_tile.y,'y')+3,
-        }
-        player.dash_particles[key]=dash_particle
-      end
-    end
-  end
-
-  -- update dash particles
+function update_player_dash_particles(player)
+  -- kill old dash particles
   for key,particle in pairs(player.dash_particles) do
     if particle.end_time<g.now then
       player.dash_particles[key]=nil
     end
   end
+  if player.velocity~=g.settings.player_dash_velocity then return end
+  -- if player is still on "from" tile
+  -- then do nothing (don't spawn particles on occupied tiles)
+  if player.tile_x==player.from_x and player.tile_y==player.from_y then return end
+  -- spawn new dash particles.
+  local trailing_tile=get_adjacent_tile(
+    player.tile_x,
+    player.tile_y,
+    get_opposite_direction(player.z))
+  -- if dash particle does not exist on that tile then spawn
+  local key=trailing_tile.x..","..trailing_tile.y
+  if not player.dash_particles[key] then
+    local dash_particle={
+      c=white,
+      end_time=g.now+g.settings.player_dash_particle_lifetime,
+      size=2,
+      tile_x=trailing_tile.x,
+      tile_y=trailing_tile.y,
+      x=tile_to_pixel(trailing_tile.x,'x')+3,
+      y=tile_to_pixel(trailing_tile.y,'y')+3,
+    }
+    player.dash_particles[key]=dash_particle
+  end
+end
+
+function update_player_particles(player)
+  update_player_spawn_particles(player)
+  update_player_explode_particles(player)
+  update_player_dash_particles(player)
 end
 
 function update_player_entity_collisions(p)
