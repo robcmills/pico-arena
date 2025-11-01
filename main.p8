@@ -641,26 +641,19 @@ function update_player_dash_particles(player)
       player.dash_particles[key]=nil
     end
   end
-  if player.velocity~=g.settings.player_dash_velocity then return end
-  -- if player is still on "from" tile
-  -- then do nothing (don't spawn particles on occupied tiles)
-  if player.tile_x==player.from_x and player.tile_y==player.from_y then return end
+  if not is_dashing(player) then return end
   -- spawn new dash particles.
-  local trailing_tile=get_adjacent_tile(
-    player.tile_x,
-    player.tile_y,
-    get_opposite_direction(player.z))
   -- if dash particle does not exist on that tile then spawn
-  local key=trailing_tile.x..","..trailing_tile.y
+  local key=player.tile_x..","..player.tile_y
   if not player.dash_particles[key] then
     local dash_particle={
       c=white,
       end_time=g.now+g.settings.player_dash_particle_lifetime,
       size=2,
-      tile_x=trailing_tile.x,
-      tile_y=trailing_tile.y,
-      x=tile_to_pixel(trailing_tile.x,'x')+3,
-      y=tile_to_pixel(trailing_tile.y,'y')+3,
+      tile_x=player.tile_x,
+      tile_y=player.tile_y,
+      x=tile_to_pixel(player.tile_x,'x')+3,
+      y=tile_to_pixel(player.tile_y,'y')+3,
     }
     player.dash_particles[key]=dash_particle
   end
@@ -886,7 +879,10 @@ end
 
 function draw_player_dash_particles(p)
   for _,par in pairs(p.dash_particles) do
-    circfill(par.x,par.y,par.size,get_dash_particle_color(par))
+    -- skip if player occupies same tile to avoid particles "ahead" of player
+    if par.tile_x~=p.tile_x or par.tile_y~=p.tile_y then
+      circfill(par.x,par.y,par.size,get_dash_particle_color(par))
+    end
   end
 end
 
