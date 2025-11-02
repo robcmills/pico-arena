@@ -864,8 +864,8 @@ function _update60()
   g.frame+=1
   g.now=get_time()
   update_tests_pre()
-  update_entities()
   update_players()
+  update_entities()
   update_lines()
 end
 
