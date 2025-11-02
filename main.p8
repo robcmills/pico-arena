@@ -88,6 +88,7 @@ tests={{
   end,
   update_post=function()
     if g.now>test.move_time+g.settings.player_dash_velocity+g.settings.player_velocity+g.settings.player_fall_into_void_anim_time+g.settings.player_spawn_duration+frame_duration_60 then
+      assertTrue(g.p1.score==-1,"player 1 score is -1")
       return true -- test finished
     end
   end,
@@ -837,6 +838,7 @@ function update_void_fall(p)
   if p.void_fall_start~=nil and g.now-p.void_fall_start>=g.settings.player_fall_into_void_anim_time then
     -- respawn
     p.void_fall_start=nil
+    p.score-=1
     spawn_player(p)
   end
 end
@@ -1085,24 +1087,29 @@ function format_time(t)
   return tostr(m<10 and "0" or "")..tostr(m)..":"..tostr(s<10 and "0" or "")..tostr(s)
 end
 
+function draw_score_hud(p)
+  local score_pad=tostr((p.score>=0 and p.score<10) and "0" or "")..tostr(p.score)
+  local score_hud="\#"..int_to_p8hex(p.c).."\f7"..score_pad
+  local xoffset=p.id==1 and -22 or 14
+  if p.id==1 and p.score<-9 then xoffset-=4 end
+  print(score_hud,g.screen_size/2+xoffset,2)
+end
+
+function draw_scores_hud()
+  draw_score_hud(g.p1)
+  draw_score_hud(g.p2)
+end
+
 function draw_hud()
   -- names
   print("player 1",1,2,g.p1.c)
   local p2hud_w=print("player 2",0,-16)
   print("player 2",g.screen_size-p2hud_w-1,2,g.p2.c)
-  -- hp
   draw_hp(g.p1)
   draw_hp(g.p2)
-  -- energy
   draw_energy_hud(g.p1)
   draw_energy_hud(g.p2)
-  -- scores
-  local p1_score_pad=tostr(g.p1.score<10 and "0" or "")..tostr(g.p1.score)
-  local p1_score_hud="\#"..int_to_p8hex(g.p1.c).."\f7"..p1_score_pad
-  print(p1_score_hud,g.screen_size/2-22,2)
-  local p2_score_pad=tostr(g.p2.score<10 and "0" or "")..tostr(g.p2.score)
-  local p2_score_hud="\#"..int_to_p8hex(g.p2.c).."\f7"..p2_score_pad
-  print(p2_score_hud,g.screen_size/2+14,2)
+  draw_scores_hud()
   -- game clock
   print(format_time(g.now),g.screen_size/2-10,2)
 end
