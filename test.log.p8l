@@ -1,0 +1,7 @@
+
+line beats dash
+  both players dash towards each other
+  o player 1 hp not full
+  o player 2 hp not full
+  o player 1 pushed back horizontally one tile from collision
+  o player 2 pushed back horizontally one tile from collision

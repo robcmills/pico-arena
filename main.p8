@@ -89,8 +89,8 @@ tests={{
     if g.now>test.dash_time+g.settings.player_dash_velocity*2+g.settings.player_velocity+frame_duration_60 then
       assertTrue(g.p1.hp<g.settings.player_max_hp,"player 1 hp not full")
       assertTrue(g.p2.hp<g.settings.player_max_hp,"player 2 hp not full")
-      assertTrue(g.p1.tile_x==5,"player 1 pushed back horizontally one tile from collision")
-      assertTrue(g.p2.tile_x==7,"player 2 pushed back horizontally one tile from collision")
+      assertTrue(g.p1.tile_x==3,"player 1 pushed back horizontally one tile from collision")
+      assertTrue(g.p2.tile_x==6,"player 2 pushed back horizontally one tile from collision")
       return true -- test finished
     end
   end,
@@ -389,6 +389,18 @@ function player_dash_collision(player)
   elseif player.z==-90 then target.y-=1 end
   -- check if other player is occupying adjacent tile
   if target.x==other_player.tile_x and target.y==other_player.tile_y then
+    -- if collision detected, cancel dash
+    cancel_movement(player)
+    -- check for dash vs dash collision
+    if is_dashing(other_player) and other_player.z==get_opposite_direction(player.z) then
+      dmg_player(player,g.settings.dash_damage)
+      if player.hp>0 then
+        push_player(player,other_player.z)
+      elseif #player.explode_particles==0 then
+        explode_player(player,other_player.z)
+        other_player.score+=1
+      end
+    end
     -- damage collider
     dmg_player(other_player,g.settings.dash_damage)
     if other_player.hp>0 then
@@ -402,6 +414,7 @@ function player_dash_collision(player)
   -- check entity collisions
   local collider=raycast({x=player.tile_x,y=player.tile_y},player.z,true)
   if collider.x==target.x and collider.y==target.y then
+    cancel_movement(player)
     return true
   end
   return false
@@ -731,10 +744,7 @@ function update_player_movement(p)
 
   -- if we are dashing, do collision check
   if p.velocity==g.settings.player_dash_velocity then
-    if player_dash_collision(p) then
-      -- if collision detected, cancel dash
-      cancel_movement(p)
-    elseif interpolation==1 then
+    if not player_dash_collision(p) and interpolation==1 then
       -- if no collision then continue dashing
       dash_player(p,p.z,true)
     end
