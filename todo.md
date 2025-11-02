@@ -28,11 +28,10 @@
 - [x] Add blocking (energy shield)
   - [x] drain energy while shielding
   - [x] reflect line shots
-- [ ] rock, paper, scissor mechanic
+- [x] rock, paper, scissor mechanic
     - shield beats laser
     - dash beats shield
     - laser beats dash
-- [ ] Add "fall" into void tiles
 - [x] Namespace all game state globals (game.x)
 - [ ] Refactor naming (longer, more explicit, more scalable)
 - [x] Prevent fragged player from colliding
@@ -40,10 +39,12 @@
 - [ ] Add fancy animations for:
   - [x] player spawn
   - [ ] energy pickup
-- [ ] Enable choosing player color
 - [x] Add frag counts to HUD
+- [ ] Add splash screen
+- [ ] Add menu screen to choose game type, arena, player color, etc.
+- [ ] Enable choosing player color
 - [ ] Add game clock
-- [ ] Add energy (in progress)
+- [x] Add energy
   - [x] Implement energy respawn (timer)
 - [ ] Add more map tile types
   - [ ] destructible walls

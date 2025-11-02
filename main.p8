@@ -340,8 +340,8 @@ function init_game(game_type, arena)
 end
 
 function _init()
-  --init_game("versus", arenas.test1)
-  init_tests()
+  init_game("versus", arenas.test1)
+  --init_tests()
 end
 
 -- move player in direction z until they collide with something
