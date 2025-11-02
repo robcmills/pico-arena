@@ -9,7 +9,7 @@
 - [ ] find missing frame 2
 - [ ] Fix line
   - [x] fix line end point not aligning with player
-  - [ ] line collision should cancel player movement|dash
+  - [x] line collision should cancel player movement|dash
 - [ ] taking damage
   - [ ] prevent player from firing
   - [ ] prevent player from dashing
@@ -23,7 +23,7 @@
   - [ ] change dash trail color
   - [x] drain energy when dashing
   - [ ] handle dash vs dash collision (cancel)
-  - [ ] cancel dash if hit with line weapon
+  - [x] cancel dash if hit with line weapon
   - [ ] enable adjacent dash
 - [ ] Add blocking (energy shield)
   - [ ] drain energy while shielding

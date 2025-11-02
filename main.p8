@@ -66,7 +66,7 @@ tests={{
   init=function()
     logt("line beats dash")
     test.p1_fire_time=0
-    test.p2_dash_time=0
+    test.dash_time=0
     init_game("versus", arenas.test1)
   end,
   update_pre=function()
@@ -77,21 +77,20 @@ tests={{
       g.p1.spawn_particles={}
       g.p2.spawn_particles={}
       set_player_pos(g.p1,2,4,0)
-      set_player_pos(g.p2,4,4,0)
+      set_player_pos(g.p2,6,4,180)
     elseif g.frame==2 then
-      update_player_input(g.p2,input.p2_right|input.p2_o)
-      test.p2_dash_time=g.now
-      logt("  player 2 dashes right")
-    elseif g.now>=test.p2_dash_time+g.settings.player_dash_velocity and test.p1_fire_time==0 then
-      test.p1_fire_time=g.now
-      update_player_input(g.p1,input.p1_x)
-      logt("  player 1 fires")
+      update_player_input(g.p1,input.p1_right|input.p1_o)
+      update_player_input(g.p2,input.p2_left|input.p2_o)
+      test.dash_time=g.now
+      logt("  both players dash towards each other")
     end
   end,
   update_post=function()
-    if g.now>test.p2_dash_time+g.settings.player_dash_velocity+g.settings.player_velocity+frame_duration_60 then
+    if g.now>test.dash_time+g.settings.player_dash_velocity*2+g.settings.player_velocity+frame_duration_60 then
+      assertTrue(g.p1.hp<g.settings.player_max_hp,"player 1 hp not full")
       assertTrue(g.p2.hp<g.settings.player_max_hp,"player 2 hp not full")
-      assertTrue(g.p2.tile_x==6,"player 2 pushed horizontally only one tile")
+      assertTrue(g.p1.tile_x==5,"player 1 pushed back horizontally one tile from collision")
+      assertTrue(g.p2.tile_x==7,"player 2 pushed back horizontally one tile from collision")
       return true -- test finished
     end
   end,
@@ -376,19 +375,19 @@ function dash_player(player,z,is_continue)
   -- TODO: play dash sound
 end
 
--- check if player dash is still colliding
+-- check for collisions mid-dash
 -- necessary to enable continued dashing if collider moved out of the way
--- returns true if collider is still occupying adjacent tile
+-- returns true if collision detected
 -- returns false if path is clear to continue dashing
 function player_dash_collision(player)
   local other_player=player.id==1 and g.p2 or g.p1
-  local target={x=player.to_x,y=player.to_y}
+  local target={x=player.tile_x,y=player.tile_y}
   -- get adjacent tile
   if player.z==0 then target.x+=1
   elseif player.z==180 then target.x-=1
   elseif player.z==90 then target.y+=1
   elseif player.z==-90 then target.y-=1 end
-  -- check if other player is still occupying adjacent tile
+  -- check if other player is occupying adjacent tile
   if target.x==other_player.tile_x and target.y==other_player.tile_y then
     -- damage collider
     dmg_player(other_player,g.settings.dash_damage)
@@ -400,7 +399,7 @@ function player_dash_collision(player)
     end
     return true
   end
-  -- check if collider is still occupying adjacent tile
+  -- check entity collisions
   local collider=raycast({x=player.tile_x,y=player.tile_y},player.z,true)
   if collider.x==target.x and collider.y==target.y then
     return true
@@ -695,6 +694,17 @@ function update_entities()
   update_player_entity_collisions(g.p2)
 end
 
+function cancel_movement(p)
+  p.last_move_time=nil
+  p.pixel_x=tile_to_pixel(p.tile_x,"x")
+  p.pixel_y=tile_to_pixel(p.tile_y,"y")
+  p.from_x=nil
+  p.from_y=nil
+  p.to_x=nil
+  p.to_y=nil
+  p.velocity=0
+end
+
 function update_player_movement(p)
   if p.last_move_time==nil then return end
 
@@ -719,20 +729,23 @@ function update_player_movement(p)
   p.tile_x=flr((p.pixel_x+g.tile_size/2-g.arena.sx)/g.tile_size)
   p.tile_y=flr((p.pixel_y+g.tile_size/2-g.arena.sy)/g.tile_size)
 
+  -- if we are dashing, do collision check
+  if p.velocity==g.settings.player_dash_velocity then
+    if player_dash_collision(p) then
+      -- if collision detected, cancel dash
+      cancel_movement(p)
+    elseif interpolation==1 then
+      -- if no collision then continue dashing
+      dash_player(p,p.z,true)
+    end
+    return
+  end
+
   -- are we done moving?
   if interpolation==1 then
-    -- if we are ending a dash, do collision check
-    if p.velocity==g.settings.player_dash_velocity then
-      if not player_dash_collision(p) then
-        -- if no collision (e.g. other player moved out of the way)
-        -- then continue dashing
-        dash_player(p,p.z,true)
-        return
-      end
-    end
     p.last_move_time=nil
-    p.pixel_x=p.to_x*g.tile_size+g.arena.sx
-    p.pixel_y=p.to_y*g.tile_size+g.arena.sy
+    p.pixel_x=tile_to_pixel(p.to_x,"x")
+    p.pixel_y=tile_to_pixel(p.to_y,"y")
     p.from_x=nil
     p.from_y=nil
     p.to_x=nil
