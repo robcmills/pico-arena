@@ -823,8 +823,8 @@ function get_btn_input()
 end
 
 function update_player(p)
-  update_player_movement(p)
   update_player_input(p,get_btn_input())
+  update_player_movement(p)
   update_player_particles(p)
 end
 
