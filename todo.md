@@ -32,6 +32,9 @@
     - shield beats laser
     - dash beats shield
     - laser beats dash
+- [ ] fall into void
+  - [ ] subtract from player score (enable negative score)
+  - [ ] insulate falling player (no damage, no shield, no movement, etc.)
 - [x] Namespace all game state globals (game.x)
 - [ ] Refactor naming (longer, more explicit, more scalable)
 - [x] Prevent fragged player from colliding

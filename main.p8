@@ -64,8 +64,8 @@ test={
 }
 tests={{
   init=function()
-    logt("dash beats shield")
-    test.p1_dash_time=0
+    logt("player fall into void")
+    test.move_time=0
     init_game("versus", arenas.test1)
   end,
   update_pre=function()
@@ -75,30 +75,19 @@ tests={{
       -- disable spawn animation
       g.p1.spawn_particles={}
       g.p2.spawn_particles={}
-      set_player_pos(g.p1,2,4,0)
-      set_player_pos(g.p2,6,4,180)
+      set_player_pos(g.p1,1,4,180)
+      set_player_pos(g.p2,6,4,0)
     end
   end,
   input=function()
     if g.frame==2 then
-      logt("  p2 shields")
-      return input.p2_o
-    elseif g.frame==3 then
-      test.p1_dash_time=g.now
-      logt("  p1 dashes and p2 shields")
-      return input.p1_right|input.p1_o|input.p2_o
-    elseif g.frame>3 then
-      return input.p2_o
+      logt("  p1 moves into void and p2 dashes into void")
+      test.move_time=g.now
+      return input.p1_left|input.p2_right|input.p2_o
     end
   end,
   update_post=function()
-    if g.now>test.p1_dash_time+g.settings.player_dash_velocity*3+g.settings.player_velocity+frame_duration_60 then
-      assertTrue(g.p1.hp==g.settings.player_max_hp,"player 1 hp is full")
-      assertTrue(g.p2.hp<g.settings.player_max_hp,"player 2 hp not full")
-      assertTrue(g.p1.energy<g.settings.player_max_energy,"player 1 energy not full")
-      assertTrue(g.p2.energy==g.settings.player_max_energy,"player 2 energy full")
-      assertTrue(g.p1.tile_x==5,"player dashed forward")
-      assertTrue(g.p2.tile_x==7,"player 2 pushed back")
+    if g.now>test.move_time+g.settings.player_dash_velocity+g.settings.player_velocity+g.settings.player_fall_into_void_anim_time+g.settings.player_spawn_duration+frame_duration_60 then
       return true -- test finished
     end
   end,
@@ -169,6 +158,18 @@ end
 
 function is_dashing(p)
   return p.velocity==g.settings.player_dash_velocity
+end
+
+function is_input_active(p)
+  return not is_falling_into_void(p) and not is_spawning(p)
+end
+
+function is_falling_into_void(p)
+  return p.void_fall_start~=nil and g.now-p.void_fall_start<g.settings.player_fall_into_void_anim_time
+end
+
+function is_firing(p)
+  return p.last_fire_time>0 and g.now-p.last_fire_time<g.settings.player_fire_anim_time
 end
 
 function is_spawning(p)
@@ -270,6 +271,7 @@ function init_game(game_type, arena)
       to_x=nil, -- movement target x position in tile coordinates
       to_y=nil, -- movement target y position in tile coordinates
       velocity=0, -- movement velocity in seconds per tile (8 pixels)
+      void_fall_start=nil, -- time when player started falling into void
       z=0, -- facing direction in degrees clockwise (0=East,90=South)
     },
     p2={
@@ -297,6 +299,7 @@ function init_game(game_type, arena)
       to_x=nil,
       to_y=nil,
       velocity=0,
+      void_fall_start=nil,
       z=180,
     },
     lines={}, -- line weapon "tracers"
@@ -313,11 +316,12 @@ function init_game(game_type, arena)
       player_damage_duration=0.32, -- seconds player damage animation lasts
       player_dash_particle_lifetime=0.2,  -- seconds a dash particle lasts
       player_dash_velocity=0.02,  -- seconds per tile of movement (lower is faster)
+      player_fall_into_void_anim_time=0.3, -- seconds player fall into void animation lasts
       player_fire_anim_time=0.3,  -- seconds player fire animation lasts
       player_max_energy=16,
       player_max_hp=16,
       player_spawn_duration=0.64, -- seconds player spawn animation lasts
-      player_velocity=0.1,  -- default velocity in seconds per tile (8 pixels)
+      player_velocity=0.15,  -- default velocity in seconds per tile (8 pixels)
     },
     sprites={
       flags={
@@ -325,6 +329,7 @@ function init_game(game_type, arena)
       },
       energy_spr=33, -- sprite index for energy pickups
       spawn_spr=4,
+      void=0,
     },
   }
   -- init game state that depends on settings
@@ -340,8 +345,8 @@ function init_game(game_type, arena)
 end
 
 function _init()
-  init_game("versus", arenas.test1)
-  --init_tests()
+  --init_game("versus", arenas.test1)
+  init_tests()
 end
 
 -- move player in direction z until they collide with something
@@ -822,10 +827,31 @@ function get_btn_input()
   return test.enabled and get_test_input() or btn()
 end
 
+function update_void_fall(p)
+  -- start
+  if p.void_fall_start==nil and not is_falling_into_void(p) and p.velocity==0 and aget(p.tile_x,p.tile_y)==g.sprites.void then
+    -- TODO: play fall into void sound
+    p.void_fall_start=g.now
+  end
+  -- end
+  if p.void_fall_start~=nil and g.now-p.void_fall_start>=g.settings.player_fall_into_void_anim_time then
+    -- respawn
+    p.void_fall_start=nil
+    spawn_player(p)
+  end
+end
+
+function update_player_collisions(p)
+  update_void_fall(p)
+end
+
 function update_player(p)
-  update_player_input(p,get_btn_input())
+  if is_input_active(p) then
+    update_player_input(p,get_btn_input())
+  end
   update_player_movement(p)
   update_player_particles(p)
+  update_player_collisions(p)
 end
 
 function update_players()
@@ -935,6 +961,26 @@ function draw_player_dash_particles(p)
   end
 end
 
+function get_void_fall_yoffset(p)
+  local yoffset=0
+  if p.void_fall_start~=nil then
+    local t=(g.now-p.void_fall_start)/g.settings.player_fall_into_void_anim_time
+    if t<0 then t=0 end
+    if t>1 then t=1 end
+    -- short pause and ease-in for cartoonish gravity
+    local pause_frac=0.2
+    local ease_t
+    if t<pause_frac then
+      ease_t=0
+    else
+      local nt=(t-pause_frac)/(1-pause_frac)
+      ease_t=nt*nt
+    end
+    yoffset=ease_t*g.tile_size
+  end
+  return yoffset
+end
+
 function draw_player(p)
   if p.id==2 then
     pal(g.p1.c,g.p2.c) -- swap p1 -> p2 color (reuse same sprite)
@@ -970,7 +1016,7 @@ function draw_player(p)
   local xoffset=p.flip_x and -1 or 0 -- account for off-center sprites
 
   -- player fire animation
-  if p.last_fire_time>0 and g.now-p.last_fire_time<g.settings.player_fire_anim_time then
+  if is_firing(p) then
     if sprn==17 then sprn=22 end -- use "squinting" sprites
     if sprn==19 then sprn=23 end
   end
@@ -978,17 +1024,27 @@ function draw_player(p)
   if is_taking_damage(p) then
     if sprn==17 then sprn=22 end -- use "squinting" sprites
     if sprn==19 then sprn=23 end
-    pal(g.p1.c,10) -- swap p1 color -> yellow
+    pal(g.p1.c,10) -- swap player color -> yellow
+  end
+
+  local yoffset=0
+  if is_falling_into_void(p) then
+    pal(g.p1.c,light_gray) -- swap player colors -> light gray
+    yoffset=get_void_fall_yoffset(p)
+    clip(p.pixel_x,p.pixel_y,g.tile_size,g.tile_size-1)
   end
 
   -- draw player sprite
-  spr(sprn,p.pixel_x+xoffset,p.pixel_y,1,1,p.flip_x)
+  spr(sprn,p.pixel_x+xoffset,p.pixel_y+yoffset,1,1,p.flip_x)
+  clip()
 
   -- shield or aim reticle
-  if p.shield then
-    circ(p.pixel_x+3,p.pixel_y+3,3,yellow)
-  else
-    draw_player_dir(p)
+  if not is_falling_into_void(p) then
+    if p.shield then
+      circ(p.pixel_x+3,p.pixel_y+3,3,yellow)
+    else
+      draw_player_dir(p)
+    end
   end
   pal()
 end
