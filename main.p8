@@ -64,10 +64,23 @@ test={
 }
 tests={{
   init=function()
-    logt("line beats dash")
+    logt("shield beats line")
     test.p1_fire_time=0
-    test.dash_time=0
+    test.shield_time=0
     init_game("versus", arenas.test1)
+  end,
+  input=function()
+    if g.frame==2 then
+      test.shield_time=g.now
+      logt("  p2 shields")
+      return input.p2_o
+    elseif g.frame==3 then
+      test.p1_fire_time=g.now
+      logt("  p1 fires and p2 shields")
+      return input.p1_x|input.p2_o
+    elseif g.frame>3 then
+      return input.p2_o
+    end
   end,
   update_pre=function()
     if g.frame==1 then
@@ -78,19 +91,16 @@ tests={{
       g.p2.spawn_particles={}
       set_player_pos(g.p1,2,4,0)
       set_player_pos(g.p2,6,4,180)
-    elseif g.frame==2 then
-      update_player_input(g.p1,input.p1_right|input.p1_o)
-      update_player_input(g.p2,input.p2_left|input.p2_o)
-      test.dash_time=g.now
-      logt("  both players dash towards each other")
     end
   end,
   update_post=function()
-    if g.now>test.dash_time+g.settings.player_dash_velocity*2+g.settings.player_velocity+frame_duration_60 then
+    if g.now>test.p1_fire_time+g.settings.player_velocity+frame_duration_60 then
       assertTrue(g.p1.hp<g.settings.player_max_hp,"player 1 hp not full")
-      assertTrue(g.p2.hp<g.settings.player_max_hp,"player 2 hp not full")
-      assertTrue(g.p1.tile_x==3,"player 1 pushed back horizontally one tile from collision")
-      assertTrue(g.p2.tile_x==6,"player 2 pushed back horizontally one tile from collision")
+      assertTrue(g.p2.hp==g.settings.player_max_hp,"player 2 hp is full")
+      assertTrue(g.p1.energy<g.settings.player_max_energy,"player 1 energy not full")
+      assertTrue(g.p2.energy<g.settings.player_max_energy,"player 2 energy not full")
+      assertTrue(g.p1.tile_x==1,"player 1 pushed back")
+      assertTrue(g.p2.tile_x==6,"player 2 not pushed back")
       return true -- test finished
     end
   end,
@@ -102,6 +112,9 @@ function init_tests()
   test.enabled=true
   test.start_time=time()
   tests[test.index].init()
+end
+function get_test_input()
+  return tests[test.index].input()
 end
 function update_tests_pre()
   if not test.enabled then return end
@@ -552,6 +565,20 @@ function raycast(from_tile,dir,intersect_void)
   return {type='offscreen',x=target.x,y=target.y}
 end
 
+-- player "collider" is hit by player "shooter" with line weapon in given direction "z"
+function player_line_collision(collider,shooter,z)
+  dmg_player(collider,g.settings.line_dmg)
+  if collider.hp>0 then
+    if is_dashing(collider) then
+      collider.dash_particles={}
+    end
+    collider_pushed=push_player(collider,z)
+  elseif #collider.explode_particles==0 then
+    explode_player(collider,z)
+    shooter.score+=1
+  end
+end
+
 function fire_line(p)
   if p.energy<=0 then
     -- TODO: play empty energy sound
@@ -565,15 +592,11 @@ function fire_line(p)
   local t=collider -- target tile
 
   if collider.type=='player' then
-    dmg_player(collider.p,g.settings.line_dmg)
-    if collider.p.hp>0 then
-      if is_dashing(collider.p) then
-        collider.p.dash_particles={}
-      end
-      collider_pushed=push_player(collider.p,p.z)
-    elseif #collider.p.explode_particles==0 then
-      explode_player(collider.p,p.z)
-      p.score+=1
+    if collider.p.shield then
+      player_line_collision(p,collider.p,get_opposite_direction(p.z))
+      collider.p.energy-=1
+    else
+      player_line_collision(collider.p,p,p.z)
     end
   end
 
@@ -802,9 +825,13 @@ function update_player_input(p,btn_bits)
   end
 end
 
+function get_btn_input()
+  return test.enabled and get_test_input() or btn()
+end
+
 function update_player(p)
   update_player_movement(p)
-  update_player_input(p,btn())
+  update_player_input(p,get_btn_input())
   update_player_particles(p)
 end
 
