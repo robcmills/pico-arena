@@ -65,29 +65,34 @@ test={
 tests={{
   init=function()
     logt("player fall into void")
+    test.fire_time=0
     test.move_time=0
     init_game("versus", arenas.test1)
   end,
   update_pre=function()
     if g.frame==1 then
       -- enable firing immediately
-      g.p1.last_fire_time=-g.settings.line_delay
+      g.p2.last_fire_time=-g.settings.line_delay
       -- disable spawn animation
       g.p1.spawn_particles={}
       g.p2.spawn_particles={}
       set_player_pos(g.p1,1,4,180)
-      set_player_pos(g.p2,6,4,0)
+      set_player_pos(g.p2,6,4,180)
     end
   end,
   input=function()
-    if g.frame==2 then
-      logt("  p1 moves into void and p2 dashes into void")
+    if g.frame==2 and test.move_time==0 then
+      logt("  p1 moves into void")
       test.move_time=g.now
-      return input.p1_left|input.p2_right|input.p2_o
+      return input.p1_left
+    elseif g.now>test.move_time+g.settings.player_velocity/2 and test.fire_time==0 then
+      logt("  p2 fires")
+      test.fire_time=g.now
+      return input.p2_x
     end
   end,
   update_post=function()
-    if g.now>test.move_time+g.settings.player_dash_velocity+g.settings.player_velocity+g.settings.player_fall_into_void_anim_time+g.settings.player_spawn_duration+frame_duration_60 then
+    if g.now>test.fire_time+g.settings.player_velocity+g.settings.player_fall_into_void_anim_time+g.settings.player_spawn_duration+frame_duration_60 then
       assertTrue(g.p1.score==-1,"player 1 score is -1")
       return true -- test finished
     end
@@ -847,9 +852,9 @@ function update_player_collisions(p)
   update_void_fall(p)
 end
 
-function update_player(p)
+function update_player(p,input)
   if is_input_active(p) then
-    update_player_input(p,get_btn_input())
+    update_player_input(p,input)
   end
   update_player_movement(p)
   update_player_particles(p)
@@ -857,8 +862,9 @@ function update_player(p)
 end
 
 function update_players()
-  update_player(g.p1)
-  update_player(g.p2)
+  local input=get_btn_input()
+  update_player(g.p1,input)
+  update_player(g.p2,input)
 end
 
 function update_lines()
