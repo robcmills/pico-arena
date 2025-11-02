@@ -7,7 +7,7 @@
 - [x] Refactor movement
 - [x] Add "tests"
 - [ ] find missing frame 2
-- [ ] Fix line
+- [x] Fix line
   - [x] fix line end point not aligning with player
   - [x] line collision should cancel player movement|dash
 - [ ] taking damage
@@ -20,9 +20,9 @@
   - [x] dmg collider and push back
   - [ ] dash player collisions should push back 1 tile or more? into void?
   - [x] add particle trail
-  - [ ] change dash trail color
+  - [x] change dash trail color
   - [x] drain energy when dashing
-  - [ ] handle dash vs dash collision (cancel)
+  - [x] handle dash vs dash collision (cancel)
   - [x] cancel dash if hit with line weapon
   - [ ] enable adjacent dash
 - [ ] Add blocking (energy shield)
