@@ -64,7 +64,7 @@ test={
 }
 tests={{
   init=function()
-    logt("player fall into void")
+    logt("shoot player just after fall into void")
     test.fire_time=0
     test.move_time=0
     init_game("versus", arenas.test1)
@@ -85,15 +85,16 @@ tests={{
       logt("  p1 moves into void")
       test.move_time=g.now
       return input.p1_left
-    elseif g.now>test.move_time+g.settings.player_velocity/2 and test.fire_time==0 then
+    elseif g.now>test.move_time+g.settings.player_velocity and test.fire_time==0 then
       logt("  p2 fires")
       test.fire_time=g.now
       return input.p2_x
     end
   end,
   update_post=function()
-    if g.now>test.fire_time+g.settings.player_velocity+g.settings.player_fall_into_void_anim_time+g.settings.player_spawn_duration+frame_duration_60 then
-      assertTrue(g.p1.score==-1,"player 1 score is -1")
+    if g.now>test.fire_time+g.settings.player_velocity+frame_duration_60*3 then
+      assertTrue(g.p1.tile_x==0,"player 1 was not pushed by line")
+      assertTrue(g.p1.hp==g.settings.player_max_hp,"player 1 was not damaged by line")
       return true -- test finished
     end
   end,
@@ -160,6 +161,10 @@ function init_arena()
   g.arena.sx=flr((g.screen_size-g.tile_size*g.arena.celw)/2)
   g.arena.sy=flr((g.screen_size-g.tile_size*g.arena.celh)/2)
   init_entities()
+end
+
+function is_active(p)
+  return p.hp>0 and not is_falling_into_void(p) and not is_spawning(p)
 end
 
 function is_dashing(p)
@@ -561,7 +566,7 @@ function raycast(from_tile,dir,intersect_void)
     end
     -- check for player
     for p in all({g.p1,g.p2}) do
-      if p.tile_x==target.x and p.tile_y==target.y and p.hp>0 then
+      if p.tile_x==target.x and p.tile_y==target.y and is_active(p) then
         return {type='player',p=p,x=target.x,y=target.y}
       end
     end
