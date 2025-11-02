@@ -25,9 +25,9 @@
   - [x] handle dash vs dash collision (cancel)
   - [x] cancel dash if hit with line weapon
   - [ ] enable adjacent dash
-- [ ] Add blocking (energy shield)
-  - [ ] drain energy while shielding
-  - [ ] reflect line shots
+- [x] Add blocking (energy shield)
+  - [x] drain energy while shielding
+  - [x] reflect line shots
 - [ ] rock, paper, scissor mechanic
     - shield beats laser
     - dash beats shield

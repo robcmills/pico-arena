@@ -64,23 +64,9 @@ test={
 }
 tests={{
   init=function()
-    logt("shield beats line")
-    test.p1_fire_time=0
-    test.shield_time=0
+    logt("dash beats shield")
+    test.p1_dash_time=0
     init_game("versus", arenas.test1)
-  end,
-  input=function()
-    if g.frame==2 then
-      test.shield_time=g.now
-      logt("  p2 shields")
-      return input.p2_o
-    elseif g.frame==3 then
-      test.p1_fire_time=g.now
-      logt("  p1 fires and p2 shields")
-      return input.p1_x|input.p2_o
-    elseif g.frame>3 then
-      return input.p2_o
-    end
   end,
   update_pre=function()
     if g.frame==1 then
@@ -93,14 +79,26 @@ tests={{
       set_player_pos(g.p2,6,4,180)
     end
   end,
+  input=function()
+    if g.frame==2 then
+      logt("  p2 shields")
+      return input.p2_o
+    elseif g.frame==3 then
+      test.p1_dash_time=g.now
+      logt("  p1 dashes and p2 shields")
+      return input.p1_right|input.p1_o|input.p2_o
+    elseif g.frame>3 then
+      return input.p2_o
+    end
+  end,
   update_post=function()
-    if g.now>test.p1_fire_time+g.settings.player_velocity+frame_duration_60 then
-      assertTrue(g.p1.hp<g.settings.player_max_hp,"player 1 hp not full")
-      assertTrue(g.p2.hp==g.settings.player_max_hp,"player 2 hp is full")
+    if g.now>test.p1_dash_time+g.settings.player_dash_velocity*3+g.settings.player_velocity+frame_duration_60 then
+      assertTrue(g.p1.hp==g.settings.player_max_hp,"player 1 hp is full")
+      assertTrue(g.p2.hp<g.settings.player_max_hp,"player 2 hp not full")
       assertTrue(g.p1.energy<g.settings.player_max_energy,"player 1 energy not full")
-      assertTrue(g.p2.energy<g.settings.player_max_energy,"player 2 energy not full")
-      assertTrue(g.p1.tile_x==1,"player 1 pushed back")
-      assertTrue(g.p2.tile_x==6,"player 2 not pushed back")
+      assertTrue(g.p2.energy==g.settings.player_max_energy,"player 2 energy full")
+      assertTrue(g.p1.tile_x==5,"player dashed forward")
+      assertTrue(g.p2.tile_x==7,"player 2 pushed back")
       return true -- test finished
     end
   end,
@@ -476,11 +474,6 @@ function set_player_pos(player,x,y,z)
   player.flip_x=z==180
 end
 
-function shield_player(player)
-  if player.energy<=0 then return end
-  player.shield=true
-end
-
 function dmg_player(p, dmg)
   p.hp-=dmg
   p.last_dmg_time=g.now
@@ -795,7 +788,7 @@ function update_player_x(p,x_pressed)
 end
 
 function update_player_o(p,o_pressed)
-  p.shield=o_pressed and p.velocity==0 and p.energy>0 and not is_spawning(p)
+  p.shield=o_pressed and p.velocity==0 and p.energy>0 and not is_spawning(p) and not is_taking_damage(p)
 end
 
 -- @param p player state
