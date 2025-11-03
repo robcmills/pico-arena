@@ -64,7 +64,8 @@ test={
 }
 tests={{
   init=function()
-    logt("shoot player just after fall into void")
+    logt("falling player input is ignored")
+    test.fall_time=0
     test.fire_time=0
     test.move_time=0
     init_game("versus", arenas.test1)
@@ -85,16 +86,15 @@ tests={{
       logt("  p1 moves into void")
       test.move_time=g.now
       return input.p1_left
-    elseif g.now>test.move_time+g.settings.player_velocity and test.fire_time==0 then
-      logt("  p2 fires")
+    elseif g.now>test.move_time+g.settings.player_velocity+frame_duration_60 and test.fire_time==0 then
+      logt("  p1 fires")
       test.fire_time=g.now
-      return input.p2_x
+      return input.p1_x
     end
   end,
   update_post=function()
-    if g.now>test.fire_time+g.settings.player_velocity+frame_duration_60*3 then
-      assertTrue(g.p1.tile_x==0,"player 1 was not pushed by line")
-      assertTrue(g.p1.hp==g.settings.player_max_hp,"player 1 was not damaged by line")
+    if g.now>test.fire_time+g.settings.player_velocity+frame_duration_60*2 then
+      assertTrue(g.p1.energy==g.settings.player_max_energy,"player 1 input ignored")
       return true -- test finished
     end
   end,

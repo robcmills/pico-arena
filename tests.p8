@@ -9,8 +9,43 @@ frame_duration_60=1/60
 input={}
 g={}
 test={}
-
 tests={{
+  init=function()
+    logt("falling player input is ignored")
+    test.fall_time=0
+    test.fire_time=0
+    test.move_time=0
+    init_game("versus", arenas.test1)
+  end,
+  update_pre=function()
+    if g.frame==1 then
+      -- enable firing immediately
+      g.p2.last_fire_time=-g.settings.line_delay
+      -- disable spawn animation
+      g.p1.spawn_particles={}
+      g.p2.spawn_particles={}
+      set_player_pos(g.p1,1,4,180)
+      set_player_pos(g.p2,6,4,180)
+    end
+  end,
+  input=function()
+    if g.frame==2 and test.move_time==0 then
+      logt("  p1 moves into void")
+      test.move_time=g.now
+      return input.p1_left
+    elseif g.now>test.move_time+g.settings.player_velocity+frame_duration_60 and test.fire_time==0 then
+      logt("  p1 fires")
+      test.fire_time=g.now
+      return input.p1_x
+    end
+  end,
+  update_post=function()
+    if g.now>test.fire_time+g.settings.player_velocity+frame_duration_60*2 then
+      assertTrue(g.p1.energy==g.settings.player_max_energy,"player 1 input ignored")
+      return true -- test finished
+    end
+  end,
+},{
   init=function()
     logt("shoot player just before fall into void")
     test.fire_time=0
