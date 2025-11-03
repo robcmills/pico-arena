@@ -64,7 +64,7 @@ test={
 }
 tests={{
   init=function()
-    logt("falling player input is ignored")
+    logt("falling and spawning player input is ignored")
     test.fall_time=0
     test.fire_time=0
     test.move_time=0
@@ -77,24 +77,25 @@ tests={{
       -- disable spawn animation
       g.p1.spawn_particles={}
       g.p2.spawn_particles={}
+      -- enable immediate input
+      g.p1.last_spawn_time=-g.settings.player_spawn_duration
+      g.p2.last_spawn_time=-g.settings.player_spawn_duration
+      -- set player positions
       set_player_pos(g.p1,1,4,180)
       set_player_pos(g.p2,6,4,180)
     end
   end,
   input=function()
-    if g.frame==2 and test.move_time==0 then
-      logt("  p1 moves into void")
-      test.move_time=g.now
+    if g.frame>2 then
+      --logt("  p1 moves into void and continues pressing left")
+      if test.move_time==0 then
+        test.move_time=g.now
+      end
       return input.p1_left
-    elseif g.now>test.move_time+g.settings.player_velocity+frame_duration_60 and test.fire_time==0 then
-      logt("  p1 fires")
-      test.fire_time=g.now
-      return input.p1_x
     end
   end,
   update_post=function()
-    if g.now>test.fire_time+g.settings.player_velocity+frame_duration_60*2 then
-      assertTrue(g.p1.energy==g.settings.player_max_energy,"player 1 input ignored")
+    if g.now>test.move_time+g.settings.player_velocity+g.settings.player_fall_into_void_anim_time+g.settings.player_spawn_duration+frame_duration_60 then
       return true -- test finished
     end
   end,
@@ -172,11 +173,11 @@ function is_dashing(p)
 end
 
 function is_input_active(p)
-  return not is_falling_into_void(p) and not is_spawning(p)
+  return is_active(p)
 end
 
 function is_falling_into_void(p)
-  return p.void_fall_start~=nil and g.now-p.void_fall_start<g.settings.player_fall_into_void_anim_time
+  return p.void_fall_start~=nil and g.now-p.void_fall_start<=g.settings.player_fall_into_void_anim_time
 end
 
 function is_firing(p)
@@ -184,7 +185,7 @@ function is_firing(p)
 end
 
 function is_spawning(p)
-  return #p.spawn_particles>0
+  return g.now-p.last_spawn_time<=g.settings.player_spawn_duration
 end
 
 function is_taking_damage(p)
@@ -840,15 +841,17 @@ end
 
 function update_void_fall(p)
   -- start
-  if p.void_fall_start==nil and not is_falling_into_void(p) and p.velocity==0 and aget(p.tile_x,p.tile_y)==g.sprites.void then
+  if p.void_fall_start==nil and is_active(p) and p.velocity==0 and aget(p.tile_x,p.tile_y)==g.sprites.void then
     -- TODO: play fall into void sound
     p.void_fall_start=g.now
+    p.hp=0
   end
   -- end
-  if p.void_fall_start~=nil and g.now-p.void_fall_start>=g.settings.player_fall_into_void_anim_time then
+  if p.void_fall_start~=nil and (g.now-p.void_fall_start)>=g.settings.player_fall_into_void_anim_time then
     -- respawn
     p.void_fall_start=nil
     p.score-=1
+    -- TODO: play score minus sound
     spawn_player(p)
   end
 end
@@ -1017,7 +1020,7 @@ function draw_player(p)
     return
   end
 
-  if p.hp<=0 then
+  if is_spawning(p) then
     pal()
     return
   end

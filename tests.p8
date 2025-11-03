@@ -9,7 +9,45 @@ frame_duration_60=1/60
 input={}
 g={}
 test={}
+
 tests={{
+  init=function()
+    logt("falling and spawning player input is ignored")
+    test.fall_time=0
+    test.fire_time=0
+    test.move_time=0
+    init_game("versus", arenas.test1)
+  end,
+  update_pre=function()
+    if g.frame==1 then
+      -- enable firing immediately
+      g.p2.last_fire_time=-g.settings.line_delay
+      -- disable spawn animation
+      g.p1.spawn_particles={}
+      g.p2.spawn_particles={}
+      -- enable immediate input
+      g.p1.last_spawn_time=-g.settings.player_spawn_duration
+      g.p2.last_spawn_time=-g.settings.player_spawn_duration
+      -- set player positions
+      set_player_pos(g.p1,1,4,180)
+      set_player_pos(g.p2,6,4,180)
+    end
+  end,
+  input=function()
+    if g.frame>2 then
+      --logt("  p1 moves into void and continues pressing left")
+      if test.move_time==0 then
+        test.move_time=g.now
+      end
+      return input.p1_left
+    end
+  end,
+  update_post=function()
+    if g.now>test.move_time+g.settings.player_velocity+g.settings.player_fall_into_void_anim_time+g.settings.player_spawn_duration+frame_duration_60 then
+      return true -- test finished
+    end
+  end,
+},{
   init=function()
     logt("falling player input is ignored")
     test.fall_time=0

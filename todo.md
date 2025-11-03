@@ -34,7 +34,7 @@
     - laser beats dash
 - [ ] fall into void
   - [x] subtract from player score (enable negative score)
-  - [ ] insulate falling player (no damage, no shield, no movement, etc.)
+  - [x] insulate falling player (no damage, no shield, no movement, etc.)
 - [x] Namespace all game state globals (game.x)
 - [ ] Refactor naming (longer, more explicit, more scalable)
 - [x] Prevent fragged player from colliding
@@ -43,6 +43,12 @@
   - [x] player spawn
   - [ ] energy pickup
 - [x] Add frag counts to HUD
+- [ ] set_score function
+  - [ ] play score sounds
+  - [ ] play score animations
+- [ ] set_player_hp function
+  - [ ] play hp sounds
+  - [ ] hp transition animations
 - [ ] Add splash screen
 - [ ] Add menu screen to choose game type, arena, player color, etc.
 - [ ] Enable choosing player color
