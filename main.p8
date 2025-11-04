@@ -337,7 +337,7 @@ function init_game(game_type, arena)
       player_fall_into_void_anim_time=0.3, -- seconds player fall into void animation lasts
       player_fire_anim_time=0.3,  -- seconds player fire animation lasts
       player_max_energy=16,
-      player_max_hp=16,
+      player_max_hp=8,
       player_spawn_duration=0.64, -- seconds player spawn animation lasts
       player_velocity=0.15,  -- default velocity in seconds per tile (8 pixels)
     },
@@ -363,7 +363,7 @@ function init_game(game_type, arena)
 end
 
 function _init()
-  init_game("versus", arenas.arena2)
+  init_game("versus", arenas.arena1)
   --init_tests()
 end
 
@@ -935,9 +935,9 @@ function draw_energy_entity(e)
   -- if a player is "on top" of the energy pickup it will be obscured,
   -- so draw it in hud instead (so player can see respawn timing)
   if g.p1.tile_x==e.x and g.p1.tile_y==e.y then
-    draw_energy_sprite(e,1,14)
+    draw_energy_sprite(e,128/2-16,8)
   elseif g.p2.tile_x==e.x and g.p2.tile_y==e.y then
-    draw_energy_sprite(e,128-8,14)
+    draw_energy_sprite(e,128/2+8,8)
   else
     local x=e.x*g.tile_size+g.arena.sx
     local y=e.y*g.tile_size+g.arena.sy
@@ -1071,16 +1071,42 @@ function draw_player(p)
   pal()
 end
 
-function draw_hp(p)
-  local x=p.id==1 and 1 or 128/2+13
-  rect(x,9,x+g.settings.player_max_hp*3,10,1) -- background
-  if p.hp>0 then rect(x,9,x+p.hp*3,10,p.c) end -- hp
+function draw_hp_hud(p)
+  local seg_w=5 -- segment width
+  local gap=1
+  local total_w=g.settings.player_max_hp*(seg_w+gap)-gap*2
+  local x=p.id==1 and 1 or 128-total_w-3
+  -- background
+  for i=0,g.settings.player_max_hp-1 do
+    local sx=x+i*(seg_w+gap)
+    rect(sx,9,sx+seg_w-1,10,dark_blue)
+  end
+  -- player hp
+  for i=0,p.hp-1 do
+    local sx=x+i*(seg_w+gap)
+    rect(sx,9,sx+seg_w-1,10,p.c)
+  end
 end
 
 function draw_energy_hud(p)
-  local x=p.id==1 and 1 or 128/2+13
-  rect(x,12,x+g.settings.player_max_energy*3,13,dark_gray) -- background
-  if p.energy>0 then rect(x,12,x+p.energy*3,13,yellow) end -- energy
+  local seg_h=1 -- segment height
+  local seg_w=2 -- segment width
+  local gap=1
+  local total_w=g.settings.player_max_energy*(seg_w+gap)-gap*2
+  local x=p.id==1 and 1 or 128-total_w-3
+  local y=12
+  -- background
+  for i=0,g.settings.player_max_energy-1 do
+    local sx=x+i*(seg_w+gap)
+    rect(sx,y,sx+seg_w-1,y+seg_h,dark_gray)
+  end
+  -- player energy
+  for i=0,p.energy-1 do
+    local sx=x+i*(seg_w+gap)
+    rect(sx,y,sx+seg_w-1,y+seg_h,yellow)
+  end
+  --rect(x,12,x+g.settings.player_max_energy*3,13,dark_gray) -- background
+  --if p.energy>0 then rect(x,12,x+p.energy*3,13,yellow) end -- energy
 end
 
 function draw_lines()
@@ -1110,7 +1136,7 @@ end
 function draw_score_hud(p)
   local score_pad=tostr((p.score>=0 and p.score<10) and "0" or "")..tostr(p.score)
   local score_hud="\#"..int_to_p8hex(p.c).."\f7"..score_pad
-  local xoffset=p.id==1 and -22 or 14
+  local xoffset=p.id==1 and -24 or 16
   if p.id==1 and p.score<-9 then xoffset-=4 end
   print(score_hud,g.screen_size/2+xoffset,2)
 end
@@ -1125,8 +1151,8 @@ function draw_hud()
   print("player 1",1,2,g.p1.c)
   local p2hud_w=print("player 2",0,-16)
   print("player 2",g.screen_size-p2hud_w-1,2,g.p2.c)
-  draw_hp(g.p1)
-  draw_hp(g.p2)
+  draw_hp_hud(g.p1)
+  draw_hp_hud(g.p2)
   draw_energy_hud(g.p1)
   draw_energy_hud(g.p2)
   draw_scores_hud()

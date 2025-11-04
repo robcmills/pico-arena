@@ -29,9 +29,11 @@
 - [x] Prevent fragged player from colliding
 - [x] Respawn fragged player
 - [x] Add frag counts to HUD
+- [x] segment hp and energy bars
 
 
 - [ ] handle line and shield mid-movement
+- [ ] disable fire when shielding
 - [ ] add "reset_player" function
   - [ ] reset energy
 - [ ] set_score function
@@ -88,6 +90,7 @@
 
 ## Polish
 
+- [ ] add slowdown to player explode particles
 - [ ] find missing frame 2
 - [ ] Refactor naming (longer, more explicit, more scalable)
 - [ ] Add fancy animations for:
