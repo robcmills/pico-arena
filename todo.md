@@ -1,30 +1,20 @@
 # Bugs
 
-
 # TODO
 
 - [x] Use _update60
 - [x] Refactor movement
 - [x] Add "tests"
-- [ ] find missing frame 2
 - [x] Fix line
   - [x] fix line end point not aligning with player
   - [x] line collision should cancel player movement|dash
-- [ ] taking damage
-  - [ ] prevent player from firing
-  - [ ] prevent player from dashing
-  - [ ] prevent player from moving
-  - [ ] prevent player from taking additional damage
-- [ ] Prevent fire when taking damage (duel mechanic:first to draw gains advantage)
-- [ ] Add "dash" move
+- [x] Add "dash" move
   - [x] dmg collider and push back
-  - [ ] dash player collisions should push back 1 tile or more? into void?
   - [x] add particle trail
   - [x] change dash trail color
   - [x] drain energy when dashing
   - [x] handle dash vs dash collision (cancel)
   - [x] cancel dash if hit with line weapon
-  - [ ] enable adjacent dash
 - [x] Add blocking (energy shield)
   - [x] drain energy while shielding
   - [x] reflect line shots
@@ -32,17 +22,18 @@
     - shield beats laser
     - dash beats shield
     - laser beats dash
-- [ ] fall into void
+- [x] fall into void
   - [x] subtract from player score (enable negative score)
   - [x] insulate falling player (no damage, no shield, no movement, etc.)
 - [x] Namespace all game state globals (game.x)
-- [ ] Refactor naming (longer, more explicit, more scalable)
 - [x] Prevent fragged player from colliding
 - [x] Respawn fragged player
-- [ ] Add fancy animations for:
-  - [x] player spawn
-  - [ ] energy pickup
 - [x] Add frag counts to HUD
+
+
+- [ ] handle line and shield mid-movement
+- [ ] add "reset_player" function
+  - [ ] reset energy
 - [ ] set_score function
   - [ ] play score sounds
   - [ ] play score animations
@@ -93,5 +84,25 @@
   - [ ] bleachers with audience/crowd/spectators/fans
 - [ ] Add arena validation
   - [ ] ensure at least two spawn points
-- [ ] Add two types of spawn tiles, initial and regular
 - [x] Make players face each other on first spawn
+
+## Polish
+
+- [ ] find missing frame 2
+- [ ] Refactor naming (longer, more explicit, more scalable)
+- [ ] Add fancy animations for:
+  - [x] player spawn
+  - [ ] energy pickup
+
+
+## Maybe
+
+- [ ] Add two types of spawn tiles, initial and regular
+- [ ] taking damage
+  - [ ] prevent player from firing
+  - [ ] prevent player from dashing
+  - [ ] prevent player from moving
+  - [ ] prevent player from taking additional damage
+- [ ] Prevent fire when taking damage (duel mechanic:first to draw gains advantage)
+- [ ] enable adjacent dash
+- [ ] dash player collisions should push back 1 tile or more? into void?

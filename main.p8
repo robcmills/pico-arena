@@ -46,6 +46,12 @@ arenas={
     celh=10,
     celw=10,
   },
+  arena2={
+    celx=10,
+    cely=0,
+    celh=12,
+    celw=16,
+  },
   test1={
     celx=119,
     cely=55,
@@ -357,8 +363,8 @@ function init_game(game_type, arena)
 end
 
 function _init()
-  --init_game("versus", arenas.test1)
-  init_tests()
+  init_game("versus", arenas.arena2)
+  --init_tests()
 end
 
 -- move player in direction z until they collide with something
