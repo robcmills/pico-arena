@@ -76,12 +76,13 @@ test={
 }
 tests={{
   init=function()
-    logt("line does no damage if collider is already taking damage")
+    logt("settings.enable_void_suicide=false")
     test.fall_time=0
     test.fire_time=0
     test.move_time=0
     test.shield_frame=0
     init_game("versus", arenas.test1)
+    g.settings.enable_void_suicide=false
   end,
   update_pre=function()
     if g.frame==1 then
@@ -95,28 +96,21 @@ tests={{
       g.p1.last_spawn_time=-g.settings.player_spawn_duration
       g.p2.last_spawn_time=-g.settings.player_spawn_duration
       -- set player positions
-      set_player_pos(g.p1,2,4,0)
-      set_player_pos(g.p2,5,4,180)
+      set_player_pos(g.p1,2,4,180)
+      set_player_pos(g.p2,6,4,180)
     end
   end,
   input=function()
-    -- p1 presses x every frame
-    if g.frame>1 then
-      if test.fire_time==0 then
-        test.fire_time=g.now
-      end
-      -- after taking damage once p2 holds o to shield
-      if g.frame>2 then
-        return input.p2_o|input.p1_x
-      end
-      return input.p1_x
+    -- p1 tries to moves into void
+    if g.frame==2 then
+      test.move_time=g.now
+      logt("player 1 tries to dash into void")
+      return input.p1_left|input.p1_o
     end
   end,
   update_post=function()
-    if test.fire_time>0 and g.now>test.fire_time+g.settings.player_velocity*3 then
-      assertTrue(g.p1.hp==g.settings.player_max_hp-g.settings.line_dmg,"player 1 took one line damage")
-      assertTrue(g.p2.hp==g.settings.player_max_hp-g.settings.line_dmg,"player 2 took one line damage")
-      assertTrue(g.p2.tile_x==6,"player 2 pushed horizontally only one tile")
+    if g.now>test.move_time+g.settings.player_velocity then
+      assertTrue(g.p1.tile_x==1,"player 1 did not move into void")
       return true -- test finished
     end
   end,
@@ -211,6 +205,10 @@ end
 
 function is_taking_damage(p)
   return p.last_dmg_time>0 and g.now-p.last_dmg_time<g.settings.player_damage_duration
+end
+
+function is_void(spr)
+  return spr==g.sprites.void
 end
 
 function spawn_player(p)
@@ -340,6 +338,7 @@ function init_game(game_type, arena)
     tile_size=8,
     settings={
       dash_damage=1,
+      enable_void_suicide=false,
       energy_pickup_amount=8,  -- amount of energy per energy pickup
       energy_respawn_time=15,  -- seconds until energy respawns
       line_delay=0.2,  -- seconds between weapon fires
@@ -378,7 +377,7 @@ function init_game(game_type, arena)
 end
 
 function _init()
-  --init_game("versus", arenas.arena2)
+  --init_game("versus", arenas.arena3)
   init_tests()
 end
 
@@ -470,7 +469,8 @@ function player_dash_collision(player)
 end
 
 -- move player in direction z one tile
-function move_player(player,z)
+function move_player(player,z,is_push)
+  is_push=is_push==nil and false or is_push
   -- Update player flip state and z dir
   if z==0 then player.flip_x=false end
   if z==180 then player.flip_x=true end
@@ -481,10 +481,15 @@ function move_player(player,z)
   local to_x=player.tile_x+dx
   local to_y=player.tile_y+dy
   -- check for collisions that would prevent movement
-  -- solid tiles
   local to_spr=aget(to_x,to_y) -- target arena sprite
+  -- solid tiles
   if fget(to_spr,g.sprites.is_solid) then
     -- TODO: play solid bump sound
+    return false
+  end
+  -- void
+  if not is_push and not g.settings.enable_void_suicide and is_void(to_spr) then
+    -- TODO: play void bump sound
     return false
   end
   -- other player collisions
@@ -521,7 +526,7 @@ function push_player(p,dir)
   -- prevent changing player direction
   local prev_flip_x=p.flip_x
   local prev_z=p.z
-  move_player(p,dir)
+  move_player(p,dir,true)
   p.flip_x=prev_flip_x
   p.z=prev_z
   -- return true if moved

@@ -31,9 +31,9 @@
 - [x] Add frag counts to HUD
 - [x] segment hp and energy bars
 
-- [ ] enable shield mid-movement
+- [x] enable shield mid-movement
+- [x] disable move into void (suicide)
 - [ ] increase dash pushback
-- [ ] disable move into void (suicide)
 - [ ] enable dash cancel (into shield or movement)
 - [ ] enable player movement push
 - [ ] add shield attack (pulse)

@@ -1,5 +1,8 @@
 
-line does no damage if collider is already taking damage
-  o player 1 took one line damage
-  o player 2 took one line damage
-  o player 2 pushed horizontally only one tile
+settings.enable_void_suicide=false
+player 1 tries to dash into void
+  o player 1 did not move into void
+
+settings.enable_void_suicide=false
+player 1 tries to dash into void
+  o player 1 did not move into void

@@ -12,6 +12,126 @@ test={}
 
 tests={{
   init=function()
+    logt("settings.enable_void_suicide=false")
+    test.fall_time=0
+    test.fire_time=0
+    test.move_time=0
+    test.shield_frame=0
+    init_game("versus", arenas.test1)
+    g.settings.enable_void_suicide=false
+  end,
+  update_pre=function()
+    if g.frame==1 then
+      -- enable firing immediately
+      g.p1.last_fire_time=-g.settings.line_delay
+      g.p2.last_fire_time=-g.settings.line_delay
+      -- disable spawn animation
+      g.p1.spawn_particles={}
+      g.p2.spawn_particles={}
+      -- enable immediate input
+      g.p1.last_spawn_time=-g.settings.player_spawn_duration
+      g.p2.last_spawn_time=-g.settings.player_spawn_duration
+      -- set player positions
+      set_player_pos(g.p1,2,4,180)
+      set_player_pos(g.p2,6,4,180)
+    end
+  end,
+  input=function()
+    -- p1 tries to moves into void
+    if g.frame==2 then
+      test.move_time=g.now
+      logt("player 1 tries to dash into void")
+      return input.p1_left|input.p1_o
+    end
+  end,
+  update_post=function()
+    if g.now>test.move_time+g.settings.player_velocity then
+      assertTrue(g.p1.tile_x==1,"player 1 did not move into void")
+      return true -- test finished
+    end
+  end,
+},{
+  init=function()
+    logt("settings.enable_void_suicide=false")
+    test.fall_time=0
+    test.fire_time=0
+    test.move_time=0
+    test.shield_frame=0
+    init_game("versus", arenas.test1)
+    g.settings.enable_void_suicide=false
+  end,
+  update_pre=function()
+    if g.frame==1 then
+      -- enable firing immediately
+      g.p1.last_fire_time=-g.settings.line_delay
+      g.p2.last_fire_time=-g.settings.line_delay
+      -- disable spawn animation
+      g.p1.spawn_particles={}
+      g.p2.spawn_particles={}
+      -- enable immediate input
+      g.p1.last_spawn_time=-g.settings.player_spawn_duration
+      g.p2.last_spawn_time=-g.settings.player_spawn_duration
+      -- set player positions
+      set_player_pos(g.p1,1,4,180)
+      set_player_pos(g.p2,5,4,180)
+    end
+  end,
+  input=function()
+    -- p1 tries to moves into void
+    if g.frame==2 then
+      test.fire_time=g.now
+      logt("player 2 shoots p1 into void")
+      return input.p2_x
+    end
+  end,
+  update_post=function()
+    if g.now>test.fire_time+g.settings.player_velocity then
+      assertTrue(g.p1.hp==0,"player 1 hp is zero (falling into void)")
+      return true -- test finished
+    end
+  end,
+},{
+  init=function()
+    logt("settings.enable_void_suicide=false")
+    test.fall_time=0
+    test.fire_time=0
+    test.move_time=0
+    test.shield_frame=0
+    init_game("versus", arenas.test1)
+    g.settings.enable_void_suicide=false
+  end,
+  update_pre=function()
+    if g.frame==1 then
+      -- enable firing immediately
+      g.p1.last_fire_time=-g.settings.line_delay
+      g.p2.last_fire_time=-g.settings.line_delay
+      -- disable spawn animation
+      g.p1.spawn_particles={}
+      g.p2.spawn_particles={}
+      -- enable immediate input
+      g.p1.last_spawn_time=-g.settings.player_spawn_duration
+      g.p2.last_spawn_time=-g.settings.player_spawn_duration
+      -- set player positions
+      set_player_pos(g.p1,1,4,180)
+      set_player_pos(g.p2,5,4,180)
+    end
+  end,
+  input=function()
+    -- p1 tries to moves into void
+    if g.frame==1 then
+      test.move_time=g.now
+      logt("player 1 tried to move into void")
+      return input.p1_left
+    end
+  end,
+  update_post=function()
+    if g.now>test.move_time+g.settings.player_velocity then
+      assertTrue(g.p1.tile_x==1,"player 1 did not move into void")
+      return true -- test finished
+    end
+  end,
+},{
+  init=function()
     logt("line does no damage if collider is already taking damage")
     test.fall_time=0
     test.fire_time=0
