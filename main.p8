@@ -76,15 +76,17 @@ test={
 }
 tests={{
   init=function()
-    logt("falling and spawning player input is ignored")
+    logt("mid-movement line and shield")
     test.fall_time=0
     test.fire_time=0
     test.move_time=0
+    test.shield_frame=0
     init_game("versus", arenas.test1)
   end,
   update_pre=function()
     if g.frame==1 then
       -- enable firing immediately
+      g.p1.last_fire_time=-g.settings.line_delay
       g.p2.last_fire_time=-g.settings.line_delay
       -- disable spawn animation
       g.p1.spawn_particles={}
@@ -93,21 +95,31 @@ tests={{
       g.p1.last_spawn_time=-g.settings.player_spawn_duration
       g.p2.last_spawn_time=-g.settings.player_spawn_duration
       -- set player positions
-      set_player_pos(g.p1,1,4,180)
+      set_player_pos(g.p1,2,4,0)
       set_player_pos(g.p2,6,4,180)
     end
   end,
   input=function()
-    if g.frame>2 then
-      --logt("  p1 moves into void and continues pressing left")
-      if test.move_time==0 then
-        test.move_time=g.now
+    if g.frame==2 then
+      logt("  p2 moves left")
+      test.move_time=g.now
+      return input.p2_left
+    elseif g.now>test.move_time+g.settings.player_velocity/2 then
+      -- p2 shields mid-movement
+      if test.shield_frame==0 then
+        test.shield_frame=g.frame
+      elseif g.frame==test.shield_frame+1 then
+        logt("  p1 fires while p2 is still mid-movement but shielded")
+        test.fire_time=g.now
+        return input.p1_x|input.p2_o
       end
-      return input.p1_left
+      return input.p2_o
     end
   end,
   update_post=function()
-    if g.now>test.move_time+g.settings.player_velocity+g.settings.player_fall_into_void_anim_time+g.settings.player_spawn_duration+frame_duration_60 then
+    if g.now>test.fire_time+g.settings.player_velocity then
+      assertTrue(g.p1.hp<g.settings.player_max_hp,"player 1 hp not full")
+      assertTrue(g.p2.hp==g.settings.player_max_hp,"player 2 hp full")
       return true -- test finished
     end
   end,
@@ -817,7 +829,7 @@ function update_player_x(p,x_pressed)
 end
 
 function update_player_o(p,o_pressed)
-  p.shield=o_pressed and p.velocity==0 and p.energy>0 and not is_spawning(p) and not is_taking_damage(p)
+  p.shield=o_pressed and p.energy>0 and not is_spawning(p) and not is_dashing(p) and not is_taking_damage(p)
 end
 
 -- @param p player state
