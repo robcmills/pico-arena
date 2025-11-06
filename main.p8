@@ -76,7 +76,7 @@ test={
 }
 tests={{
   init=function()
-    logt("mid-movement line and shield")
+    logt("line does no damage if collider is already taking damage")
     test.fall_time=0
     test.fire_time=0
     test.move_time=0
@@ -96,30 +96,27 @@ tests={{
       g.p2.last_spawn_time=-g.settings.player_spawn_duration
       -- set player positions
       set_player_pos(g.p1,2,4,0)
-      set_player_pos(g.p2,6,4,180)
+      set_player_pos(g.p2,5,4,180)
     end
   end,
   input=function()
-    if g.frame==2 then
-      logt("  p2 moves left")
-      test.move_time=g.now
-      return input.p2_left
-    elseif g.now>test.move_time+g.settings.player_velocity/2 then
-      -- p2 shields mid-movement
-      if test.shield_frame==0 then
-        test.shield_frame=g.frame
-      elseif g.frame==test.shield_frame+1 then
-        logt("  p1 fires while p2 is still mid-movement but shielded")
+    -- p1 presses x every frame
+    if g.frame>1 then
+      if test.fire_time==0 then
         test.fire_time=g.now
-        return input.p1_x|input.p2_o
       end
-      return input.p2_o
+      -- after taking damage once p2 holds o to shield
+      if g.frame>2 then
+        return input.p2_o|input.p1_x
+      end
+      return input.p1_x
     end
   end,
   update_post=function()
-    if g.now>test.fire_time+g.settings.player_velocity then
-      assertTrue(g.p1.hp<g.settings.player_max_hp,"player 1 hp not full")
-      assertTrue(g.p2.hp==g.settings.player_max_hp,"player 2 hp full")
+    if test.fire_time>0 and g.now>test.fire_time+g.settings.player_velocity*3 then
+      assertTrue(g.p1.hp==g.settings.player_max_hp-g.settings.line_dmg,"player 1 took one line damage")
+      assertTrue(g.p2.hp==g.settings.player_max_hp-g.settings.line_dmg,"player 2 took one line damage")
+      assertTrue(g.p2.tile_x==6,"player 2 pushed horizontally only one tile")
       return true -- test finished
     end
   end,
@@ -629,7 +626,7 @@ function fire_line(p)
     if collider.p.shield then
       player_line_collision(p,collider.p,get_opposite_direction(p.z))
       collider.p.energy-=1
-    else
+    elseif not is_taking_damage(collider.p) then
       player_line_collision(collider.p,p,p.z)
     end
   end

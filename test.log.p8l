@@ -1,6 +1,5 @@
 
-mid-movement line and shield
-  p2 moves left
-  p1 fires while p2 is still mid-movement but shielded
-  o player 1 hp not full
-  o player 2 hp full
+line does no damage if collider is already taking damage
+  o player 1 took one line damage
+  o player 2 took one line damage
+  o player 2 pushed horizontally only one tile

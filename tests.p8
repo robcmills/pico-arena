@@ -12,6 +12,101 @@ test={}
 
 tests={{
   init=function()
+    logt("line does no damage if collider is already taking damage")
+    test.fall_time=0
+    test.fire_time=0
+    test.move_time=0
+    test.shield_frame=0
+    init_game("versus", arenas.test1)
+  end,
+  update_pre=function()
+    if g.frame==1 then
+      -- enable firing immediately
+      g.p1.last_fire_time=-g.settings.line_delay
+      g.p2.last_fire_time=-g.settings.line_delay
+      -- disable spawn animation
+      g.p1.spawn_particles={}
+      g.p2.spawn_particles={}
+      -- enable immediate input
+      g.p1.last_spawn_time=-g.settings.player_spawn_duration
+      g.p2.last_spawn_time=-g.settings.player_spawn_duration
+      -- set player positions
+      set_player_pos(g.p1,2,4,0)
+      set_player_pos(g.p2,5,4,180)
+    end
+  end,
+  input=function()
+    -- p1 presses x every frame
+    if g.frame>1 then
+      if test.fire_time==0 then
+        test.fire_time=g.now
+      end
+      -- after taking damage once p2 holds o to shield
+      if g.frame>2 then
+        return input.p2_o|input.p1_x
+      end
+      return input.p1_x
+    end
+  end,
+  update_post=function()
+    if test.fire_time>0 and g.now>test.fire_time+g.settings.player_velocity*3 then
+      assertTrue(g.p1.hp==g.settings.player_max_hp-g.settings.line_dmg,"player 1 took one line damage")
+      assertTrue(g.p2.hp==g.settings.player_max_hp-g.settings.line_dmg,"player 2 took one line damage")
+      assertTrue(g.p2.tile_x==6,"player 2 pushed horizontally only one tile")
+      return true -- test finished
+    end
+  end,
+},{
+  init=function()
+    logt("mid-movement line and shield")
+    test.fall_time=0
+    test.fire_time=0
+    test.move_time=0
+    test.shield_frame=0
+    init_game("versus", arenas.test1)
+  end,
+  update_pre=function()
+    if g.frame==1 then
+      -- enable firing immediately
+      g.p1.last_fire_time=-g.settings.line_delay
+      g.p2.last_fire_time=-g.settings.line_delay
+      -- disable spawn animation
+      g.p1.spawn_particles={}
+      g.p2.spawn_particles={}
+      -- enable immediate input
+      g.p1.last_spawn_time=-g.settings.player_spawn_duration
+      g.p2.last_spawn_time=-g.settings.player_spawn_duration
+      -- set player positions
+      set_player_pos(g.p1,2,4,0)
+      set_player_pos(g.p2,6,4,180)
+    end
+  end,
+  input=function()
+    if g.frame==2 then
+      logt("  p2 moves left")
+      test.move_time=g.now
+      return input.p2_left
+    elseif g.now>test.move_time+g.settings.player_velocity/2 then
+      -- p2 shields mid-movement
+      if test.shield_frame==0 then
+        test.shield_frame=g.frame
+      elseif g.frame==test.shield_frame+1 then
+        logt("  p1 fires while p2 is still mid-movement but shielded")
+        test.fire_time=g.now
+        return input.p1_x|input.p2_o
+      end
+      return input.p2_o
+    end
+  end,
+  update_post=function()
+    if g.now>test.fire_time+g.settings.player_velocity then
+      assertTrue(g.p1.hp<g.settings.player_max_hp,"player 1 hp not full")
+      assertTrue(g.p2.hp==g.settings.player_max_hp,"player 2 hp full")
+      return true -- test finished
+    end
+  end,
+},{
+  init=function()
     logt("falling and spawning player input is ignored")
     test.fall_time=0
     test.fire_time=0
