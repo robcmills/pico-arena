@@ -76,13 +76,13 @@ test={
 }
 tests={{
   init=function()
-    logt("settings.enable_void_suicide=false")
+    logt("settings.enable_void_suicide=true")
     test.fall_time=0
     test.fire_time=0
     test.move_time=0
     test.shield_frame=0
     init_game("versus", arenas.test1)
-    g.settings.enable_void_suicide=false
+    g.settings.enable_void_suicide=true
   end,
   update_pre=function()
     if g.frame==1 then
@@ -101,16 +101,15 @@ tests={{
     end
   end,
   input=function()
-    -- p1 tries to moves into void
     if g.frame==2 then
       test.move_time=g.now
-      logt("player 1 tries to dash into void")
+      logt("player 1 dashes into void")
       return input.p1_left|input.p1_o
     end
   end,
   update_post=function()
-    if g.now>test.move_time+g.settings.player_velocity then
-      assertTrue(g.p1.tile_x==1,"player 1 did not move into void")
+    if g.now>test.move_time+g.settings.player_dash_velocity+g.settings.player_fall_into_void_anim_time then
+      assertTrue(g.p1.hp==0,"player 1 dashed into void")
       return true -- test finished
     end
   end,
@@ -397,11 +396,13 @@ function dash_player(player,z,is_continue)
   end
   local collider=raycast({x=player.tile_x,y=player.tile_y},z,true)
   local target={x=collider.x,y=collider.y}
-  -- get adjacent tile
-  if z==0 then target.x-=1
-  elseif z==180 then target.x+=1
-  elseif z==90 then target.y-=1
-  elseif z==-90 then target.y+=1 end
+  if collider.type~='void' or (collider.type=='void' and not g.settings.enable_void_suicide) then
+    -- get adjacent tile
+    if z==0 then target.x-=1
+    elseif z==180 then target.x+=1
+    elseif z==90 then target.y-=1
+    elseif z==-90 then target.y+=1 end
+  end
   -- cannot dash if already adjacent to collider
   if target.x==player.tile_x and target.y==player.tile_y then return end
   -- dash is happening
@@ -803,7 +804,7 @@ function update_player_movement(p)
 
   -- if we are dashing, do collision check
   if p.velocity==g.settings.player_dash_velocity then
-    if not player_dash_collision(p) and interpolation==1 then
+    if interpolation==1 and not player_dash_collision(p) then
       -- if no collision then continue dashing
       dash_player(p,p.z,true)
     end
