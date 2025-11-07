@@ -1,6 +1,6 @@
 # Bugs
 
-# TODO
+# DONE
 
 - [x] Use _update60
 - [x] Refactor movement
@@ -30,23 +30,26 @@
 - [x] Respawn fragged player
 - [x] Add frag counts to HUD
 - [x] segment hp and energy bars
-
 - [x] enable shield mid-movement
 - [x] disable move into void (suicide)
+- [x] Make players face each other on first spawn
+
+# TODO
+
 - [ ] enable dash cancel (into shield or movement)
 - [ ] handle line mid-movement/dash
 - [x] disable shield while firing
 - [ ] increase dash pushback
 - [ ] enable player movement push
 - [ ] add shield attack (burst)
-  - [ ] assert that dash beats burst
-  - [ ] test burst vs burst
-  - [ ] test burst vs shield
+  - [x] test dash beats burst
+  - [x] test burst vs burst
+  - [x] test burst vs shield
 - [ ] add aiming (hold x to aim)
 
 - [ ] orange tiles explode
 - [ ] red tiles frag on contact
-- [ ] blue tiles freeze
+- [ ] ice tiles freeze
 
 - [ ] add "reset_player" function
   - [ ] reset energy
@@ -75,9 +78,9 @@
   - [ ] elevators
   - [ ] bridges
   - [ ] platforms
-  - [ ] lava
+  - [ ] lava (damages when occupied)
   - [ ] water (slows movement)
-  - [ ] ice
+  - [ ] ice (explodes and "freezes" players)
   - [ ] fire
   - [ ] shiny/reflective floors/walls
   - [ ] "alive" tiles with animations responsive to player movement
@@ -91,26 +94,33 @@
   - [ ] tetris
   - [ ] tron lightcycle
 - [ ] Add more maps
+- [ ] Add "overworld" map arena select
+  - [ ] forest (trees, bushes, water tiles, falling leaves)
+  - [ ] underground caves (lava tiles, falling rocks and lava flow) 
+  - [ ] mountain (wind and ice and avalanche)
+  - [ ] floating platforms in the clouds (rain and lightning)
+
 - [ ] Add splash start screen
 - [ ] Add more game types
   - [ ] single player
   - [ ] cooperative multiplayer
   - [ ] ctf
-- [ ] Add arena "backgrounds" ?
-  - [ ] bleachers with audience/crowd/spectators/fans
-- [ ] Add arena validation
-  - [ ] ensure at least two spawn points
-- [x] Make players face each other on first spawn
 
 ## Polish
 
+- [ ] tile art
+  - [ ] combine tiles and auto-"terrain"
+  - [ ] add fractal noise to voids
+- [ ] Add arena "backgrounds" ?
+  - [ ] bleachers with audience/crowd/spectators/fans
 - [ ] add slowdown to player explode particles
 - [ ] find missing frame 2
 - [ ] Refactor naming (longer, more explicit, more scalable)
 - [ ] Add fancy animations for:
   - [x] player spawn
   - [ ] energy pickup
-
+- [ ] Add arena validation
+  - [ ] ensure at least two spawn points
 
 ## Maybe
 

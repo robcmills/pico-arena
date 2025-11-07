@@ -77,7 +77,7 @@ test={
 
 tests={{
   init=function()
-    logt("burst vs burst")
+    logt("dash beats burst")
     test.fall_time=0
     test.fire_time=0
     test.move_time=0
@@ -99,25 +99,22 @@ tests={{
       g.p1.last_energy_loss_time=-g.settings.energy_loss_delay
       g.p2.last_energy_loss_time=-g.settings.energy_loss_delay
       -- set player positions
-      set_player_pos(g.p1,3,4,0)
-      set_player_pos(g.p2,4,5,180)
+      set_player_pos(g.p1,2,4,0)
+      set_player_pos(g.p2,6,4,180)
     end
   end,
   input=function()
     if g.frame==2 then
-      logt("player 1 and 2 burst")
+      logt("p1 bursts and p2 dashes")
       test.fire_time=g.now
-      return input.p1_x|input.p1_o|input.p2_o|input.p2_x
-    else
-      return input.p1_o|input.p2_o
+      return input.p1_o|input.p1_x|input.p2_o|input.p2_left
     end
   end,
   update_post=function()
     if g.now>test.fire_time+g.settings.burst_grow_duration+g.settings.burst_ring_duration+frame_duration_60 then
-      assertTrue(g.p1.tile_x==3,"p1 not pushed horizontally by burst")
-      assertTrue(g.p1.hp==g.settings.player_max_hp,"p1 did not lose hp")
-      assertTrue(g.p2.tile_x==4,"p2 not pushed horizontally by burst")
+      assertTrue(g.p1.hp==g.settings.player_max_hp-1,"p1 lost hp")
       assertTrue(g.p2.hp==g.settings.player_max_hp,"p2 did not lose hp")
+      assertTrue(g.p1.tile_x==1,"p1 pushed horizontally by dash")
       return true -- test finished
     end
   end,
@@ -403,8 +400,8 @@ function init_game(game_type, arena)
 end
 
 function _init()
-  init_game("versus", arenas.arena3)
-  --init_tests()
+  --init_game("versus", arenas.arena3)
+  init_tests()
 end
 
 -- move player in direction z until they collide with something
@@ -751,6 +748,10 @@ function can_lose_energy(p)
   return p.energy>0 and g.now-p.last_energy_loss_time>g.settings.energy_loss_delay
 end
 
+function cancel_burst(player,particle)
+  del(player.burst_particles,particle)
+end
+
 function update_burst_collisions(player,particle)
   -- player collision
   local other_player=player.id==1 and g.p2 or g.p1
@@ -763,6 +764,9 @@ function update_burst_collisions(player,particle)
       if can_lose_energy(other_player) then
         lose_energy(other_player,g.settings.burst_energy_loss)
       end
+    elseif is_dashing(other_player) then
+      -- dash beats burst
+      cancel_burst(player,particle)
     elseif not is_taking_damage(other_player) then
       player_line_collision(other_player,player,push_z)
     end
