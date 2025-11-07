@@ -105,13 +105,14 @@ tests={{
       test.fire_time=g.now
       return input.p1_x|input.p1_o
     elseif g.frame>2 then
-      -- p1 fires every frame after burst
-      return input.p1_x
+      -- p2 fires every frame after burst
+      return input.p2_x
     end
   end,
   update_post=function()
     if g.now>test.fire_time+g.settings.burst_grow_duration+g.settings.burst_ring_duration+frame_duration_60 then
-      assertTrue(g.p1.energy==g.settings.player_max_energy-2,"p1 spent two energy, one for burst and only one line after burst ended")
+      assertTrue(g.p2.hp==g.settings.player_max_hp-1,"p2 lost one hp, while p1 was bursting")
+      assertTrue(g.p1.hp==g.settings.player_max_hp-1,"p1 lost one hp, after bursting")
       return true -- test finished
     end
   end,
@@ -646,7 +647,8 @@ function fire_line(p)
   local t=collider -- target tile
 
   if collider.type=='player' then
-    if collider.p.shield then
+    -- if collider player is shielding or bursting then shooter is damaged
+    if collider.p.shield or is_bursting(collider.p) then
       player_line_collision(p,collider.p,get_opposite_direction(p.z))
       collider.p.energy-=1
     elseif not is_taking_damage(collider.p) then
