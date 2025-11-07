@@ -76,13 +76,12 @@ test={
 }
 tests={{
   init=function()
-    logt("settings.enable_void_suicide=true")
+    logt("shield burst attack")
     test.fall_time=0
     test.fire_time=0
     test.move_time=0
     test.shield_frame=0
     init_game("versus", arenas.test1)
-    g.settings.enable_void_suicide=true
   end,
   update_pre=function()
     if g.frame==1 then
@@ -96,20 +95,23 @@ tests={{
       g.p1.last_spawn_time=-g.settings.player_spawn_duration
       g.p2.last_spawn_time=-g.settings.player_spawn_duration
       -- set player positions
-      set_player_pos(g.p1,2,4,180)
+      set_player_pos(g.p1,2,4,0)
       set_player_pos(g.p2,6,4,180)
     end
   end,
   input=function()
     if g.frame==2 then
-      test.move_time=g.now
-      logt("player 1 dashes into void")
-      return input.p1_left|input.p1_o
+      logt("player 1 bursts")
+      test.fire_time=g.now
+      return input.p1_x|input.p1_o
+    elseif g.frame>2 then
+      -- p1 fires every frame after burst
+      return input.p1_x
     end
   end,
   update_post=function()
-    if g.now>test.move_time+g.settings.player_dash_velocity+g.settings.player_fall_into_void_anim_time then
-      assertTrue(g.p1.hp==0,"player 1 dashed into void")
+    if g.now>test.fire_time+g.settings.burst_grow_duration+g.settings.burst_ring_duration+frame_duration_60 then
+      assertTrue(g.p1.energy==g.settings.player_max_energy-2,"p1 spent two energy, one for burst and only one line after burst ended")
       return true -- test finished
     end
   end,
@@ -180,6 +182,10 @@ end
 
 function is_active(p)
   return p.hp>0 and not is_falling_into_void(p) and not is_spawning(p)
+end
+
+function is_bursting(p)
+  return p.last_burst_time>0 and g.now<p.last_burst_time+g.settings.burst_grow_duration
 end
 
 function is_dashing(p)
@@ -276,6 +282,7 @@ function init_game(game_type, arena)
     game_type=game_type,
     now=0,
     p1={
+      burst_particles={},
       c=blue, -- color
       dash_particles={},
       energy=0,
@@ -284,6 +291,7 @@ function init_game(game_type, arena)
       hp=0,
       id=1,
       flip_x=false,
+      last_burst_time=0,
       last_dmg_time=0,
       last_fire_time=0,
       last_move_bits=0,
@@ -305,6 +313,7 @@ function init_game(game_type, arena)
       z=0, -- facing direction in degrees clockwise (0=East,90=South)
     },
     p2={
+      burst_particles={},
       c=red,
       dash_particles={},
       energy=0,
@@ -313,6 +322,7 @@ function init_game(game_type, arena)
       hp=0,
       id=2,
       flip_x=true,
+      last_burst_time=0,
       last_dmg_time=0,
       last_fire_time=0,
       last_move_bits=0,
@@ -336,6 +346,12 @@ function init_game(game_type, arena)
     screen_size=128,
     tile_size=8,
     settings={
+      burst_color=yellow,
+      burst_delay=0.2,  -- seconds between burst fires
+      burst_grow_duration=0.2,  -- seconds burst radius grows
+      burst_ring_color=dark_gray,
+      burst_ring_duration=0.1,  -- seconds burst ring remains after growth
+      burst_radius=12,
       dash_damage=1,
       enable_void_suicide=false,
       energy_pickup_amount=8,  -- amount of energy per energy pickup
@@ -617,6 +633,7 @@ function player_line_collision(collider,shooter,z)
 end
 
 function fire_line(p)
+  p.last_fire_time=g.now
   if p.energy<=0 then
     -- TODO: play empty energy sound
     -- TODO: flash player energy bar light_gray
@@ -678,11 +695,60 @@ function fire_line(p)
   })
 
   if p.energy>0 then p.energy-=1 end
-  p.last_fire_time=g.now -- player fire animation
 end
 
 function fire_weapon(p)
   if p.w==1 then fire_line(p) end
+end
+
+function get_player_center(p)
+  return {x=p.pixel_x+3,y=p.pixel_y+3}
+end
+
+function get_burst_particle(p)
+  local center=get_player_center(p)
+  local particle = {
+    c=g.settings.burst_color,
+    end_time=g.now+g.settings.burst_grow_duration+g.settings.burst_ring_duration,
+    radius=3,
+    start_time=g.now,
+    x=center.x,
+    y=center.y,
+  }
+  particle.update=function()
+    -- interpolate radius based on time
+    local t=(g.now-particle.start_time)/g.settings.burst_grow_duration
+    if t<0 then t=0 end
+    if t>1 then t=1 end
+    local ease=1-(1-t)^3 -- ease out slowdown
+    particle.radius=3+ease*(g.settings.burst_radius-3)
+  end
+  return particle
+end
+
+function fire_burst(p)
+  if p.energy<=0 then
+    -- TODO: play empty energy sound
+    -- TODO: flash player energy bar light_gray
+    return
+  end
+  p.last_fire_time=g.now
+  p.last_burst_time=g.now
+  p.energy-=1
+  -- spawn burst particles
+  add(p.burst_particles,get_burst_particle(p))
+end
+
+function update_player_burst_particles(player)
+  if #player.burst_particles>0 then
+    for particle in all(player.burst_particles) do
+      if particle.end_time<g.now then
+        del(player.burst_particles,particle)
+      else
+        particle.update()
+      end
+    end
+  end
 end
 
 function update_player_spawn_particles(player)
@@ -741,6 +807,7 @@ function update_player_particles(player)
   update_player_spawn_particles(player)
   update_player_explode_particles(player)
   update_player_dash_particles(player)
+  update_player_burst_particles(player)
 end
 
 function update_player_entity_collisions(p)
@@ -824,6 +891,12 @@ function update_player_movement(p)
   end
 end
 
+function update_player_xo(p)
+  if g.now-p.last_fire_time>g.settings.burst_delay then
+    fire_burst(p)
+  end
+end
+
 function update_player_x(p,x_pressed)
   if x_pressed and g.now-p.last_fire_time>g.settings.line_delay and not is_spawning(p) then
     fire_weapon(p)
@@ -848,8 +921,12 @@ function update_player_input(p,btn_bits)
   local p_down=b&8~=0
   local p_x=b&16~=0
   local p_o=b&32~=0
-  update_player_x(p,p_x)
-  update_player_o(p,p_o)
+  if p_x and p_o then
+    update_player_xo(p)
+  else
+    update_player_x(p,p_x)
+    update_player_o(p,p_o)
+  end
   if p.last_move_time~=nil then return end
   if p_left and p_o then dash_player(p,180)
   elseif p_left then move_player(p,180)
@@ -1004,6 +1081,26 @@ function draw_player_dash_particles(p)
   end
 end
 
+function draw_player_burst_particles(player)
+  if #player.burst_particles==0 then return end
+  for p in all(player.burst_particles) do
+    if g.now<p.start_time+g.settings.burst_grow_duration then
+      circfill(p.x,p.y,p.radius,p.c)
+    end
+    if g.now<p.start_time+g.settings.burst_grow_duration+g.settings.burst_ring_duration then
+      local ring_color=g.now<p.start_time+g.settings.burst_grow_duration and p.c or g.settings.burst_ring_color
+      circ(p.x,p.y,p.radius,ring_color)
+    end
+  end
+end
+
+function draw_player_particles()
+  draw_player_dash_particles(g.p1)
+  draw_player_dash_particles(g.p2)
+  draw_player_burst_particles(g.p1)
+  draw_player_burst_particles(g.p2)
+end
+
 function get_void_fall_yoffset(p)
   local yoffset=0
   if p.void_fall_start~=nil then
@@ -1082,7 +1179,7 @@ function draw_player(p)
   clip()
 
   -- shield or aim reticle
-  if not is_falling_into_void(p) then
+  if not is_bursting(p) and not is_falling_into_void(p) then
     if p.shield then
       circ(p.pixel_x+3,p.pixel_y+3,3,yellow)
     else
@@ -1193,8 +1290,7 @@ function _draw()
   cls()
   draw_arena()
   draw_entities()
-  draw_player_dash_particles(g.p1)
-  draw_player_dash_particles(g.p2)
+  draw_player_particles()
   draw_player(g.p1)
   draw_player(g.p2)
   draw_lines()

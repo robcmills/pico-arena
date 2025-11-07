@@ -33,18 +33,18 @@
 
 - [x] enable shield mid-movement
 - [x] disable move into void (suicide)
-- [ ] increase dash pushback
 - [ ] enable dash cancel (into shield or movement)
+- [ ] handle line mid-movement/dash
+- [x] disable shield while firing
+- [ ] increase dash pushback
 - [ ] enable player movement push
-- [ ] add shield attack (pulse)
+- [ ] add shield attack (burst)
 - [ ] add aiming (hold x to aim)
 
 - [ ] orange tiles explode
 - [ ] red tiles frag on contact
 - [ ] blue tiles freeze
 
-- [ ] handle line and shield mid-movement
-- [ ] disable fire while shielding or disable shield while firing
 - [ ] add "reset_player" function
   - [ ] reset energy
 - [ ] set_score function
