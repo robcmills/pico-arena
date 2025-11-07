@@ -76,7 +76,7 @@ test={
 }
 tests={{
   init=function()
-    logt("shield burst attack")
+    logt("shield burst attack (pushback)")
     test.fall_time=0
     test.fire_time=0
     test.move_time=0
@@ -95,8 +95,8 @@ tests={{
       g.p1.last_spawn_time=-g.settings.player_spawn_duration
       g.p2.last_spawn_time=-g.settings.player_spawn_duration
       -- set player positions
-      set_player_pos(g.p1,2,4,0)
-      set_player_pos(g.p2,6,4,180)
+      set_player_pos(g.p1,3,4,0)
+      set_player_pos(g.p2,3,5,180)
     end
   end,
   input=function()
@@ -104,15 +104,12 @@ tests={{
       logt("player 1 bursts")
       test.fire_time=g.now
       return input.p1_x|input.p1_o
-    elseif g.frame>2 then
-      -- p2 fires every frame after burst
-      return input.p2_x
     end
   end,
   update_post=function()
     if g.now>test.fire_time+g.settings.burst_grow_duration+g.settings.burst_ring_duration+frame_duration_60 then
-      assertTrue(g.p2.hp==g.settings.player_max_hp-1,"p2 lost one hp, while p1 was bursting")
-      assertTrue(g.p1.hp==g.settings.player_max_hp-1,"p1 lost one hp, after bursting")
+      assertTrue(g.p2.tile_y==6,"p2 pushed vertically by burst")
+      assertTrue(g.p2.hp==g.settings.player_max_hp-1,"p2 lost one hp")
       return true -- test finished
     end
   end,
@@ -368,6 +365,7 @@ function init_game(game_type, arena)
       player_fire_anim_time=0.3,  -- seconds player fire animation lasts
       player_max_energy=16,
       player_max_hp=8,
+      player_radius=2,
       player_spawn_duration=0.64, -- seconds player spawn animation lasts
       player_velocity=0.15,  -- default velocity in seconds per tile (8 pixels)
     },
@@ -707,6 +705,52 @@ function get_player_center(p)
   return {x=p.pixel_x+3,y=p.pixel_y+3}
 end
 
+function get_distance(x1,y1,x2,y2)
+  local dx=x2-x1
+  local dy=y2-y1
+  return sqrt(dx*dx+dy*dy)
+end
+
+function get_burst_push_z(x1,y1,x2,y2,z)
+  local dx=x2-x1
+  local dy=y2-y1
+  -- cardinal directions
+  if abs(dx)>0 and dy==0 then
+    return dx>0 and 0 or 180
+  elseif dx==0 and abs(dy)>0 then
+    return dy>0 and 90 or -90
+  end
+  -- diagonals
+  if dx~=0 and dy~=0 then
+    z=((z+180)%360)-180 -- normalize to [-180,180)
+    local horizontal_bias=(abs(z)<=45 or abs(z)>=135)
+    if horizontal_bias then
+      return dx>0 and 0 or 180
+    else
+      return dy>0 and 90 or -90
+    end
+  end
+  return 0 -- points are the same
+end
+
+function update_burst_collisions(player,particle)
+  -- player collision
+  local other_player=player.id==1 and g.p2 or g.p1
+  local c=get_player_center(other_player)
+  local dist=get_distance(particle.x,particle.y,c.x,c.y)-g.settings.player_radius-1
+  if dist<=particle.radius then
+    local push_z=get_burst_push_z(particle.x,particle.y,c.x,c.y,other_player.z)
+    -- if other player is shielding or bursting
+    -- then they take no damage but are still pushed and energy drained
+    if other_player.shield or is_bursting(other_player) then
+      push_player(other_player,push_z)
+      other_player.energy-=1
+    elseif not is_taking_damage(other_player) then
+      player_line_collision(other_player,player,push_z)
+    end
+  end
+end
+
 function get_burst_particle(p)
   local center=get_player_center(p)
   local particle = {
@@ -724,6 +768,7 @@ function get_burst_particle(p)
     if t>1 then t=1 end
     local ease=1-(1-t)^3 -- ease out slowdown
     particle.radius=3+ease*(g.settings.burst_radius-3)
+    update_burst_collisions(p,particle)
   end
   return particle
 end

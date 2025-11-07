@@ -1,5 +1,5 @@
 
-shield burst attack
+shield burst attack (pushback)
 player 1 bursts
-  o p2 lost one hp, while p1 was bursting
-  o p1 lost one hp, after bursting
+  o p2 pushed vertically by burst
+  o p2 lost one hp

@@ -39,6 +39,9 @@
 - [ ] increase dash pushback
 - [ ] enable player movement push
 - [ ] add shield attack (burst)
+  - [ ] assert that dash beats burst
+  - [ ] test burst vs burst
+  - [ ] test burst vs shield
 - [ ] add aiming (hold x to aim)
 
 - [ ] orange tiles explode
