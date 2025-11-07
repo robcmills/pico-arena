@@ -400,8 +400,8 @@ function init_game(game_type, arena)
 end
 
 function _init()
-  --init_game("versus", arenas.arena3)
-  init_tests()
+  init_game("versus", arenas.arena3)
+  --init_tests()
 end
 
 -- move player in direction z until they collide with something
@@ -447,6 +447,10 @@ function dash_player(player,z,is_continue)
   -- TODO: play dash sound
 end
 
+function increase_score(p)
+  p.score+=1
+end
+
 -- check for collisions mid-dash
 -- necessary to enable continued dashing if collider moved out of the way
 -- returns true if collision detected
@@ -470,7 +474,7 @@ function player_dash_collision(player)
         push_player(player,other_player.z)
       elseif #player.explode_particles==0 then
         explode_player(player,other_player.z)
-        other_player.score+=1
+        increase_score(other_player)
       end
     end
     -- damage collider
@@ -479,7 +483,7 @@ function player_dash_collision(player)
       collider_pushed=push_player(other_player,player.z)
     elseif #other_player.explode_particles==0 then
       explode_player(other_player,player.z)
-      player.score+=1
+      increase_score(player)
     end
     return true
   end
@@ -635,7 +639,7 @@ function player_line_collision(collider,shooter,z)
     collider_pushed=push_player(collider,z)
   elseif #collider.explode_particles==0 then
     explode_player(collider,z)
-    shooter.score+=1
+    increase_score(shooter)
   end
 end
 
@@ -1012,6 +1016,10 @@ function get_btn_input()
   return test.enabled and get_test_input() or btn()
 end
 
+function get_other_player(p)
+  return p.id==1 and g.p2 or g.p1
+end
+
 function update_void_fall(p)
   -- start
   if p.void_fall_start==nil and is_active(p) and p.velocity==0 and aget(p.tile_x,p.tile_y)==g.sprites.void then
@@ -1023,7 +1031,7 @@ function update_void_fall(p)
   if p.void_fall_start~=nil and (g.now-p.void_fall_start)>=g.settings.player_fall_into_void_anim_time then
     -- respawn
     p.void_fall_start=nil
-    p.score-=1
+    increase_score(get_other_player(p))
     -- TODO: play score minus sound
     spawn_player(p)
   end

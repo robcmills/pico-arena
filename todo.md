@@ -33,18 +33,15 @@
 - [x] enable shield mid-movement
 - [x] disable move into void (suicide)
 - [x] Make players face each other on first spawn
-
-# TODO
-
-- [ ] enable dash cancel (into shield or movement)
-- [ ] handle line mid-movement/dash
 - [x] disable shield while firing
-- [ ] increase dash pushback
-- [ ] enable player movement push
-- [ ] add shield attack (burst)
+- [x] add shield attack (burst)
   - [x] test dash beats burst
   - [x] test burst vs burst
   - [x] test burst vs shield
+
+# TODO
+
+- [ ] prevent negative scores
 - [ ] add aiming (hold x to aim)
 
 - [ ] orange tiles explode
@@ -108,6 +105,8 @@
 
 ## Polish
 
+- [ ] enable dash cancel (into shield or movement)
+- [ ] handle line mid-movement/dash
 - [ ] tile art
   - [ ] combine tiles and auto-"terrain"
   - [ ] add fractal noise to voids
@@ -124,6 +123,8 @@
 
 ## Maybe
 
+- [ ] increase dash pushback
+- [ ] enable player movement push
 - [ ] Add two types of spawn tiles, initial and regular
 - [ ] taking damage
   - [ ] prevent player from firing
