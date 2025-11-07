@@ -74,9 +74,10 @@ test={
   run_all=false,
   start_time=0,
 }
+
 tests={{
   init=function()
-    logt("shield burst attack (pushback)")
+    logt("burst vs shield")
     test.fall_time=0
     test.fire_time=0
     test.move_time=0
@@ -96,20 +97,22 @@ tests={{
       g.p2.last_spawn_time=-g.settings.player_spawn_duration
       -- set player positions
       set_player_pos(g.p1,3,4,0)
-      set_player_pos(g.p2,3,5,180)
+      set_player_pos(g.p2,4,5,180)
     end
   end,
   input=function()
     if g.frame==2 then
-      logt("player 1 bursts")
+      logt("player 1 bursts and player 2 shields")
       test.fire_time=g.now
-      return input.p1_x|input.p1_o
+      return input.p1_x|input.p1_o|input.p2_o
+    else
+      return input.p2_o
     end
   end,
   update_post=function()
     if g.now>test.fire_time+g.settings.burst_grow_duration+g.settings.burst_ring_duration+frame_duration_60 then
-      assertTrue(g.p2.tile_y==6,"p2 pushed vertically by burst")
-      assertTrue(g.p2.hp==g.settings.player_max_hp-1,"p2 lost one hp")
+      assertTrue(g.p2.tile_x==4,"p2 not pushed horizontally by burst")
+      assertTrue(g.p2.hp==g.settings.player_max_hp,"p2 did not lose hp")
       return true -- test finished
     end
   end,

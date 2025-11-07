@@ -12,6 +12,47 @@ test={}
 
 tests={{
   init=function()
+    logt("burst vs shield")
+    test.fall_time=0
+    test.fire_time=0
+    test.move_time=0
+    test.shield_frame=0
+    init_game("versus", arenas.test1)
+  end,
+  update_pre=function()
+    if g.frame==1 then
+      -- enable firing immediately
+      g.p1.last_fire_time=-g.settings.line_delay
+      g.p2.last_fire_time=-g.settings.line_delay
+      -- disable spawn animation
+      g.p1.spawn_particles={}
+      g.p2.spawn_particles={}
+      -- enable immediate input
+      g.p1.last_spawn_time=-g.settings.player_spawn_duration
+      g.p2.last_spawn_time=-g.settings.player_spawn_duration
+      -- set player positions
+      set_player_pos(g.p1,3,4,0)
+      set_player_pos(g.p2,4,5,180)
+    end
+  end,
+  input=function()
+    if g.frame==2 then
+      logt("player 1 bursts and player 2 shields")
+      test.fire_time=g.now
+      return input.p1_x|input.p1_o|input.p2_o
+    else
+      return input.p2_o
+    end
+  end,
+  update_post=function()
+    if g.now>test.fire_time+g.settings.burst_grow_duration+g.settings.burst_ring_duration+frame_duration_60 then
+      assertTrue(g.p2.tile_x==4,"p2 not pushed horizontally by burst")
+      assertTrue(g.p2.hp==g.settings.player_max_hp,"p2 did not lose hp")
+      return true -- test finished
+    end
+  end,
+},{
+  init=function()
     logt("shield burst attack (pushback)")
     test.fall_time=0
     test.fire_time=0
