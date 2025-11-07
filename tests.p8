@@ -12,6 +12,52 @@ test={}
 
 tests={{
   init=function()
+    logt("burst vs burst")
+    test.fall_time=0
+    test.fire_time=0
+    test.move_time=0
+    test.shield_frame=0
+    init_game("versus", arenas.test1)
+  end,
+  update_pre=function()
+    if g.frame==1 then
+      -- enable firing immediately
+      g.p1.last_fire_time=-g.settings.line_delay
+      g.p2.last_fire_time=-g.settings.line_delay
+      -- disable spawn animation
+      g.p1.spawn_particles={}
+      g.p2.spawn_particles={}
+      -- enable immediate input
+      g.p1.last_spawn_time=-g.settings.player_spawn_duration
+      g.p2.last_spawn_time=-g.settings.player_spawn_duration
+      -- enable immediate energy loss
+      g.p1.last_energy_loss_time=-g.settings.energy_loss_delay
+      g.p2.last_energy_loss_time=-g.settings.energy_loss_delay
+      -- set player positions
+      set_player_pos(g.p1,3,4,0)
+      set_player_pos(g.p2,4,5,180)
+    end
+  end,
+  input=function()
+    if g.frame==2 then
+      logt("player 1 and 2 burst")
+      test.fire_time=g.now
+      return input.p1_x|input.p1_o|input.p2_o|input.p2_x
+    else
+      return input.p1_o|input.p2_o
+    end
+  end,
+  update_post=function()
+    if g.now>test.fire_time+g.settings.burst_grow_duration+g.settings.burst_ring_duration+frame_duration_60 then
+      assertTrue(g.p1.tile_x==3,"p1 not pushed horizontally by burst")
+      assertTrue(g.p1.hp==g.settings.player_max_hp,"p1 did not lose hp")
+      assertTrue(g.p2.tile_x==4,"p2 not pushed horizontally by burst")
+      assertTrue(g.p2.hp==g.settings.player_max_hp,"p2 did not lose hp")
+      return true -- test finished
+    end
+  end,
+},{
+  init=function()
     logt("burst vs shield")
     test.fall_time=0
     test.fire_time=0

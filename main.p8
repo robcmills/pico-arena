@@ -403,8 +403,8 @@ function init_game(game_type, arena)
 end
 
 function _init()
-  --init_game("versus", arenas.arena3)
-  init_tests()
+  init_game("versus", arenas.arena3)
+  --init_tests()
 end
 
 -- move player in direction z until they collide with something
@@ -659,7 +659,7 @@ function fire_line(p)
     -- if collider player is shielding or bursting then shooter is damaged
     if collider.p.shield or is_bursting(collider.p) then
       player_line_collision(p,collider.p,get_opposite_direction(p.z))
-      lose_energy(collider.p,g.settings.line_damage)
+      lose_energy(collider.p,g.settings.line_dmg)
     elseif not is_taking_damage(collider.p) then
       player_line_collision(collider.p,p,p.z)
     end
@@ -703,7 +703,7 @@ function fire_line(p)
     target_pos=t,
     z=p.z,
   })
-  lose_energy(p,g.settings.line_damage)
+  lose_energy(p,g.settings.line_dmg)
 end
 
 function fire_weapon(p)
