@@ -1,5 +1,7 @@
 
-burst vs shield
-player 1 bursts and player 2 shields
+burst vs burst
+player 1 and 2 burst
+  o p1 not pushed horizontally by burst
+  o p1 did not lose hp
   o p2 not pushed horizontally by burst
   o p2 did not lose hp

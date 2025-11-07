@@ -77,7 +77,7 @@ test={
 
 tests={{
   init=function()
-    logt("burst vs shield")
+    logt("burst vs burst")
     test.fall_time=0
     test.fire_time=0
     test.move_time=0
@@ -95,6 +95,9 @@ tests={{
       -- enable immediate input
       g.p1.last_spawn_time=-g.settings.player_spawn_duration
       g.p2.last_spawn_time=-g.settings.player_spawn_duration
+      -- enable immediate energy loss
+      g.p1.last_energy_loss_time=-g.settings.energy_loss_delay
+      g.p2.last_energy_loss_time=-g.settings.energy_loss_delay
       -- set player positions
       set_player_pos(g.p1,3,4,0)
       set_player_pos(g.p2,4,5,180)
@@ -102,15 +105,17 @@ tests={{
   end,
   input=function()
     if g.frame==2 then
-      logt("player 1 bursts and player 2 shields")
+      logt("player 1 and 2 burst")
       test.fire_time=g.now
-      return input.p1_x|input.p1_o|input.p2_o
+      return input.p1_x|input.p1_o|input.p2_o|input.p2_x
     else
-      return input.p2_o
+      return input.p1_o|input.p2_o
     end
   end,
   update_post=function()
     if g.now>test.fire_time+g.settings.burst_grow_duration+g.settings.burst_ring_duration+frame_duration_60 then
+      assertTrue(g.p1.tile_x==3,"p1 not pushed horizontally by burst")
+      assertTrue(g.p1.hp==g.settings.player_max_hp,"p1 did not lose hp")
       assertTrue(g.p2.tile_x==4,"p2 not pushed horizontally by burst")
       assertTrue(g.p2.hp==g.settings.player_max_hp,"p2 did not lose hp")
       return true -- test finished
@@ -294,6 +299,7 @@ function init_game(game_type, arena)
       flip_x=false,
       last_burst_time=0,
       last_dmg_time=0,
+      last_energy_loss_time=0,
       last_fire_time=0,
       last_move_bits=0,
       last_move_time=nil,
@@ -325,6 +331,7 @@ function init_game(game_type, arena)
       flip_x=true,
       last_burst_time=0,
       last_dmg_time=0,
+      last_energy_loss_time=0,
       last_fire_time=0,
       last_move_bits=0,
       last_move_time=nil,
@@ -349,12 +356,14 @@ function init_game(game_type, arena)
     settings={
       burst_color=yellow,
       burst_delay=0.2,  -- seconds between burst fires
+      burst_energy_loss=1,
       burst_grow_duration=0.2,  -- seconds burst radius grows
       burst_ring_color=dark_gray,
       burst_ring_duration=0.1,  -- seconds burst ring remains after growth
       burst_radius=12,
       dash_damage=1,
       enable_void_suicide=false,
+      energy_loss_delay=0.32,  -- seconds until energy loss is applied (debounce) should be greater than burst_grow_duration else a single burst will drain multiple energy
       energy_pickup_amount=8,  -- amount of energy per energy pickup
       energy_respawn_time=15,  -- seconds until energy respawns
       line_delay=0.2,  -- seconds between weapon fires
@@ -429,8 +438,7 @@ function dash_player(player,z,is_continue)
   if z==180 then player.flip_x=true end
   player.z=z
   if not is_continue then
-    -- drain energy
-    player.energy-=1
+    lose_energy(player,1)
   end
   -- move player
   player.last_move_time=g.now
@@ -651,7 +659,7 @@ function fire_line(p)
     -- if collider player is shielding or bursting then shooter is damaged
     if collider.p.shield or is_bursting(collider.p) then
       player_line_collision(p,collider.p,get_opposite_direction(p.z))
-      collider.p.energy-=1
+      lose_energy(collider.p,g.settings.line_damage)
     elseif not is_taking_damage(collider.p) then
       player_line_collision(collider.p,p,p.z)
     end
@@ -687,7 +695,6 @@ function fire_line(p)
     elseif p.z==90 then t.y-=1
     elseif p.z==-90 then t.y+=6 end
   end
-
   add(g.lines,{
     collider=collider,
     p=p.id,
@@ -696,8 +703,7 @@ function fire_line(p)
     target_pos=t,
     z=p.z,
   })
-
-  if p.energy>0 then p.energy-=1 end
+  lose_energy(p,g.settings.line_damage)
 end
 
 function fire_weapon(p)
@@ -736,6 +742,15 @@ function get_burst_push_z(x1,y1,x2,y2,z)
   return 0 -- points are the same
 end
 
+function lose_energy(p,amount)
+  p.energy-=amount
+  p.last_energy_loss_time=g.now
+end
+
+function can_lose_energy(p)
+  return p.energy>0 and g.now-p.last_energy_loss_time>g.settings.energy_loss_delay
+end
+
 function update_burst_collisions(player,particle)
   -- player collision
   local other_player=player.id==1 and g.p2 or g.p1
@@ -743,11 +758,11 @@ function update_burst_collisions(player,particle)
   local dist=get_distance(particle.x,particle.y,c.x,c.y)-g.settings.player_radius-1
   if dist<=particle.radius then
     local push_z=get_burst_push_z(particle.x,particle.y,c.x,c.y,other_player.z)
-    -- if other player is shielding or bursting
-    -- then they take no damage but are still pushed and energy drained
+    -- if other player is shielding or bursting then they take no damage
     if other_player.shield or is_bursting(other_player) then
-      push_player(other_player,push_z)
-      other_player.energy-=1
+      if can_lose_energy(other_player) then
+        lose_energy(other_player,g.settings.burst_energy_loss)
+      end
     elseif not is_taking_damage(other_player) then
       player_line_collision(other_player,player,push_z)
     end
@@ -784,7 +799,7 @@ function fire_burst(p)
   end
   p.last_fire_time=g.now
   p.last_burst_time=g.now
-  p.energy-=1
+  lose_energy(p,g.settings.burst_energy_loss)
   -- spawn burst particles
   add(p.burst_particles,get_burst_particle(p))
 end
