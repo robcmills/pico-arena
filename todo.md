@@ -38,16 +38,20 @@
   - [x] test dash beats burst
   - [x] test burst vs burst
   - [x] test burst vs shield
+- [x] prevent negative scores
 
 # TODO
 
-- [ ] prevent negative scores
+- [ ] Add splash start screen
+- [ ] Add menu screen to choose game type, arena, player color, etc.
+- [ ] Add more game types
+  - [ ] single player
+  - [ ] cooperative multiplayer
+  - [ ] ctf
 - [ ] add aiming (hold x to aim)
-
 - [ ] orange tiles explode
 - [ ] red tiles frag on contact
 - [ ] ice tiles freeze
-
 - [ ] add "reset_player" function
   - [ ] reset energy
 - [ ] set_score function
@@ -56,8 +60,6 @@
 - [ ] set_player_hp function
   - [ ] play hp sounds
   - [ ] hp transition animations
-- [ ] Add splash screen
-- [ ] Add menu screen to choose game type, arena, player color, etc.
 - [ ] Enable choosing player color
 - [ ] Add game clock
 - [x] Add energy
@@ -97,11 +99,6 @@
   - [ ] mountain (wind and ice and avalanche)
   - [ ] floating platforms in the clouds (rain and lightning)
 
-- [ ] Add splash start screen
-- [ ] Add more game types
-  - [ ] single player
-  - [ ] cooperative multiplayer
-  - [ ] ctf
 
 ## Polish
 

@@ -35,6 +35,9 @@ input={
 frame_duration_30=1/30
 frame_duration_60=1/60
 
+-- global state
+s={}
+
 -- global game state
 g={}
 
@@ -66,7 +69,6 @@ arenas={
   }
 }
 
--- start tests
 -- global test state
 test={
   enabled=false,
@@ -399,8 +401,24 @@ function init_game(game_type, arena)
   spawn_player(g.p2)
 end
 
+-- initialize global state
+function init_state()
+  s={
+    game_type="duel",
+    menu={
+      input_delay=0.1,
+      items={"game_type","time_limit","start"},
+      last_input_time=0,
+      selected_item_index=1,
+    },
+    state="start",
+    time_limit=2, -- minutes a match lasts
+  }
+end
+
 function _init()
-  init_game("versus", arenas.arena3)
+  init_state()
+  --init_game("versus", arenas.arena2)
   --init_tests()
 end
 
@@ -981,38 +999,49 @@ function update_player_o(p,o_pressed)
   p.shield=o_pressed and p.energy>0 and not is_spawning(p) and not is_dashing(p) and not is_taking_damage(p)
 end
 
--- @param p player state
--- @param btn_bits btn() return value
--- (a bitfield of all 12 button states for players 1 & 2)
--- p1: bits 0..5  p2: bits 8..13
+function get_input()
+  local b=get_input_bitfield()
+  return {
+    {
+      left=b&1~=0,
+      right=b&2~=0,
+      up=b&4~=0,
+      down=b&8~=0,
+      x=b&16~=0,
+      o=b&32~=0,
+    },
+    {
+      left=b&256~=0,
+      right=b&512~=0,
+      up=b&1024~=0,
+      down=b&2048~=0,
+      x=b&4096~=0,
+      o=b&8192~=0,
+    },
+  }
+end
+
 function update_player_input(p,btn_bits)
-  local shift=(p.id-1)*8
-  local b=btn_bits>>shift
-  local p_left=b&1~=0
-  local p_right=b&2~=0
-  local p_up=b&4~=0
-  local p_down=b&8~=0
-  local p_x=b&16~=0
-  local p_o=b&32~=0
-  if p_x and p_o then
+  local i=get_input()[p.id]
+  if i.x and i.o then
     update_player_xo(p)
   else
-    update_player_x(p,p_x)
-    update_player_o(p,p_o)
+    update_player_x(p,i.x)
+    update_player_o(p,i.o)
   end
   if p.last_move_time~=nil then return end
-  if p_left and p_o then dash_player(p,180)
-  elseif p_left then move_player(p,180)
-  elseif p_right and p_o then dash_player(p,0)
-  elseif p_right then move_player(p,0)
-  elseif p_up and p_o then dash_player(p,-90)
-  elseif p_up then move_player(p,-90)
-  elseif p_down and p_o then dash_player(p,90)
-  elseif p_down then move_player(p,90)
+  if i.left and i.o then dash_player(p,180)
+  elseif i.left then move_player(p,180)
+  elseif i.right and i.o then dash_player(p,0)
+  elseif i.right then move_player(p,0)
+  elseif i.up and i.o then dash_player(p,-90)
+  elseif i.up then move_player(p,-90)
+  elseif i.down and i.o then dash_player(p,90)
+  elseif i.down then move_player(p,90)
   end
 end
 
-function get_btn_input()
+function get_input_bitfield()
   return test.enabled and get_test_input() or btn()
 end
 
@@ -1051,7 +1080,7 @@ function update_player(p,input)
 end
 
 function update_players()
-  local input=get_btn_input()
+  local input=get_input_bitfield()
   update_player(g.p1,input)
   update_player(g.p2,input)
 end
@@ -1083,13 +1112,41 @@ function update_lines()
   end
 end
 
-function _update60()
+function update_game()
   g.frame+=1
   g.now=get_time()
   update_tests_pre()
   update_players()
   update_entities()
   update_lines()
+end
+
+function update_start()
+  local now=time()
+  if now-s.menu.last_input_time<s.menu.input_delay then return end
+  s.menu.last_input_time=now
+  local i=get_input()
+  local down=i[1].down or i[2].down
+  local up=i[1].up or i[2].up
+  if down then
+    s.menu.selected_item_index+=1
+    if s.menu.selected_item_index>#s.menu.items then
+      s.menu.selected_item_index=1
+    end
+  elseif up then
+    s.menu.selected_item_index-=1
+    if s.menu.selected_item_index<1 then
+      s.menu.selected_item_index=#s.menu.items
+    end
+  end
+end
+
+function _update60()
+  if s.state=="start" then
+    update_start()
+  elseif s.state=="game" then
+    update_game()
+  end
 end
 
 function draw_arena()
@@ -1363,8 +1420,7 @@ function draw_debug()
   end
 end
 
-function _draw()
-  cls()
+function draw_game()
   draw_arena()
   draw_entities()
   draw_player_particles()
@@ -1374,6 +1430,36 @@ function _draw()
   draw_hud()
   draw_debug()
   update_tests_post()
+end
+
+function draw_title()
+  print("pic",45,37,blue)
+  spr(17,56,36,1,1)
+  spr(20,63,36,1,1)
+  print("arena",66,37,red)
+end
+
+function draw_menu()
+  local selected_item=s.menu.items[s.menu.selected_item_index]
+  print("game type:",26,59,selected_item=="game_type" and white or dark_gray)
+  print("⬅️ "..s.game_type.." ➡️",67,59,selected_item=="game_type" and yellow or dark_gray)
+  print("time limit:",22,68,selected_item=="time_limit" and white or dark_gray)
+  print("⬅️ "..s.time_limit.." min ➡️",67,68,selected_item=="time_limit" and yellow or dark_gray)
+  print("start",54,84,selected_item=="start" and yellow or dark_gray)
+end
+
+function draw_start()
+  draw_title()
+  draw_menu()
+end
+
+function _draw()
+  cls()
+  if s.state=="start" then
+    draw_start()
+  elseif s.state=="game" then
+    draw_game()
+  end
 end
 
 -- utils
