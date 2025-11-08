@@ -61,6 +61,12 @@ arenas={
     celh=12,
     celw=12,
   },
+  menu={
+    celx=0,
+    cely=50,
+    celh=14,
+    celw=14,
+  },
   test1={
     celx=119,
     cely=55,
@@ -178,10 +184,14 @@ function init_entities()
   init_energy_pickups()
 end
 
+function center_arena(a)
+  -- add offset to center
+  a.sx=flr((g.screen_size-g.tile_size*a.celw)/2)
+  a.sy=flr((g.screen_size-g.tile_size*a.celh)/2)
+end
+
 function init_arena()
-  -- calculate offset to center map
-  g.arena.sx=flr((g.screen_size-g.tile_size*g.arena.celw)/2)
-  g.arena.sy=flr((g.screen_size-g.tile_size*g.arena.celh)/2)
+  center_arena(g.arena)
   init_entities()
 end
 
@@ -406,9 +416,10 @@ function init_state()
   s={
     game_type="duel",
     menu={
-      input_delay=0.1,
-      items={"game_type","time_limit","start"},
+      input_delay=0.14,
+      items={"game_type","time_limit","arena","start"},
       last_input_time=0,
+      selected_arena_index=1,
       selected_item_index=1,
     },
     state="start",
@@ -1149,8 +1160,8 @@ function _update60()
   end
 end
 
-function draw_arena()
-  map(g.arena.celx,g.arena.cely,g.arena.sx,g.arena.sy,g.arena.celw,g.arena.celh)
+function draw_arena(a)
+  map(a.celx,a.cely,a.sx,a.sy,a.celw,a.celh)
 end
 
 function draw_energy_sprite(e,x,y)
@@ -1421,7 +1432,7 @@ function draw_debug()
 end
 
 function draw_game()
-  draw_arena()
+  draw_arena(g.arena)
   draw_entities()
   draw_player_particles()
   draw_player(g.p1)
@@ -1432,23 +1443,59 @@ function draw_game()
   update_tests_post()
 end
 
+function draw_menu_background()
+  g.screen_size=128
+  g.tile_size=8
+  center_arena(arenas.menu)
+  draw_arena(arenas.menu)
+end
+
 function draw_title()
-  print("pic",45,37,blue)
-  spr(17,56,36,1,1)
-  spr(20,63,36,1,1)
-  print("arena",66,37,red)
+  print("pic",43,33,blue)
+  spr(17,54,32,1,1)
+  spr(20,61,32,1,1)
+  print("arena",64,33,red)
+end
+
+function keys(table)
+  local keys={}
+  for k,v in pairs(table) do
+    keys[#keys+1]=k
+  end
+  return keys
+end
+
+-- print centered
+function printc(text,y)
+  local retx=print(text,0,-128)
+  print(text,g.screen_size/2-retx/2,y)
+end
+
+function draw_menu_items(items)
+  for i,item in ipairs(items) do
+    local is_selected=item[3]
+    local key_color=is_selected and white or dark_gray
+    local value_color=is_selected and yellow or dark_gray
+    local y=(6+i)*g.tile_size+1
+    local text="\f"..int_to_p8hex(key_color)..item[1]..":".."\f"..int_to_p8hex(value_color).."⬅️ "..item[2].." ➡️"
+    printc(text,y)
+  end
 end
 
 function draw_menu()
+  local selected_arena=keys(arenas)[s.menu.selected_arena_index]
   local selected_item=s.menu.items[s.menu.selected_item_index]
-  print("game type:",26,59,selected_item=="game_type" and white or dark_gray)
-  print("⬅️ "..s.game_type.." ➡️",67,59,selected_item=="game_type" and yellow or dark_gray)
-  print("time limit:",22,68,selected_item=="time_limit" and white or dark_gray)
-  print("⬅️ "..s.time_limit.." min ➡️",67,68,selected_item=="time_limit" and yellow or dark_gray)
-  print("start",54,84,selected_item=="start" and yellow or dark_gray)
+  local time_limit=s.time_limit.." min"
+  draw_menu_items({
+    {"game_type",s.game_type,selected_item=="game_type"},
+    {"time_limit",time_limit,selected_item=="time_limit"},
+    {"arena",selected_arena,selected_item=="arena"},
+  })
+  print("start",54,97,selected_item=="start" and yellow or dark_gray)
 end
 
 function draw_start()
+  draw_menu_background()
   draw_title()
   draw_menu()
 end
