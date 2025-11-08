@@ -418,6 +418,7 @@ end
 
 function _init()
   init_state()
+  --s.state="game"
   --init_game("versus", arenas.arena2)
   --init_tests()
 end
@@ -1021,8 +1022,7 @@ function get_input()
   }
 end
 
-function update_player_input(p,btn_bits)
-  local i=get_input()[p.id]
+function update_player_input(p,i)
   if i.x and i.o then
     update_player_xo(p)
   else
@@ -1072,7 +1072,7 @@ end
 
 function update_player(p,input)
   if is_input_active(p) then
-    update_player_input(p,input)
+    update_player_input(p,input[p.id])
   end
   update_player_movement(p)
   update_player_particles(p)
@@ -1080,7 +1080,7 @@ function update_player(p,input)
 end
 
 function update_players()
-  local input=get_input_bitfield()
+  local input=get_input()
   update_player(g.p1,input)
   update_player(g.p2,input)
 end
@@ -1491,11 +1491,11 @@ function get_time()
 end
 
 function log(str)
-  printh(str, "p8log.txt")
+  printh(str,"arena.log")
 end
 
 function logt(str)
-  printh(str, "test.log")
+  printh(str,"arena_test.log")
 end
 
 -- random weighted choice
