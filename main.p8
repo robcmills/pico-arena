@@ -361,7 +361,6 @@ function init_game(game_type, arena)
     },
     lines={}, -- line weapon "tracers"
     screen_size=128,
-    tile_size=8,
     settings={
       burst_color=yellow,
       burst_delay=0.2,  -- seconds between burst fires
@@ -398,6 +397,8 @@ function init_game(game_type, arena)
       spawn_spr=4,
       void=0,
     },
+    start_time=time(),
+    tile_size=8,
   }
   -- init game state that depends on settings
   g.p1.energy=g.settings.player_max_energy
@@ -1581,7 +1582,7 @@ function get_opposite_direction(dir)
 end
 
 function get_time()
-  return test.enabled and time()-test.start_time or time()
+  return test.enabled and time()-test.start_time or time()-g.start_time
 end
 
 function log(str)
