@@ -85,12 +85,12 @@ test={
 
 tests={{
   init=function()
-    logt("dash beats burst")
+    logt("respawn bug")
     test.fall_time=0
     test.fire_time=0
     test.move_time=0
     test.shield_frame=0
-    init_game("versus", arenas.test1)
+    init_game("duel", arenas.test1)
   end,
   update_pre=function()
     if g.frame==1 then
@@ -107,22 +107,26 @@ tests={{
       g.p1.last_energy_loss_time=-g.settings.energy_loss_delay
       g.p2.last_energy_loss_time=-g.settings.energy_loss_delay
       -- set player positions
-      set_player_pos(g.p1,2,4,0)
-      set_player_pos(g.p2,6,4,180)
+      set_player_pos(g.p2,2,1,0)
+      set_player_pos(g.p1,6,1,180)
+      -- set player hp
+      g.p2.hp=1
     end
   end,
   input=function()
     if g.frame==2 then
-      logt("p1 bursts and p2 dashes")
+      logt("p1 shoots p2")
+      return input.p1_x
+    elseif g.now>test.fire_time+g.settings.player_explode_duration+g.settings.player_spawn_duration+frame_duration_60*3 then
+      logt("p1 shoots p2 again after respawn")
       test.fire_time=g.now
-      return input.p1_o|input.p1_x|input.p2_o|input.p2_left
+      set_player_pos(g.p1,6,4,180)
+      set_player_pos(g.p2,2,4,0)
+      return input.p1_x
     end
   end,
   update_post=function()
-    if g.now>test.fire_time+g.settings.burst_grow_duration+g.settings.burst_ring_duration+frame_duration_60 then
-      assertTrue(g.p1.hp==g.settings.player_max_hp-1,"p1 lost hp")
-      assertTrue(g.p2.hp==g.settings.player_max_hp,"p2 did not lose hp")
-      assertTrue(g.p1.tile_x==1,"p1 pushed horizontally by dash")
+    if test.fire_time~=0 and g.now>test.fire_time+frame_duration_60 then
       return true -- test finished
     end
   end,
@@ -131,6 +135,7 @@ tests={{
 function init_tests()
   extcmd("rec_frames")
   logt("") -- separate tests with a blank line
+  s.state="game"
   test.enabled=true
   test.start_time=time()
   tests[test.index].init()
@@ -381,6 +386,7 @@ function init_game(game_type, arena)
       player_damage_duration=0.32, -- seconds player damage animation lasts
       player_dash_particle_lifetime=0.2,  -- seconds a dash particle lasts
       player_dash_velocity=0.02,  -- seconds per tile of movement (lower is faster)
+      player_explode_duration=1, -- seconds player explode animation lasts
       player_fall_into_void_anim_time=0.3, -- seconds player fall into void animation lasts
       player_fire_anim_time=0.3,  -- seconds player fire animation lasts
       player_max_energy=16,
@@ -415,7 +421,6 @@ end
 -- initialize global state
 function init_state()
   s={
-    game_type="duel",
     menu={
       game_types={"duel","ctf"},
       input_delay=0.14,
@@ -428,14 +433,13 @@ function init_state()
       time_limits={2,4,8},
     },
     state="start",
-    time_limit=2, -- minutes a match lasts
   }
 end
 
 function _init()
   init_state()
   --s.state="game"
-  --init_game("versus", arenas.arena2)
+  --init_game("duel", arenas.arena2)
   --init_tests()
 end
 
@@ -620,7 +624,7 @@ function explode_player(player,dir)
     -- particle
     local particle={
       c=rnd({player.c,yellow,white}),
-      end_time=g.now+0.5+rnd(0.5),
+      end_time=g.now+g.settings.player_explode_duration,
       size=size,
       x=cx+cos(spawn_angle)*spawn_radius,
       y=cy+sin(spawn_angle)*spawn_radius,
@@ -876,7 +880,7 @@ function update_player_explode_particles(player)
     for particle in all(player.explode_particles) do
       if particle.end_time<g.now then
         del(player.explode_particles,particle)
-        if #player.explode_particles==0 and g.game_type=="versus" then
+        if #player.explode_particles==0 and g.game_type=="duel" then
           spawn_player(player)
         end
       else
