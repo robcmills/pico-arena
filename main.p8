@@ -416,11 +416,15 @@ function init_state()
   s={
     game_type="duel",
     menu={
+      game_types={"duel","ctf"},
       input_delay=0.14,
       items={"game_type","time_limit","arena","start"},
       last_input_time=0,
       selected_arena_index=1,
+      selected_game_type_index=1,
       selected_item_index=1,
+      selected_time_limit_index=1,
+      time_limits={2,4,8},
     },
     state="start",
     time_limit=2, -- minutes a match lasts
@@ -1132,11 +1136,12 @@ function update_game()
   update_lines()
 end
 
-function update_start()
+function update_menu()
   local now=time()
   if now-s.menu.last_input_time<s.menu.input_delay then return end
   s.menu.last_input_time=now
   local i=get_input()
+  -- up/down
   local down=i[1].down or i[2].down
   local up=i[1].up or i[2].up
   if down then
@@ -1150,11 +1155,52 @@ function update_start()
       s.menu.selected_item_index=#s.menu.items
     end
   end
+  -- left/right
+  local left=i[1].left or i[2].left
+  local right=i[1].right or i[2].right
+  if left or right then
+    local dx=left and -1 or 1
+    if s.menu.selected_item_index==1 then
+      -- game type
+      s.menu.selected_game_type_index+=dx
+      if s.menu.selected_game_type_index<1 then
+        s.menu.selected_game_type_index=#s.menu.game_types
+      elseif s.menu.selected_game_type_index>#s.menu.game_types then
+        s.menu.selected_game_type_index=1
+      end
+    elseif s.menu.selected_item_index==2 then
+      -- time limit
+      s.menu.selected_time_limit_index+=dx
+      if s.menu.selected_time_limit_index<1 then
+        s.menu.selected_time_limit_index=#s.menu.time_limits
+      elseif s.menu.selected_time_limit_index>#s.menu.time_limits then
+        s.menu.selected_time_limit_index=1
+      end
+    elseif s.menu.selected_item_index==3 then
+      -- arena
+      s.menu.selected_arena_index+=dx
+      if s.menu.selected_arena_index<1 then
+        s.menu.selected_arena_index=#keys(arenas)
+      elseif s.menu.selected_arena_index>#keys(arenas) then
+        s.menu.selected_arena_index=1
+      end
+    end
+  end
+  -- x to start
+  local x=i[1].x or i[2].x
+  local o=i[1].o or i[2].o
+  if s.menu.items[s.menu.selected_item_index]=="start" and (x or o) then
+    s.state="game"
+    local game_type=s.menu.game_types[s.menu.selected_game_type_index]
+    local arena_key=keys(arenas)[s.menu.selected_arena_index]
+    local arena=arenas[arena_key]
+    init_game(game_type, arena)
+  end
 end
 
 function _update60()
   if s.state=="start" then
-    update_start()
+    update_menu()
   elseif s.state=="game" then
     update_game()
   end
@@ -1483,11 +1529,12 @@ function draw_menu_items(items)
 end
 
 function draw_menu()
+  local selected_game_type=s.menu.game_types[s.menu.selected_game_type_index]
   local selected_arena=keys(arenas)[s.menu.selected_arena_index]
   local selected_item=s.menu.items[s.menu.selected_item_index]
-  local time_limit=s.time_limit.." min"
+  local time_limit=s.menu.time_limits[s.menu.selected_time_limit_index].." min"
   draw_menu_items({
-    {"game_type",s.game_type,selected_item=="game_type"},
+    {"game_type",selected_game_type,selected_item=="game_type"},
     {"time_limit",time_limit,selected_item=="time_limit"},
     {"arena",selected_arena,selected_item=="arena"},
   })
