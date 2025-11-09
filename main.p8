@@ -1456,6 +1456,15 @@ function draw_scores_hud()
   draw_score_hud(g.p2)
 end
 
+function draw_game_clock()
+  local limit_min=s.menu.time_limits[s.menu.selected_time_limit_index]
+  local limit_sec=limit_min*60
+  local remaining=limit_sec-g.now
+  if remaining<0 then remaining=0 end
+  local color=remaining<11 and red or remaining<31 and orange or white
+  print(format_time(remaining),g.screen_size/2-10,2,color)
+end
+
 function draw_hud()
   -- names
   print("player 1",1,2,g.p1.c)
@@ -1466,8 +1475,7 @@ function draw_hud()
   draw_energy_hud(g.p1)
   draw_energy_hud(g.p2)
   draw_scores_hud()
-  -- game clock
-  print(format_time(g.now),g.screen_size/2-10,2)
+  draw_game_clock()
 end
 
 function draw_debug()
