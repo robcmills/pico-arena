@@ -85,7 +85,7 @@ test={
 
 tests={{
   init=function()
-    logt("respawn bug")
+    logt("explode polish")
     test.fall_time=0
     test.fire_time=0
     test.move_time=0
@@ -107,26 +107,21 @@ tests={{
       g.p1.last_energy_loss_time=-g.settings.energy_loss_delay
       g.p2.last_energy_loss_time=-g.settings.energy_loss_delay
       -- set player positions
-      set_player_pos(g.p2,2,1,0)
-      set_player_pos(g.p1,6,1,180)
+      set_player_pos(g.p1,2,4,0)
+      set_player_pos(g.p2,6,4,180)
       -- set player hp
-      g.p2.hp=1
+      g.p1.hp=1
     end
   end,
   input=function()
     if g.frame==2 then
-      logt("p1 shoots p2")
-      return input.p1_x
-    elseif g.now>test.fire_time+g.settings.player_explode_duration+g.settings.player_spawn_duration+frame_duration_60*3 then
-      logt("p1 shoots p2 again after respawn")
+      logt("p2 shoots p1")
       test.fire_time=g.now
-      set_player_pos(g.p1,6,4,180)
-      set_player_pos(g.p2,2,4,0)
-      return input.p1_x
+      return input.p2_x
     end
   end,
   update_post=function()
-    if test.fire_time~=0 and g.now>test.fire_time+frame_duration_60 then
+    if test.fire_time~=0 and g.now>test.fire_time+g.settings.player_explode_duration+frame_duration_60 then
       return true -- test finished
     end
   end,
@@ -440,7 +435,7 @@ function _init()
   init_state()
   --s.state="game"
   --init_game("duel", arenas.arena2)
-  --init_tests()
+  init_tests()
 end
 
 -- move player in direction z until they collide with something
