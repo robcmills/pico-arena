@@ -435,7 +435,7 @@ function _init()
   init_state()
   --s.state="game"
   --init_game("duel", arenas.arena2)
-  init_tests()
+  --init_tests()
 end
 
 -- move player in direction z until they collide with something
@@ -620,6 +620,7 @@ function explode_player(player,dir)
     local particle={
       c=rnd({player.c,yellow,white}),
       end_time=g.now+g.settings.player_explode_duration,
+      start_time=g.now,
       size=size,
       x=cx+cos(spawn_angle)*spawn_radius,
       y=cy+sin(spawn_angle)*spawn_radius,
@@ -627,8 +628,10 @@ function explode_player(player,dir)
       vy=-sin(angle)*speed
     }
     particle.update=function()
-      particle.x+=particle.vx
-      particle.y+=particle.vy
+      local t=(particle.end_time-g.now)/(particle.end_time-particle.start_time)
+      t=max(0,t) -- clamp to 0
+      particle.x+=particle.vx*t*t
+      particle.y+=particle.vy*t*t
     end
     add(player.explode_particles,particle)
   end
