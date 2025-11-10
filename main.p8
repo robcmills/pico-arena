@@ -426,10 +426,13 @@ function init_state()
       selected_game_type_index=1,
       selected_item_index=1,
       selected_time_limit_index=1,
+      start_selected_time=nil,
       time_limits={0.5,2,4,8},
+      transition_time=1,
     },
     state="start",
   }
+  music(1)
 end
 
 function _init()
@@ -1165,6 +1168,13 @@ function init_game_start_countdown()
 end
 
 function update_menu()
+  if s.menu.start_selected_time~=nil then
+    if time()-s.menu.start_selected_time>s.menu.transition_time then
+      s.menu.start_selected_time=nil
+      init_game_start_countdown()
+    end
+    return
+  end
   local i=get_debounced_input()
   if i==nil then return end
   -- up/down
@@ -1212,11 +1222,15 @@ function update_menu()
       end
     end
   end
+  -- sfx
+  if up or down or left or right then sfx(5) end
   -- x to start
   local x=i[1].x or i[2].x
   local o=i[1].o or i[2].o
   if s.menu.items[s.menu.selected_item_index]=="start" and (x or o) then
-    init_game_start_countdown()
+    music(-1)
+    sfx(6)
+    s.menu.start_selected_time=time()
   end
 end
 
@@ -1236,7 +1250,7 @@ function update_match_end()
   if i==nil then return end
   local x=i[1].x or i[2].x
   if x then
-    s.state="start"
+    init_state()
   end
 end
 
@@ -1613,9 +1627,11 @@ function draw_menu()
 end
 
 function draw_start()
-  draw_menu_background()
+  if s.menu.start_selected_time==nil then
+    draw_menu_background()
+    draw_menu()
+  end
   draw_title()
-  draw_menu()
 end
 
 function draw_match_end()
