@@ -428,7 +428,7 @@ function init_state()
       selected_time_limit_index=1,
       start_selected_time=nil,
       time_limits={0.5,2,4,8},
-      transition_time=1,
+      transition_time=2,
     },
     state="start",
   }
@@ -1165,6 +1165,7 @@ function init_game_start_countdown()
   center_arena(arena)
   s.state="game_start_countdown"
   s.countdown_start_time=time()
+  sfx(7)
 end
 
 function update_menu()
