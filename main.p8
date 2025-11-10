@@ -417,11 +417,11 @@ end
 -- initialize global state
 function init_state()
   s={
+    input_delay=0.14,
+    last_input_time=0,
     menu={
       game_types={"duel","ctf"},
-      input_delay=0.14,
       items={"game_type","time_limit","arena","start"},
-      last_input_time=0,
       selected_arena_index=1,
       selected_game_type_index=1,
       selected_item_index=1,
@@ -1041,6 +1041,13 @@ function get_input()
   }
 end
 
+function get_debounced_input()
+  local now=time()
+  if now-s.last_input_time<s.input_delay then return nil end
+  s.last_input_time=now
+  return get_input()
+end
+
 function update_player_input(p,i)
   if i.x and i.o then
     update_player_xo(p)
@@ -1149,10 +1156,8 @@ function update_game()
 end
 
 function update_menu()
-  local now=time()
-  if now-s.menu.last_input_time<s.menu.input_delay then return end
-  s.menu.last_input_time=now
-  local i=get_input()
+  local i=get_debounced_input()
+  if i==nil then return end
   -- up/down
   local down=i[1].down or i[2].down
   local up=i[1].up or i[2].up
@@ -1212,6 +1217,12 @@ end
 
 function update_match_end()
   -- TODO: play match end sound
+  local i=get_debounced_input()
+  if i==nil then return end
+  local x=i[1].x or i[2].x
+  if x then
+    s.state="start"
+  end
 end
 
 function _update60()
