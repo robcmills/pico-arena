@@ -1155,6 +1155,15 @@ function update_game()
   update_lines()
 end
 
+function init_game_start_countdown()
+  local arena_key=keys(arenas)[s.menu.selected_arena_index]
+  local arena=arenas[arena_key]
+  g.arena=arena
+  center_arena(arena)
+  s.state="game_start_countdown"
+  s.countdown_start_time=time()
+end
+
 function update_menu()
   local i=get_debounced_input()
   if i==nil then return end
@@ -1207,6 +1216,12 @@ function update_menu()
   local x=i[1].x or i[2].x
   local o=i[1].o or i[2].o
   if s.menu.items[s.menu.selected_item_index]=="start" and (x or o) then
+    init_game_start_countdown()
+  end
+end
+
+function update_game_start_countdown()
+  if time()-s.countdown_start_time>3 then
     s.state="game"
     local game_type=s.menu.game_types[s.menu.selected_game_type_index]
     local arena_key=keys(arenas)[s.menu.selected_arena_index]
@@ -1228,6 +1243,8 @@ end
 function _update60()
   if s.state=="start" then
     update_menu()
+  elseif s.state=="game_start_countdown" then
+    update_game_start_countdown()
   elseif s.state=="game" then
     update_game()
   elseif s.state=="match_end" then
@@ -1626,10 +1643,18 @@ function draw_match_end()
   end
 end
 
+function draw_game_start_countdown()
+  draw_arena(g.arena)
+  local count=3-flr(time()-s.countdown_start_time)
+  printcx("\f"..int_to_p8hex(white).."match begins in \f"..int_to_p8hex(yellow)..count,6)
+end
+
 function _draw()
   cls()
   if s.state=="start" then
     draw_start()
+  elseif s.state=="game_start_countdown" then
+    draw_game_start_countdown()
   elseif s.state=="game" then
     draw_game()
   elseif s.state=="match_end" then
