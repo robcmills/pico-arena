@@ -395,6 +395,7 @@ function init_game(game_type, arena)
         is_solid=0, -- block movement
       },
       energy_spr=33, -- sprite index for energy pickups
+      trophy_spr=49,
       spawn_spr=4,
       void=0,
     },
@@ -425,7 +426,7 @@ function init_state()
       selected_game_type_index=1,
       selected_item_index=1,
       selected_time_limit_index=1,
-      time_limits={2,4,8},
+      time_limits={0.5,2,4,8},
     },
     state="start",
   }
@@ -1130,10 +1131,18 @@ function update_lines()
   end
 end
 
+function update_end_conditions()
+  local remaining=get_game_time_remaining()
+  if remaining<=0 then
+    s.state="match_end"
+  end
+end
+
 function update_game()
   g.frame+=1
   g.now=get_time()
   update_tests_pre()
+  update_end_conditions()
   update_players()
   update_entities()
   update_lines()
@@ -1201,11 +1210,17 @@ function update_menu()
   end
 end
 
+function update_match_end()
+  -- TODO: play match end sound
+end
+
 function _update60()
   if s.state=="start" then
     update_menu()
   elseif s.state=="game" then
     update_game()
+  elseif s.state=="match_end" then
+    update_match_end()
   end
 end
 
@@ -1445,8 +1460,12 @@ function format_time(t)
   return tostr(m<10 and "0" or "")..tostr(m)..":"..tostr(s<10 and "0" or "")..tostr(s)
 end
 
+function get_score_pad(s)
+  return ((s>=0 and s<10) and "0" or "")..s
+end
+
 function draw_score_hud(p)
-  local score_pad=tostr((p.score>=0 and p.score<10) and "0" or "")..tostr(p.score)
+  local score_pad=get_score_pad(p.score)
   local score_hud="\#"..int_to_p8hex(p.c).."\f7"..score_pad
   local xoffset=p.id==1 and -24 or 16
   if p.id==1 and p.score<-9 then xoffset-=4 end
@@ -1458,11 +1477,16 @@ function draw_scores_hud()
   draw_score_hud(g.p2)
 end
 
-function draw_game_clock()
+function get_game_time_remaining()
   local limit_min=s.menu.time_limits[s.menu.selected_time_limit_index]
   local limit_sec=limit_min*60
   local remaining=limit_sec-g.now
   if remaining<0 then remaining=0 end
+  return remaining
+end
+
+function draw_game_clock()
+  local remaining=get_game_time_remaining()
   local color=remaining<11 and red or remaining<31 and orange or white
   print(format_time(remaining),g.screen_size/2-10,2,color)
 end
@@ -1522,10 +1546,18 @@ function keys(table)
   return keys
 end
 
--- print centered
-function printc(text,y)
+-- print centered horizontally
+function printcx(text,y)
   local retx=print(text,0,-128)
-  print(text,g.screen_size/2-retx/2,y)
+  print(text,128/2-retx/2,y)
+end
+
+-- print centered vertically and horizontally
+function printc(texts)
+  local y=128/2-#texts*9/2
+  for i,text in ipairs(texts) do
+    printcx(text,y+(i-1)*9)
+  end
 end
 
 function draw_menu_items(items)
@@ -1535,7 +1567,7 @@ function draw_menu_items(items)
     local value_color=is_selected and yellow or dark_gray
     local y=(6+i)*g.tile_size+1
     local text="\f"..int_to_p8hex(key_color)..item[1]..":".."\f"..int_to_p8hex(value_color).."⬅️ "..item[2].." ➡️"
-    printc(text,y)
+    printcx(text,y)
   end
 end
 
@@ -1558,12 +1590,39 @@ function draw_start()
   draw_menu()
 end
 
+function draw_match_end()
+  local b="\f"..int_to_p8hex(blue)
+  local lg="\f"..int_to_p8hex(light_gray)
+  local r="\f"..int_to_p8hex(red)
+  local w="\f"..int_to_p8hex(white)
+  local y="\f"..int_to_p8hex(yellow)
+  local p1_score=b..get_score_pad(g.p1.score)
+  local p2_score=r..get_score_pad(g.p2.score)
+  local winner=g.p1.score>g.p2.score and b.."player 1" or g.p1.score<g.p2.score and r.."player 2" or y.."tie"
+  local tie=g.p1.score==g.p2.score
+  if not tie then winner=winner..y.." wins" end
+  printc({
+    b.."player 1"..lg.." | "..r.."player 2",
+    lg.."score: "..p1_score..lg.." | "..p2_score.."       ",
+    "",
+    winner,
+    "",
+    "",
+    lg.."press ❎ to continue",
+  })
+  if not tie then
+    spr(g.sprites.trophy_spr,60,70)
+  end
+end
+
 function _draw()
   cls()
   if s.state=="start" then
     draw_start()
   elseif s.state=="game" then
     draw_game()
+  elseif s.state=="match_end" then
+    draw_match_end()
   end
 end
 
