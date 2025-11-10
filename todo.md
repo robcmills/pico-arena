@@ -39,18 +39,22 @@
   - [x] test burst vs burst
   - [x] test burst vs shield
 - [x] prevent negative scores
+- [x] Add game clock
+- [x] Add energy
+  - [x] Implement energy respawn (timer)
+- [x] Add splash start screen
+- [x] Add menu screen to choose game type, arena, player color, etc.
+- [x] add slowdown to player explode particles
 
 # TODO
 
-- [ ] Add splash start screen
-- [ ] Add menu screen to choose game type, arena, player color, etc.
 - [ ] Add more game types
   - [ ] single player
   - [ ] cooperative multiplayer
   - [ ] ctf
 - [ ] add aiming (hold x to aim)
 - [ ] orange tiles explode
-- [ ] red tiles frag on contact
+- [ ] red tiles dmg on contact
 - [ ] ice tiles freeze
 - [ ] add "reset_player" function
   - [ ] reset energy
@@ -61,9 +65,6 @@
   - [ ] play hp sounds
   - [ ] hp transition animations
 - [ ] Enable choosing player color
-- [ ] Add game clock
-- [x] Add energy
-  - [x] Implement energy respawn (timer)
 - [ ] Add more map tile types
   - [ ] destructible walls
   - [ ] movable walls
@@ -84,7 +85,7 @@
   - [ ] shiny/reflective floors/walls
   - [ ] "alive" tiles with animations responsive to player movement
 - [ ] Add more weapons
-  - [ ] shield
+  - [x] shield
   - [ ] rockets
   - [ ] grenades
   - [ ] reflectors
@@ -102,14 +103,13 @@
 
 ## Polish
 
+- [ ] increase burst radius
 - [ ] enable dash cancel (into shield or movement)
 - [ ] handle line mid-movement/dash
 - [ ] tile art
   - [ ] combine tiles and auto-"terrain"
   - [ ] add fractal noise to voids
-- [ ] Add arena "backgrounds" ?
-  - [ ] bleachers with audience/crowd/spectators/fans
-- [ ] add slowdown to player explode particles
+- [ ] Add arena backgrounds/foregrounds
 - [ ] find missing frame 2
 - [ ] Refactor naming (longer, more explicit, more scalable)
 - [ ] Add fancy animations for:
@@ -131,3 +131,4 @@
 - [ ] Prevent fire when taking damage (duel mechanic:first to draw gains advantage)
 - [ ] enable adjacent dash
 - [ ] dash player collisions should push back 1 tile or more? into void?
+

@@ -63,8 +63,8 @@ arenas={
   },
   menu={
     celx=0,
-    cely=50,
-    celh=14,
+    cely=52,
+    celh=12,
     celw=14,
   },
   test1={
@@ -162,8 +162,8 @@ function aget(x,y)
 end
 
 function init_energy_pickups()
-  for x=1,g.arena.celw do
-    for y=1,g.arena.celh do
+  for x=0,g.arena.celw do
+    for y=0,g.arena.celh do
       if aget(x,y)==g.sprites.energy_spr then
         local key=x..","..y
         g.entities[key]={
