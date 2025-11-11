@@ -437,7 +437,9 @@ function init_state()
   s={
     input_delay=0.14,
     last_input_time=0,
+    match_end_input_timeout=3,
     match_end_sfx_playing=false,
+    match_end_time=nil,
     menu={
       game_types={"duel","ctf"},
       items={"game_type","time_limit","arena","start"},
@@ -449,6 +451,7 @@ function init_state()
       time_limits={0.5,2,4,8},
       transition_time=2,
     },
+    sfx_start_times={},
     state="start",
   }
   music(1)
@@ -569,18 +572,18 @@ function move_player(player,z,is_push)
   local to_spr=aget(to_x,to_y) -- target arena sprite
   -- solid tiles
   if fget(to_spr,g.sprites.is_solid) then
-    sfx(sounds.player_move_solid_collision_bump)
+    sfxd(sounds.player_move_solid_collision_bump,0.5)
     return false
   end
   -- void
   if not is_push and not g.settings.enable_void_suicide and is_void(to_spr) then
-    sfx(sounds.player_move_solid_collision_bump)
+    sfxd(sounds.player_move_solid_collision_bump,0.5)
     return false
   end
   -- other player collisions
   local other_player=player.id==1 and g.p2 or g.p1
   if other_player.tile_x==to_x and other_player.tile_y==to_y and other_player.hp>0 then
-    sfx(sounds.player_move_solid_collision_bump)
+    sfxd(sounds.player_move_solid_collision_bump,0.5)
     return false
   end
   -- move player
@@ -1172,6 +1175,7 @@ function update_end_conditions()
   end
   if remaining<=0 then
     s.match_end_sfx_playing=false
+    s.match_end_time=time()
     s.state="match_end"
   end
 end
@@ -1274,11 +1278,12 @@ function update_game_start_countdown()
 end
 
 function update_match_end()
-  -- TODO: play match end sound
+  if time()-s.match_end_time<s.match_end_input_timeout then return end
   local i=get_debounced_input()
   if i==nil then return end
   local x=i[1].x or i[2].x
   if x then
+    sfx(sounds.menu_movement)
     init_state()
   end
 end
@@ -1674,6 +1679,7 @@ function draw_match_end()
   local winner=g.p1.score>g.p2.score and b.."player 1" or g.p1.score<g.p2.score and r.."player 2" or y.."tie"
   local tie=g.p1.score==g.p2.score
   if not tie then winner=winner..y.." wins" end
+  local continue=time()-s.match_end_time<s.match_end_input_timeout and "" or lg.."press ❎ to continue"
   printc({
     b.."player 1"..lg.." | "..r.."player 2",
     lg.."score: "..p1_score..lg.." | "..p2_score.."       ",
@@ -1681,7 +1687,7 @@ function draw_match_end()
     winner,
     "",
     "",
-    lg.."press ❎ to continue",
+    continue,
   })
   if not tie then
     spr(g.sprites.trophy_spr,60,70)
@@ -1752,6 +1758,14 @@ function rndw(choices)
   for c in all(choices) do
     run+=c.w
     if r<run then return c.v end
+  end
+end
+
+-- play sfx debounced
+function sfxd(sound,bounce)
+  if s.sfx_start_times[sound]==nil or time()-s.sfx_start_times[sound]>bounce then
+    s.sfx_start_times[sound]=time()
+    sfx(sound)
   end
 end
 

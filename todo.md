@@ -46,11 +46,12 @@
 - [x] Add menu screen to choose game type, arena, player color, etc.
 - [x] add slowdown to player explode particles
 - [x] sfx names
+- [x] Add initial timeout to game end state to ignore player input that spills over from game
+- [x] fix player move solid collision sfx stutter (sfxd)
 
 # TODO
 
 - [ ] Add print delays to match end screen to reveal results with anticipation
-- [ ] Add initial timeout to game end state to ignore player input that spills over from game
 - [ ] Add match end screen music
 - [ ] prevent continuous dash attacks (prevent dmg/push when taking damage)
 - [ ] add aiming (hold x to aim)
