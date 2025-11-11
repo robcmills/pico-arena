@@ -45,18 +45,15 @@
 - [x] Add splash start screen
 - [x] Add menu screen to choose game type, arena, player color, etc.
 - [x] add slowdown to player explode particles
+- [x] sfx names
 
 # TODO
 
+- [ ] Add print delays to match end screen to reveal results with anticipation
 - [ ] Add initial timeout to game end state to ignore player input that spills over from game
-- [ ] Add more game types
-  - [ ] single player
-  - [ ] cooperative multiplayer
-  - [ ] ctf
+- [ ] Add match end screen music
+- [ ] prevent continuous dash attacks (prevent dmg/push when taking damage)
 - [ ] add aiming (hold x to aim)
-- [ ] orange tiles explode
-- [ ] red tiles dmg on contact
-- [ ] ice tiles freeze
 - [ ] add "reset_player" function
   - [ ] reset energy
 - [ ] set_score function
@@ -69,7 +66,7 @@
 - [ ] Add more map tile types
   - [ ] destructible walls
   - [ ] movable walls
-  - [ ] voids
+  - [x] voids
   - [ ] "push" pads
   - [ ] portals
   - [ ] floors
@@ -83,6 +80,9 @@
   - [ ] water (slows movement)
   - [ ] ice (explodes and "freezes" players)
   - [ ] fire
+  - [ ] orange tiles explode
+  - [ ] red tiles dmg on contact
+  - [ ] ice tiles freeze
   - [ ] shiny/reflective floors/walls
   - [ ] "alive" tiles with animations responsive to player movement
 - [ ] Add more weapons
@@ -118,6 +118,13 @@
   - [ ] energy pickup
 - [ ] Add arena validation
   - [ ] ensure at least two spawn points
+
+## Stretch Goals
+
+- [ ] Add more game types
+  - [ ] single player
+  - [ ] cooperative multiplayer
+  - [ ] ctf
 
 ## Maybe
 

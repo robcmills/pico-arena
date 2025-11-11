@@ -75,6 +75,23 @@ arenas={
   }
 }
 
+sounds={
+  countdown=7,
+  empty_energy=18,
+  energy_collect=17,
+  fire_burst=15,
+  fire_line=11,
+  menu_movement=5,
+  menu_start=6,
+  player_damage=14,
+  player_dash=13,
+  player_explode=10,
+  player_move=12,
+  player_move_solid_collision_bump=14,
+  player_spawn=8,
+  player_void_fall=16,
+}
+
 -- global test state
 test={
   enabled=false,
@@ -285,7 +302,7 @@ function spawn_player(p)
     end
     add(p.spawn_particles,particle)
   end
-  sfx(8)
+  sfx(sounds.player_spawn)
 end
 
 function init_game(game_type, arena)
@@ -420,6 +437,7 @@ function init_state()
   s={
     input_delay=0.14,
     last_input_time=0,
+    match_end_sfx_playing=false,
     menu={
       game_types={"duel","ctf"},
       items={"game_type","time_limit","arena","start"},
@@ -451,7 +469,7 @@ function dash_player(player,z,is_continue)
     -- check if can dash
     if player.last_move_time~=nil then return end
     if player.energy<=0 then
-      -- TODO: play empty energy sound
+      sfx(sounds.empty_energy)
       -- TODO: flash player energy bar light_gray
       move_player(player,z)
       return
@@ -476,14 +494,14 @@ function dash_player(player,z,is_continue)
   if not is_continue then
     lose_energy(player,1)
   end
-  -- move player
+  -- dash player
   player.last_move_time=g.now
   player.to_x=target.x
   player.to_y=target.y
   player.from_x=player.tile_x
   player.from_y=player.tile_y
   player.velocity=g.settings.player_dash_velocity
-  -- TODO: play dash sound
+  sfx(sounds.player_dash)
 end
 
 function increase_score(p)
@@ -551,18 +569,18 @@ function move_player(player,z,is_push)
   local to_spr=aget(to_x,to_y) -- target arena sprite
   -- solid tiles
   if fget(to_spr,g.sprites.is_solid) then
-    -- TODO: play solid bump sound
+    sfx(sounds.player_move_solid_collision_bump)
     return false
   end
   -- void
   if not is_push and not g.settings.enable_void_suicide and is_void(to_spr) then
-    -- TODO: play void bump sound
+    sfx(sounds.player_move_solid_collision_bump)
     return false
   end
   -- other player collisions
   local other_player=player.id==1 and g.p2 or g.p1
   if other_player.tile_x==to_x and other_player.tile_y==to_y and other_player.hp>0 then
-    -- TODO: play player bump sound
+    sfx(sounds.player_move_solid_collision_bump)
     return false
   end
   -- move player
@@ -572,7 +590,7 @@ function move_player(player,z,is_push)
   player.from_x=player.tile_x
   player.from_y=player.tile_y
   player.velocity=g.settings.player_velocity
-  sfx(5)
+  sfx(sounds.player_move)
   return true
 end
 
@@ -588,6 +606,7 @@ end
 function dmg_player(p, dmg)
   p.hp-=dmg
   p.last_dmg_time=g.now
+  sfx(sounds.player_damage)
 end
 
 function push_player(p,dir)
@@ -641,7 +660,7 @@ function explode_player(player,dir)
     end
     add(player.explode_particles,particle)
   end
-  sfx(10)
+  sfx(sounds.player_explode)
 end
 
 function raycast(from_tile,dir,intersect_void)
@@ -690,7 +709,7 @@ end
 function fire_line(p)
   p.last_fire_time=g.now
   if p.energy<=0 then
-    -- TODO: play empty energy sound
+    sfx(sounds.empty_energy)
     -- TODO: flash player energy bar light_gray
     return
   end
@@ -749,7 +768,7 @@ function fire_line(p)
     z=p.z,
   })
   lose_energy(p,g.settings.line_dmg)
-  sfx(11)
+  sfx(sounds.fire_line)
 end
 
 function fire_weapon(p)
@@ -846,7 +865,7 @@ end
 
 function fire_burst(p)
   if p.energy<=0 then
-    -- TODO: play empty energy sound
+    sfx(sounds.empty_energy)
     -- TODO: flash player energy bar light_gray
     return
   end
@@ -855,6 +874,7 @@ function fire_burst(p)
   lose_energy(p,g.settings.burst_energy_loss)
   -- spawn burst particles
   add(p.burst_particles,get_burst_particle(p))
+  sfx(sounds.fire_burst)
 end
 
 function update_player_burst_particles(player)
@@ -935,7 +955,7 @@ function update_player_entity_collisions(p)
     p.energy+=g.settings.energy_pickup_amount
     if p.energy>g.settings.player_max_energy then p.energy=g.settings.player_max_energy end
     entity.last_collected_time=g.now
-    -- TODO: play energy pickup sound
+    sfx(sounds.energy_collect)
     -- TODO: flash player energy bar white
   end
 end
@@ -1085,16 +1105,15 @@ end
 function update_void_fall(p)
   -- start
   if p.void_fall_start==nil and is_active(p) and p.velocity==0 and aget(p.tile_x,p.tile_y)==g.sprites.void then
-    -- TODO: play fall into void sound
     p.void_fall_start=g.now
     p.hp=0
+    sfx(sounds.player_void_fall)
   end
   -- end
   if p.void_fall_start~=nil and (g.now-p.void_fall_start)>=g.settings.player_fall_into_void_anim_time then
     -- respawn
     p.void_fall_start=nil
     increase_score(get_other_player(p))
-    -- TODO: play score minus sound
     spawn_player(p)
   end
 end
@@ -1147,7 +1166,12 @@ end
 
 function update_end_conditions()
   local remaining=get_game_time_remaining()
+  if remaining<=3 and not s.match_end_sfx_playing then
+    s.match_end_sfx_playing=true
+    sfx(sounds.countdown)
+  end
   if remaining<=0 then
+    s.match_end_sfx_playing=false
     s.state="match_end"
   end
 end
@@ -1169,7 +1193,7 @@ function init_game_start_countdown()
   center_arena(arena)
   s.state="game_start_countdown"
   s.countdown_start_time=time()
-  sfx(7)
+  sfx(sounds.countdown)
 end
 
 function update_menu()
@@ -1228,13 +1252,13 @@ function update_menu()
     end
   end
   -- sfx
-  if up or down or left or right then sfx(5) end
+  if up or down or left or right then sfx(sounds.menu_movement) end
   -- x to start
   local x=i[1].x or i[2].x
   local o=i[1].o or i[2].o
   if s.menu.items[s.menu.selected_item_index]=="start" and (x or o) then
     music(-1)
-    sfx(6)
+    sfx(sounds.menu_start)
     s.menu.start_selected_time=time()
   end
 end
