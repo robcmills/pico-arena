@@ -285,6 +285,7 @@ function spawn_player(p)
     end
     add(p.spawn_particles,particle)
   end
+  sfx(8)
 end
 
 function init_game(game_type, arena)
@@ -571,6 +572,7 @@ function move_player(player,z,is_push)
   player.from_x=player.tile_x
   player.from_y=player.tile_y
   player.velocity=g.settings.player_velocity
+  sfx(5)
   return true
 end
 
@@ -639,6 +641,7 @@ function explode_player(player,dir)
     end
     add(player.explode_particles,particle)
   end
+  sfx(10)
 end
 
 function raycast(from_tile,dir,intersect_void)
@@ -746,6 +749,7 @@ function fire_line(p)
     z=p.z,
   })
   lose_energy(p,g.settings.line_dmg)
+  sfx(11)
 end
 
 function fire_weapon(p)

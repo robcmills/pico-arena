@@ -48,6 +48,7 @@
 
 # TODO
 
+- [ ] Add initial timeout to game end state to ignore player input that spills over from game
 - [ ] Add more game types
   - [ ] single player
   - [ ] cooperative multiplayer
