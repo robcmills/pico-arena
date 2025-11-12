@@ -84,8 +84,11 @@ settings={
   burst_ring_duration=0.1,  -- seconds burst ring remains after growth
   burst_radius=12,
   cube_cost=2,
+  cube_explode_radius=16,
+  cube_explode_time=0.2,
   cube_lifetime=3,
-  cube_velocity=0.08, -- seconds per tile of movement
+  cube_ring_time=0.2,
+  cube_velocity=100, -- pixels per second
   dash_damage=1,
   enable_void_suicide=false,
   energy_loss_delay=0.32,  -- seconds until energy loss is applied (debounce) should be greater than burst_grow_duration else a single burst will drain multiple energy
@@ -110,6 +113,7 @@ settings={
 
 sounds={
   countdown=7,
+  cube_explode=20,
   empty_energy=18,
   energy_collect=17,
   fire_burst=15,
@@ -221,6 +225,10 @@ end
 
 -- get sprite number of arena tile
 function aget(x,y)
+  -- bounds check
+  if x<0 or x>g.arena.celw or y<0 or y>g.arena.celh then
+    return nil
+  end
   return mget(g.arena.celx+x,g.arena.cely+y)
 end
 
@@ -611,6 +619,10 @@ function tile_to_pixel(tile,xy)
   return tile*g.tile_size+(xy=="x" and g.arena.sx or g.arena.sy)
 end
 
+function pixel_to_tile(x,y)
+  return flr((x-g.arena.sx)/g.tile_size),flr((y-g.arena.sy)/g.tile_size)
+end
+
 function explode_player(player,dir)
   -- get center of sprite
   local cx=player.pixel_x+4
@@ -767,13 +779,16 @@ function fire_cube(p)
     return
   end
   local reticle_x,reticle_y=get_reticle_pos(p)
-  local particle={
+  local cube={
+    c=yellow,
+    explode_time=nil,
     start_time=g.now,
+    r=1, -- radius
     x=reticle_x,
     y=reticle_y,
-    z=p.z,
+    z=p.z, -- direction
   }
-  p.cubes={particle}
+  p.cubes={cube}
   lose_energy(p,settings.cube_cost)
   sfx(sounds.fire_cube)
 end
@@ -862,10 +877,7 @@ function get_burst_particle(p)
   }
   particle.update=function()
     -- interpolate radius based on time
-    local t=(g.now-particle.start_time)/settings.burst_grow_duration
-    if t<0 then t=0 end
-    if t>1 then t=1 end
-    local ease=1-(1-t)^3 -- ease out slowdown
+    local ease=slowdown(g.now-particle.start_time,settings.burst_grow_duration)
     particle.radius=3+ease*(settings.burst_radius-3)
     update_burst_collisions(p,particle)
   end
@@ -951,17 +963,40 @@ function update_player_dash_particles(player)
 end
 
 function update_player_cubes(player)
-  for p in all(player.cubes) do
-    if g.now-p.start_time>settings.cube_lifetime then
-      del(player.cubes,p)
-    else
+  for c in all(player.cubes) do
+    if g.now-c.start_time>settings.cube_lifetime or (c.explode_time~=nil and g.now-c.explode_time>settings.cube_explode_time+settings.cube_ring_time) then
+      del(player.cubes,c)
+    elseif c.explode_time==nil then -- update projectile
       -- position
-      local pixels_per_sec=g.tile_size/settings.cube_velocity
-      local d=pixels_per_sec*g.dt
-      if p.z==0 or p.z==180 then
-        p.x+=d*(p.z==0 and 1 or -1)
-      elseif p.z==90 or p.z==-90 then
-        p.y+=d*(p.z==90 and 1 or -1)
+      local d=settings.cube_velocity*g.dt
+      if c.z==0 or c.z==180 then
+        c.x+=d*(c.z==0 and 1 or -1)
+      elseif c.z==90 or c.z==-90 then
+        c.y+=d*(c.z==90 and 1 or -1)
+      end
+      -- collisions
+      -- get collision pixel on leading edge
+      -- accounting for "offset" tiles
+      local cx=c.x
+      if c.z==0 then cx+=c.r+1
+      elseif c.z==180 then cx-=c.r end
+      local cy=c.y
+      if c.z==90 then cy+=c.r+1
+      elseif c.z==-90 then cy-=c.r end
+      local tile_x,tile_y=pixel_to_tile(cx,cy)
+      local aspr=aget(tile_x,tile_y)
+      -- solid tiles
+      if aspr~=nil and fget(aspr,sprites.is_solid) then
+        -- explode
+        c.explode_time=g.now
+        sfx(sounds.cube_explode)
+      end
+    else -- update explosion
+      local ease=slowdown(g.now-c.explode_time,settings.cube_explode_time)
+      c.r=1+ease*(settings.cube_explode_radius-1)
+      -- update color
+      if g.now-c.explode_time>settings.cube_explode_time then
+        c.c=dark_gray
       end
     end
   end
@@ -1415,8 +1450,8 @@ function draw_player_burst_particles(player)
 end
 
 function draw_player_cubes(player)
-  for p in all(player.cubes) do
-    rectfill(p.x-1,p.y-1,p.x+1,p.y+1,yellow)
+  for c in all(player.cubes) do
+    rect(c.x-c.r,c.y-c.r,c.x+c.r,c.y+c.r,c.c)
   end
 end
 
@@ -1825,6 +1860,13 @@ function sfxd(sound,bounce)
     s.sfx_start_times[sound]=time()
     sfx(sound)
   end
+end
+
+function slowdown(age,lifetime)
+  local t=age/lifetime
+  if t<0 then t=0 end
+  if t>1 then t=1 end
+  return 1-(1-t)^3
 end
 
 function stringify(tbl)

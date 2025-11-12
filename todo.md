@@ -50,15 +50,19 @@
 - [x] fix player move solid collision sfx stutter (sfxd)
 - [x] prevent continuous dash attacks (prevent dmg/push when taking damage)
 
+
 # TODO
 
+- [ ] projectile weapon (cubes)
+- [ ] respawn should reset weapon
 - [ ] increase burst radius
+- [ ] increase dash pushback
+- [ ] add burst delay
 - [ ] enable dash cancel (into shield or movement)
 - [ ] handle line mid-movement/dash
 - [ ] tile art
   - [ ] combine tiles and auto-"terrain"
   - [ ] add fractal noise to voids
-- [ ] add aiming (hold x to aim)
 - [ ] Add print delays to match end screen to reveal results with anticipation
 - [ ] Add match end screen music
 - [ ] add "reset_player" function
@@ -93,8 +97,6 @@
   - [ ] shiny/reflective floors/walls
   - [ ] "alive" tiles with animations responsive to player movement
 - [ ] Add more weapons
-  - [x] shield
-  - [ ] rockets
   - [ ] grenades
   - [ ] reflectors
   - [ ] corners
@@ -129,7 +131,7 @@
 
 ## Maybe
 
-- [ ] increase dash pushback
+- [ ] add aiming (hold x to aim)
 - [ ] enable player movement push
 - [ ] Add two types of spawn tiles, initial and regular
 - [ ] taking damage
