@@ -38,7 +38,7 @@ frame_duration_60=1/60
 -- global state
 s={}
 
--- global game state
+-- game state
 g={}
 
 -- maps
@@ -75,6 +75,36 @@ arenas={
   }
 }
 
+settings={
+  burst_color=yellow,
+  burst_delay=0.2,  -- seconds between burst fires
+  burst_energy_loss=1,
+  burst_grow_duration=0.2,  -- seconds burst radius grows
+  burst_ring_color=dark_gray,
+  burst_ring_duration=0.1,  -- seconds burst ring remains after growth
+  burst_radius=12,
+  dash_damage=1,
+  enable_void_suicide=false,
+  energy_loss_delay=0.32,  -- seconds until energy loss is applied (debounce) should be greater than burst_grow_duration else a single burst will drain multiple energy
+  energy_pickup_amount=8,  -- amount of energy per energy pickup
+  energy_respawn_time=15,  -- seconds until energy respawns
+  line_delay=0.2,  -- seconds between weapon fires
+  line_dmg=1,
+  line_life=0.1,  -- seconds
+  line_push=1,  -- number of tiles a line collision pushes the player
+  player_damage_duration=0.32, -- seconds player damage animation lasts
+  player_dash_particle_lifetime=0.2,  -- seconds a dash particle lasts
+  player_dash_velocity=0.02,  -- seconds per tile of movement (lower is faster)
+  player_explode_duration=1, -- seconds player explode animation lasts
+  player_fall_into_void_anim_time=0.3, -- seconds player fall into void animation lasts
+  player_fire_anim_time=0.3,  -- seconds player fire animation lasts
+  player_max_energy=16,
+  player_max_hp=8,
+  player_radius=2,
+  player_spawn_duration=0.64, -- seconds player spawn animation lasts
+  player_velocity=0.15,  -- default velocity in seconds per tile (8 pixels)
+}
+
 sounds={
   countdown=7,
   empty_energy=18,
@@ -90,6 +120,18 @@ sounds={
   player_move_solid_collision_bump=14,
   player_spawn=8,
   player_void_fall=16,
+}
+
+sprites={
+  cube_spr=35,
+  flags={
+    is_solid=0, -- block movement
+  },
+  energy_spr=33, -- sprite index for energy pickups
+  line_spr=34,
+  trophy_spr=49,
+  spawn_spr=4,
+  void=0,
 }
 
 -- global test state
@@ -112,17 +154,17 @@ tests={{
   update_pre=function()
     if g.frame==1 then
       -- enable firing immediately
-      g.p1.last_fire_time=-g.settings.line_delay
-      g.p2.last_fire_time=-g.settings.line_delay
+      g.p1.last_fire_time=-settings.line_delay
+      g.p2.last_fire_time=-settings.line_delay
       -- disable spawn animation
       g.p1.spawn_particles={}
       g.p2.spawn_particles={}
       -- enable immediate input
-      g.p1.last_spawn_time=-g.settings.player_spawn_duration
-      g.p2.last_spawn_time=-g.settings.player_spawn_duration
+      g.p1.last_spawn_time=-settings.player_spawn_duration
+      g.p2.last_spawn_time=-settings.player_spawn_duration
       -- enable immediate energy loss
-      g.p1.last_energy_loss_time=-g.settings.energy_loss_delay
-      g.p2.last_energy_loss_time=-g.settings.energy_loss_delay
+      g.p1.last_energy_loss_time=-settings.energy_loss_delay
+      g.p2.last_energy_loss_time=-settings.energy_loss_delay
       -- set player positions
       set_player_pos(g.p1,2,4,0)
       set_player_pos(g.p2,6,4,180)
@@ -138,7 +180,7 @@ tests={{
     end
   end,
   update_post=function()
-    if test.fire_time~=0 and g.now>test.fire_time+g.settings.player_explode_duration+frame_duration_60 then
+    if test.fire_time~=0 and g.now>test.fire_time+settings.player_explode_duration+frame_duration_60 then
       return true -- test finished
     end
   end,
@@ -181,7 +223,7 @@ end
 function init_energy_pickups()
   for x=0,g.arena.celw do
     for y=0,g.arena.celh do
-      if aget(x,y)==g.sprites.energy_spr then
+      if aget(x,y)==sprites.energy_spr then
         local key=x..","..y
         g.entities[key]={
           last_collected_time=nil,
@@ -217,11 +259,11 @@ function is_active(p)
 end
 
 function is_bursting(p)
-  return p.last_burst_time>0 and g.now<p.last_burst_time+g.settings.burst_grow_duration
+  return p.last_burst_time>0 and g.now<p.last_burst_time+settings.burst_grow_duration
 end
 
 function is_dashing(p)
-  return p.velocity==g.settings.player_dash_velocity
+  return p.velocity==settings.player_dash_velocity
 end
 
 function is_input_active(p)
@@ -229,23 +271,23 @@ function is_input_active(p)
 end
 
 function is_falling_into_void(p)
-  return p.void_fall_start~=nil and g.now-p.void_fall_start<=g.settings.player_fall_into_void_anim_time
+  return p.void_fall_start~=nil and g.now-p.void_fall_start<=settings.player_fall_into_void_anim_time
 end
 
 function is_firing(p)
-  return p.last_fire_time>0 and g.now-p.last_fire_time<g.settings.player_fire_anim_time
+  return p.last_fire_time>0 and g.now-p.last_fire_time<settings.player_fire_anim_time
 end
 
 function is_spawning(p)
-  return g.now-p.last_spawn_time<=g.settings.player_spawn_duration
+  return g.now-p.last_spawn_time<=settings.player_spawn_duration
 end
 
 function is_taking_damage(p)
-  return p.last_dmg_time>0 and g.now-p.last_dmg_time<g.settings.player_damage_duration
+  return p.last_dmg_time>0 and g.now-p.last_dmg_time<settings.player_damage_duration
 end
 
 function is_void(spr)
-  return spr==g.sprites.void
+  return spr==sprites.void
 end
 
 function spawn_player(p)
@@ -254,7 +296,7 @@ function spawn_player(p)
   local other_p=p.id==1 and g.p2 or g.p1
   for x=0,g.arena.celw do
     for y=0,g.arena.celh do
-      if aget(x,y)==g.sprites.spawn_spr and (other_p.tile_x~=x or other_p.tile_y~=y) then
+      if aget(x,y)==sprites.spawn_spr and (other_p.tile_x~=x or other_p.tile_y~=y) then
         add(spawns,{x=x,y=y})
       end
     end
@@ -270,7 +312,7 @@ function spawn_player(p)
   -- set dir towards map center
   p.z=p.tile_x<g.arena.celw/2 and 0 or 180
   p.flip_x=p.z==180
-  p.hp=g.settings.player_max_hp
+  p.hp=settings.player_max_hp
   p.last_spawn_time=g.now
 
   -- spawn particles
@@ -281,7 +323,7 @@ function spawn_player(p)
     local start_x=target_x
     local start_y=target_y-rnd(24)
     local size=rnd(2)
-    local duration=g.settings.player_spawn_duration
+    local duration=settings.player_spawn_duration
     local particle={
       c=rndw({{v=p.c,w=0.6},{v=white,w=0.1},{v=yellow,w=0.3}}),
       duration=duration,
@@ -305,131 +347,57 @@ function spawn_player(p)
   sfx(sounds.player_spawn)
 end
 
+function init_player(id,c)
+  return {
+    burst_particles={},
+    c=c, -- color
+    dash_particles={},
+    energy=settings.player_max_energy,
+    explode_particles={},
+    score=0,
+    hp=settings.player_max_hp,
+    id=id,
+    flip_x=false,
+    last_burst_time=0,
+    last_dmg_time=0,
+    last_energy_loss_time=0,
+    last_fire_time=0,
+    last_move_bits=0,
+    last_move_time=nil,
+    last_spawn_time=0,
+    spawn_particles={},
+    w=sprites.line_spr, -- selected weapon
+    -- position state (of top-left corner of 8x8 sprite)
+    pixel_x=0, -- current x position in pixels, relative to arena origin (top left)
+    pixel_y=0, -- current y position in pixels, relative to arena origin (top left)
+    tile_x=0, -- current x position in tile coordinates, relative to arena origin (top left)
+    tile_y=0, -- current y position in tiles coordinates, relative to arena origin (top left)
+    from_x=nil, -- movement starting x position in tile coordinates
+    from_y=nil, -- movement starting y position in tile coordinates
+    to_x=nil, -- movement target x position in tile coordinates
+    to_y=nil, -- movement target y position in tile coordinates
+    velocity=0, -- movement velocity in seconds per tile (8 pixels)
+    void_fall_start=nil, -- time when player started falling into void
+    z=0, -- facing direction in degrees clockwise (0=East,90=South)
+  }
+end
+
 function init_game(game_type, arena)
   g={
-    -- init global state
     arena=arena, -- active arena (map)
     entities={},
     debug="",
     frame=0,
     game_type=game_type,
     now=0,
-    p1={
-      burst_particles={},
-      c=blue, -- color
-      dash_particles={},
-      energy=0,
-      explode_particles={},
-      score=0,
-      hp=0,
-      id=1,
-      flip_x=false,
-      last_burst_time=0,
-      last_dmg_time=0,
-      last_energy_loss_time=0,
-      last_fire_time=0,
-      last_move_bits=0,
-      last_move_time=nil,
-      last_spawn_time=0,
-      spawn_particles={},
-      w=1, -- selected weapon (1=line)
-      -- position state (of top-left corner of 8x8 sprite)
-      pixel_x=0, -- current x position in pixels, relative to arena origin (top left)
-      pixel_y=0, -- current y position in pixels, relative to arena origin (top left)
-      tile_x=0, -- current x position in tile coordinates, relative to arena origin (top left)
-      tile_y=0, -- current y position in tiles coordinates, relative to arena origin (top left)
-      from_x=nil, -- movement starting x position in tile coordinates
-      from_y=nil, -- movement starting y position in tile coordinates
-      to_x=nil, -- movement target x position in tile coordinates
-      to_y=nil, -- movement target y position in tile coordinates
-      velocity=0, -- movement velocity in seconds per tile (8 pixels)
-      void_fall_start=nil, -- time when player started falling into void
-      z=0, -- facing direction in degrees clockwise (0=East,90=South)
-    },
-    p2={
-      burst_particles={},
-      c=red,
-      dash_particles={},
-      energy=0,
-      explode_particles={},
-      score=0,
-      hp=0,
-      id=2,
-      flip_x=true,
-      last_burst_time=0,
-      last_dmg_time=0,
-      last_energy_loss_time=0,
-      last_fire_time=0,
-      last_move_bits=0,
-      last_move_time=nil,
-      last_spawn_time=0,
-      spawn_particles={},
-      w=1,
-      pixel_x=0,
-      pixel_y=0,
-      tile_x=0,
-      tile_y=0,
-      from_x=nil,
-      from_y=nil,
-      to_x=nil,
-      to_y=nil,
-      velocity=0,
-      void_fall_start=nil,
-      z=180,
-    },
+    p1=init_player(1,blue),
+    p2=init_player(2,red),
     lines={}, -- line weapon "tracers"
     screen_size=128,
-    settings={
-      burst_color=yellow,
-      burst_delay=0.2,  -- seconds between burst fires
-      burst_energy_loss=1,
-      burst_grow_duration=0.2,  -- seconds burst radius grows
-      burst_ring_color=dark_gray,
-      burst_ring_duration=0.1,  -- seconds burst ring remains after growth
-      burst_radius=12,
-      dash_damage=1,
-      enable_void_suicide=false,
-      energy_loss_delay=0.32,  -- seconds until energy loss is applied (debounce) should be greater than burst_grow_duration else a single burst will drain multiple energy
-      energy_pickup_amount=8,  -- amount of energy per energy pickup
-      energy_respawn_time=15,  -- seconds until energy respawns
-      line_delay=0.2,  -- seconds between weapon fires
-      line_dmg=1,
-      line_life=0.1,  -- seconds
-      line_push=1,  -- number of tiles a line collision pushes the player
-      player_damage_duration=0.32, -- seconds player damage animation lasts
-      player_dash_particle_lifetime=0.2,  -- seconds a dash particle lasts
-      player_dash_velocity=0.02,  -- seconds per tile of movement (lower is faster)
-      player_explode_duration=1, -- seconds player explode animation lasts
-      player_fall_into_void_anim_time=0.3, -- seconds player fall into void animation lasts
-      player_fire_anim_time=0.3,  -- seconds player fire animation lasts
-      player_max_energy=16,
-      player_max_hp=8,
-      player_radius=2,
-      player_spawn_duration=0.64, -- seconds player spawn animation lasts
-      player_velocity=0.15,  -- default velocity in seconds per tile (8 pixels)
-    },
-    sprites={
-      cube_spr=35,
-      flags={
-        is_solid=0, -- block movement
-      },
-      energy_spr=33, -- sprite index for energy pickups
-      line_spr=34,
-      trophy_spr=49,
-      spawn_spr=4,
-      void=0,
-    },
     start_time=time(),
     tile_size=8,
   }
-  -- init game state that depends on settings
-  g.p1.energy=g.settings.player_max_energy
-  g.p2.energy=g.settings.player_max_energy
-  g.p1.hp=g.settings.player_max_hp
-  g.p2.hp=g.settings.player_max_hp
-  -- init arena
   init_arena()
-  -- spawn players
   spawn_player(g.p1)
   spawn_player(g.p2)
 end
@@ -459,12 +427,17 @@ function init_state()
   music(1)
 end
 
-function _init()
-  init_state()
+-- temp for development
+function init_immediate()
   music(-1)
   s.menu.selected_time_limit_index=2
   s.state="game"
   init_game("duel", arenas.arena3)
+end
+
+function _init()
+  init_state()
+  --init_immediate()
   --init_tests()
 end
 
@@ -484,7 +457,7 @@ function dash_player(player,z,is_continue)
   end
   local collider=raycast({x=player.tile_x,y=player.tile_y},z,true)
   local target={x=collider.x,y=collider.y}
-  if collider.type~='void' or (collider.type=='void' and not g.settings.enable_void_suicide) then
+  if collider.type~='void' or (collider.type=='void' and not settings.enable_void_suicide) then
     -- get adjacent tile
     if z==0 then target.x-=1
     elseif z==180 then target.x+=1
@@ -507,7 +480,7 @@ function dash_player(player,z,is_continue)
   player.to_y=target.y
   player.from_x=player.tile_x
   player.from_y=player.tile_y
-  player.velocity=g.settings.player_dash_velocity
+  player.velocity=settings.player_dash_velocity
   sfx(sounds.player_dash)
 end
 
@@ -533,7 +506,7 @@ function player_dash_collision(player)
     cancel_movement(player)
     -- check for dash vs dash collision
     if is_dashing(other_player) and other_player.z==get_opposite_direction(player.z) then
-      dmg_player(player,g.settings.dash_damage)
+      dmg_player(player,settings.dash_damage)
       if player.hp>0 then
         push_player(player,other_player.z)
       elseif #player.explode_particles==0 then
@@ -543,7 +516,7 @@ function player_dash_collision(player)
     end
     if not is_taking_damage(other_player) then
       -- damage collider
-      dmg_player(other_player,g.settings.dash_damage)
+      dmg_player(other_player,settings.dash_damage)
       if other_player.hp>0 then
         collider_pushed=push_player(other_player,player.z)
       elseif #other_player.explode_particles==0 then
@@ -577,12 +550,12 @@ function move_player(player,z,is_push)
   -- check for collisions that would prevent movement
   local to_spr=aget(to_x,to_y) -- target arena sprite
   -- solid tiles
-  if fget(to_spr,g.sprites.is_solid) then
+  if fget(to_spr,sprites.is_solid) then
     sfxd(sounds.player_move_solid_collision_bump,0.5)
     return false
   end
   -- void
-  if not is_push and not g.settings.enable_void_suicide and is_void(to_spr) then
+  if not is_push and not settings.enable_void_suicide and is_void(to_spr) then
     sfxd(sounds.player_move_solid_collision_bump,0.5)
     return false
   end
@@ -598,7 +571,7 @@ function move_player(player,z,is_push)
   player.to_y=to_y
   player.from_x=player.tile_x
   player.from_y=player.tile_y
-  player.velocity=g.settings.player_velocity
+  player.velocity=settings.player_velocity
   sfx(sounds.player_move)
   return true
 end
@@ -653,7 +626,7 @@ function explode_player(player,dir)
     -- particle
     local particle={
       c=rnd({player.c,yellow,white}),
-      end_time=g.now+g.settings.player_explode_duration,
+      end_time=g.now+settings.player_explode_duration,
       start_time=g.now,
       size=size,
       x=cx+cos(spawn_angle)*spawn_radius,
@@ -688,7 +661,7 @@ function raycast(from_tile,dir,intersect_void)
     if to_spr==0 and intersect_void then
       return {type='void',x=target.x,y=target.y}
     end
-    if fget(to_spr,g.sprites.is_solid) then
+    if fget(to_spr,sprites.is_solid) then
       return {type='tile',x=target.x,y=target.y}
     end
     -- check for player
@@ -703,7 +676,7 @@ end
 
 -- player "collider" is hit by player "shooter" with line weapon in given direction "z"
 function player_line_collision(collider,shooter,z)
-  dmg_player(collider,g.settings.line_dmg)
+  dmg_player(collider,settings.line_dmg)
   if collider.hp>0 then
     if is_dashing(collider) then
       collider.dash_particles={}
@@ -732,7 +705,7 @@ function fire_line(p)
     -- if collider player is shielding or bursting then shooter is damaged
     if collider.p.shield or is_bursting(collider.p) then
       player_line_collision(p,collider.p,get_opposite_direction(p.z))
-      lose_energy(collider.p,g.settings.line_dmg)
+      lose_energy(collider.p,settings.line_dmg)
     elseif not is_taking_damage(collider.p) then
       player_line_collision(collider.p,p,p.z)
     end
@@ -776,12 +749,12 @@ function fire_line(p)
     target_pos=t,
     z=p.z,
   })
-  lose_energy(p,g.settings.line_dmg)
+  lose_energy(p,settings.line_dmg)
   sfx(sounds.fire_line)
 end
 
 function fire_weapon(p)
-  if p.w==1 then fire_line(p) end
+  if p.w==sprites.line_spr then fire_line(p) end
 end
 
 function get_player_center(p)
@@ -822,7 +795,7 @@ function lose_energy(p,amount)
 end
 
 function can_lose_energy(p)
-  return p.energy>0 and g.now-p.last_energy_loss_time>g.settings.energy_loss_delay
+  return p.energy>0 and g.now-p.last_energy_loss_time>settings.energy_loss_delay
 end
 
 function cancel_burst(player,particle)
@@ -833,13 +806,13 @@ function update_burst_collisions(player,particle)
   -- player collision
   local other_player=player.id==1 and g.p2 or g.p1
   local c=get_player_center(other_player)
-  local dist=get_distance(particle.x,particle.y,c.x,c.y)-g.settings.player_radius-1
+  local dist=get_distance(particle.x,particle.y,c.x,c.y)-settings.player_radius-1
   if dist<=particle.radius then
     local push_z=get_burst_push_z(particle.x,particle.y,c.x,c.y,other_player.z)
     -- if other player is shielding or bursting then they take no damage
     if other_player.shield or is_bursting(other_player) then
       if can_lose_energy(other_player) then
-        lose_energy(other_player,g.settings.burst_energy_loss)
+        lose_energy(other_player,settings.burst_energy_loss)
       end
     elseif is_dashing(other_player) then
       -- dash beats burst
@@ -853,8 +826,8 @@ end
 function get_burst_particle(p)
   local center=get_player_center(p)
   local particle = {
-    c=g.settings.burst_color,
-    end_time=g.now+g.settings.burst_grow_duration+g.settings.burst_ring_duration,
+    c=settings.burst_color,
+    end_time=g.now+settings.burst_grow_duration+settings.burst_ring_duration,
     radius=3,
     start_time=g.now,
     x=center.x,
@@ -862,11 +835,11 @@ function get_burst_particle(p)
   }
   particle.update=function()
     -- interpolate radius based on time
-    local t=(g.now-particle.start_time)/g.settings.burst_grow_duration
+    local t=(g.now-particle.start_time)/settings.burst_grow_duration
     if t<0 then t=0 end
     if t>1 then t=1 end
     local ease=1-(1-t)^3 -- ease out slowdown
-    particle.radius=3+ease*(g.settings.burst_radius-3)
+    particle.radius=3+ease*(settings.burst_radius-3)
     update_burst_collisions(p,particle)
   end
   return particle
@@ -880,7 +853,7 @@ function fire_burst(p)
   end
   p.last_fire_time=g.now
   p.last_burst_time=g.now
-  lose_energy(p,g.settings.burst_energy_loss)
+  lose_energy(p,settings.burst_energy_loss)
   -- spawn burst particles
   add(p.burst_particles,get_burst_particle(p))
   sfx(sounds.fire_burst)
@@ -939,7 +912,7 @@ function update_player_dash_particles(player)
   if not player.dash_particles[key] then
     local dash_particle={
       c=white,
-      end_time=g.now+g.settings.player_dash_particle_lifetime,
+      end_time=g.now+settings.player_dash_particle_lifetime,
       size=2,
       tile_x=player.tile_x,
       tile_y=player.tile_y,
@@ -960,19 +933,28 @@ end
 function update_player_entity_collisions(p)
   local entity=g.entities[p.tile_x..","..p.tile_y]
   -- energy pickup
-  if entity and entity.type=="energy" and entity.last_collected_time==nil and p.energy<g.settings.player_max_energy then
-    p.energy+=g.settings.energy_pickup_amount
-    if p.energy>g.settings.player_max_energy then p.energy=g.settings.player_max_energy end
+  if entity and entity.type=="energy" and entity.last_collected_time==nil and p.energy<settings.player_max_energy then
+    p.energy+=settings.energy_pickup_amount
+    if p.energy>settings.player_max_energy then p.energy=settings.player_max_energy end
     entity.last_collected_time=g.now
     sfx(sounds.energy_collect)
     -- TODO: flash player energy bar white
   end
+  -- weapon pickup
+  if aget(p.tile_x,p.tile_y)==sprites.cube_spr and p.w~=sprites.cube_spr then
+    p.w=sprites.cube_spr
+    sfx(sounds.energy_collect)
+  elseif aget(p.tile_x,p.tile_y)==sprites.line_spr and p.w~=sprites.line_spr then
+    p.w=sprites.line_spr
+    sfx(sounds.energy_collect)
+  end
 end
 
 function update_entities()
+  -- update energy respawn timers
   for _,e in pairs(g.entities) do
     if e.type=="energy" and e.last_collected_time~=nil then
-      if g.now-e.last_collected_time>g.settings.energy_respawn_time then
+      if g.now-e.last_collected_time>settings.energy_respawn_time then
         e.last_collected_time=nil
       end
     end
@@ -1017,7 +999,7 @@ function update_player_movement(p)
   p.tile_y=flr((p.pixel_y+g.tile_size/2-g.arena.sy)/g.tile_size)
 
   -- if we are dashing, do collision check
-  if p.velocity==g.settings.player_dash_velocity then
+  if p.velocity==settings.player_dash_velocity then
     if interpolation==1 and not player_dash_collision(p) then
       -- if no collision then continue dashing
       dash_player(p,p.z,true)
@@ -1039,13 +1021,13 @@ function update_player_movement(p)
 end
 
 function update_player_xo(p)
-  if g.now-p.last_fire_time>g.settings.burst_delay then
+  if g.now-p.last_fire_time>settings.burst_delay then
     fire_burst(p)
   end
 end
 
 function update_player_x(p,x_pressed)
-  if x_pressed and g.now-p.last_fire_time>g.settings.line_delay and not is_spawning(p) then
+  if x_pressed and g.now-p.last_fire_time>settings.line_delay and not is_spawning(p) then
     fire_weapon(p)
     p.last_fire_time=g.now
   end
@@ -1113,13 +1095,13 @@ end
 
 function update_void_fall(p)
   -- start
-  if p.void_fall_start==nil and is_active(p) and p.velocity==0 and aget(p.tile_x,p.tile_y)==g.sprites.void then
+  if p.void_fall_start==nil and is_active(p) and p.velocity==0 and aget(p.tile_x,p.tile_y)==sprites.void then
     p.void_fall_start=g.now
     p.hp=0
     sfx(sounds.player_void_fall)
   end
   -- end
-  if p.void_fall_start~=nil and (g.now-p.void_fall_start)>=g.settings.player_fall_into_void_anim_time then
+  if p.void_fall_start~=nil and (g.now-p.void_fall_start)>=settings.player_fall_into_void_anim_time then
     -- respawn
     p.void_fall_start=nil
     increase_score(get_other_player(p))
@@ -1148,7 +1130,7 @@ end
 
 function update_lines()
   for i,l in pairs(g.lines) do
-    if g.now-l.start_time>g.settings.line_life then
+    if g.now-l.start_time>settings.line_life then
       deli(g.lines,i)
     end
     -- if collider is a player, update line end point to track their movement
@@ -1311,10 +1293,10 @@ function draw_arena(a)
 end
 
 function draw_energy_sprite(e,x,y)
-  spr(g.sprites.energy_spr,x,y)
+  spr(sprites.energy_spr,x,y)
   pal(yellow,dark_gray)
   clip(x,y,g.tile_size,g.tile_size-2-flr((g.now-e.last_collected_time)/3))
-  spr(g.sprites.energy_spr,x,y)
+  spr(sprites.energy_spr,x,y)
   clip()
   pal()
 end
@@ -1351,15 +1333,15 @@ function draw_player_dir(p)
   local y_tile_offset=p.z==90 and -1 or 0
   local y=p.pixel_y+y_offset*8+y_tile_offset
   local sprn=x_offset==0 and 21 or 20
-  if p.velocity==g.settings.player_dash_velocity then
+  if p.velocity==settings.player_dash_velocity then
     sprn=x_offset==0 and 25 or 24
   end
   spr(sprn,x,y,1,1,x_offset<0,y_offset<0)
 end
 
 function get_dash_particle_color(p)
-  local age=g.now-(p.end_time-g.settings.player_dash_particle_lifetime)
-  local t=age/g.settings.player_dash_particle_lifetime  -- 0 = just spawned, 1 = about to end
+  local age=g.now-(p.end_time-settings.player_dash_particle_lifetime)
+  local t=age/settings.player_dash_particle_lifetime  -- 0 = just spawned, 1 = about to end
   return t<0.33 and white or t<0.66 and light_gray or dark_gray
 end
 
@@ -1375,11 +1357,11 @@ end
 function draw_player_burst_particles(player)
   if #player.burst_particles==0 then return end
   for p in all(player.burst_particles) do
-    if g.now<p.start_time+g.settings.burst_grow_duration then
+    if g.now<p.start_time+settings.burst_grow_duration then
       circfill(p.x,p.y,p.radius,p.c)
     end
-    if g.now<p.start_time+g.settings.burst_grow_duration+g.settings.burst_ring_duration then
-      local ring_color=g.now<p.start_time+g.settings.burst_grow_duration and p.c or g.settings.burst_ring_color
+    if g.now<p.start_time+settings.burst_grow_duration+settings.burst_ring_duration then
+      local ring_color=g.now<p.start_time+settings.burst_grow_duration and p.c or settings.burst_ring_color
       circ(p.x,p.y,p.radius,ring_color)
     end
   end
@@ -1395,7 +1377,7 @@ end
 function get_void_fall_yoffset(p)
   local yoffset=0
   if p.void_fall_start~=nil then
-    local t=(g.now-p.void_fall_start)/g.settings.player_fall_into_void_anim_time
+    local t=(g.now-p.void_fall_start)/settings.player_fall_into_void_anim_time
     if t<0 then t=0 end
     if t>1 then t=1 end
     -- short pause and ease-in for cartoonish gravity
@@ -1483,10 +1465,10 @@ end
 function draw_hp_hud(p)
   local seg_w=5 -- segment width
   local gap=1
-  local total_w=g.settings.player_max_hp*(seg_w+gap)-gap*2
+  local total_w=settings.player_max_hp*(seg_w+gap)-gap*2
   local x=p.id==1 and 1 or 128-total_w-3
   -- background
-  for i=0,g.settings.player_max_hp-1 do
+  for i=0,settings.player_max_hp-1 do
     local sx=x+i*(seg_w+gap)
     rect(sx,9,sx+seg_w-1,10,dark_blue)
   end
@@ -1501,11 +1483,11 @@ function draw_energy_hud(p)
   local seg_h=1 -- segment height
   local seg_w=2 -- segment width
   local gap=1
-  local total_w=g.settings.player_max_energy*(seg_w+gap)-gap*2
+  local total_w=settings.player_max_energy*(seg_w+gap)-gap*2
   local x=p.id==1 and 1 or 128-total_w-3
   local y=12
   -- background
-  for i=0,g.settings.player_max_energy-1 do
+  for i=0,settings.player_max_energy-1 do
     local sx=x+i*(seg_w+gap)
     rect(sx,y,sx+seg_w-1,y+seg_h,dark_gray)
   end
@@ -1518,8 +1500,7 @@ end
 
 function draw_weapon_hud(p)
   local x=128/2+(p.id==1 and -16 or 8)
-  local s=p.w==1 and g.sprites.line_spr or g.sprites.cube_spr
-  spr(s,x,8)
+  spr(p.w,x,8)
 end
 
 function draw_lines()
@@ -1702,7 +1683,7 @@ function draw_match_end()
     continue,
   })
   if not tie then
-    spr(g.sprites.trophy_spr,60,70)
+    spr(sprites.trophy_spr,60,70)
   end
 end
 
