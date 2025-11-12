@@ -52,6 +52,12 @@
 
 # TODO
 
+- [ ] increase burst radius
+- [ ] enable dash cancel (into shield or movement)
+- [ ] handle line mid-movement/dash
+- [ ] tile art
+  - [ ] combine tiles and auto-"terrain"
+  - [ ] add fractal noise to voids
 - [ ] add aiming (hold x to aim)
 - [ ] Add print delays to match end screen to reveal results with anticipation
 - [ ] Add match end screen music
@@ -105,12 +111,6 @@
 
 ## Polish
 
-- [ ] increase burst radius
-- [ ] enable dash cancel (into shield or movement)
-- [ ] handle line mid-movement/dash
-- [ ] tile art
-  - [ ] combine tiles and auto-"terrain"
-  - [ ] add fractal noise to voids
 - [ ] Add arena backgrounds/foregrounds
 - [ ] find missing frame 2
 - [ ] Refactor naming (longer, more explicit, more scalable)
