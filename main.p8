@@ -409,10 +409,12 @@ function init_game(game_type, arena)
       player_velocity=0.15,  -- default velocity in seconds per tile (8 pixels)
     },
     sprites={
+      cube_spr=35,
       flags={
         is_solid=0, -- block movement
       },
       energy_spr=33, -- sprite index for energy pickups
+      line_spr=34,
       trophy_spr=49,
       spawn_spr=4,
       void=0,
@@ -459,8 +461,10 @@ end
 
 function _init()
   init_state()
-  --s.state="game"
-  --init_game("duel", arenas.arena2)
+  music(-1)
+  s.menu.selected_time_limit_index=2
+  s.state="game"
+  init_game("duel", arenas.arena3)
   --init_tests()
 end
 
@@ -1320,9 +1324,9 @@ function draw_energy_entity(e)
   -- if a player is "on top" of the energy pickup it will be obscured,
   -- so draw it in hud instead (so player can see respawn timing)
   if g.p1.tile_x==e.x and g.p1.tile_y==e.y then
-    draw_energy_sprite(e,128/2-16,8)
+    draw_energy_sprite(e,128/2-10,8)
   elseif g.p2.tile_x==e.x and g.p2.tile_y==e.y then
-    draw_energy_sprite(e,128/2+8,8)
+    draw_energy_sprite(e,128/2+2,8)
   else
     local x=e.x*g.tile_size+g.arena.sx
     local y=e.y*g.tile_size+g.arena.sy
@@ -1510,8 +1514,12 @@ function draw_energy_hud(p)
     local sx=x+i*(seg_w+gap)
     rect(sx,y,sx+seg_w-1,y+seg_h,yellow)
   end
-  --rect(x,12,x+g.settings.player_max_energy*3,13,dark_gray) -- background
-  --if p.energy>0 then rect(x,12,x+p.energy*3,13,yellow) end -- energy
+end
+
+function draw_weapon_hud(p)
+  local x=128/2+(p.id==1 and -16 or 8)
+  local s=p.w==1 and g.sprites.line_spr or g.sprites.cube_spr
+  spr(s,x,8)
 end
 
 function draw_lines()
@@ -1571,13 +1579,15 @@ end
 
 function draw_hud()
   -- names
-  print("player 1",1,2,g.p1.c)
+  print("player 1",2,2,g.p1.c)
   local p2hud_w=print("player 2",0,-16)
   print("player 2",g.screen_size-p2hud_w-1,2,g.p2.c)
   draw_hp_hud(g.p1)
   draw_hp_hud(g.p2)
   draw_energy_hud(g.p1)
   draw_energy_hud(g.p2)
+  draw_weapon_hud(g.p1)
+  draw_weapon_hud(g.p2)
   draw_scores_hud()
   draw_game_clock()
 end
