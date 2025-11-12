@@ -83,6 +83,9 @@ settings={
   burst_ring_color=dark_gray,
   burst_ring_duration=0.1,  -- seconds burst ring remains after growth
   burst_radius=12,
+  cube_cost=2,
+  cube_lifetime=3,
+  cube_velocity=0.08, -- seconds per tile of movement
   dash_damage=1,
   enable_void_suicide=false,
   energy_loss_delay=0.32,  -- seconds until energy loss is applied (debounce) should be greater than burst_grow_duration else a single burst will drain multiple energy
@@ -110,6 +113,7 @@ sounds={
   empty_energy=18,
   energy_collect=17,
   fire_burst=15,
+  fire_cube=19,
   fire_line=11,
   menu_movement=5,
   menu_start=6,
@@ -351,6 +355,7 @@ function init_player(id,c)
   return {
     burst_particles={},
     c=c, -- color
+    cubes={},
     dash_particles={},
     energy=settings.player_max_energy,
     explode_particles={},
@@ -437,7 +442,7 @@ end
 
 function _init()
   init_state()
-  --init_immediate()
+  init_immediate()
   --init_tests()
 end
 
@@ -702,6 +707,7 @@ function fire_line(p)
   local t=collider -- target tile
 
   if collider.type=='player' then
+    -- shield beats line
     -- if collider player is shielding or bursting then shooter is damaged
     if collider.p.shield or is_bursting(collider.p) then
       player_line_collision(p,collider.p,get_opposite_direction(p.z))
@@ -753,8 +759,29 @@ function fire_line(p)
   sfx(sounds.fire_line)
 end
 
+function fire_cube(p)
+  p.last_fire_time=g.now
+  if p.energy<=0 then
+    sfx(sounds.empty_energy)
+    -- TODO: flash player energy bar
+    return
+  end
+  local reticle_x,reticle_y=get_reticle_pos(p)
+  local particle={
+    start_time=g.now,
+    x=reticle_x,
+    y=reticle_y,
+    z=p.z,
+  }
+  p.cubes={particle}
+  lose_energy(p,settings.cube_cost)
+  sfx(sounds.fire_cube)
+end
+
 function fire_weapon(p)
-  if p.w==sprites.line_spr then fire_line(p) end
+  if p.w==sprites.line_spr then fire_line(p)
+  elseif p.w==sprites.cube_spr then fire_cube(p)
+  end
 end
 
 function get_player_center(p)
@@ -923,11 +950,29 @@ function update_player_dash_particles(player)
   end
 end
 
+function update_player_cubes(player)
+  for p in all(player.cubes) do
+    if g.now-p.start_time>settings.cube_lifetime then
+      del(player.cubes,p)
+    else
+      -- position
+      local pixels_per_sec=g.tile_size/settings.cube_velocity
+      local d=pixels_per_sec*g.dt
+      if p.z==0 or p.z==180 then
+        p.x+=d*(p.z==0 and 1 or -1)
+      elseif p.z==90 or p.z==-90 then
+        p.y+=d*(p.z==90 and 1 or -1)
+      end
+    end
+  end
+end
+
 function update_player_particles(player)
   update_player_spawn_particles(player)
   update_player_explode_particles(player)
   update_player_dash_particles(player)
   update_player_burst_particles(player)
+  update_player_cubes(player)
 end
 
 function update_player_entity_collisions(p)
@@ -1170,7 +1215,9 @@ end
 
 function update_game()
   g.frame+=1
-  g.now=get_time()
+  local now=get_time()
+  g.dt=now-g.now -- delta time
+  g.now=now
   update_tests_pre()
   update_end_conditions()
   update_players()
@@ -1367,7 +1414,15 @@ function draw_player_burst_particles(player)
   end
 end
 
+function draw_player_cubes(player)
+  for p in all(player.cubes) do
+    rectfill(p.x-1,p.y-1,p.x+1,p.y+1,yellow)
+  end
+end
+
 function draw_player_particles()
+  draw_player_cubes(g.p1)
+  draw_player_cubes(g.p2)
   draw_player_dash_particles(g.p1)
   draw_player_dash_particles(g.p2)
   draw_player_burst_particles(g.p1)
@@ -1728,6 +1783,16 @@ function get_opposite_direction(dir)
   elseif dir==90 then return -90
   elseif dir==-90 then return 90
   end
+end
+
+function get_reticle_pos(p)
+  local x=p.pixel_x+3
+  if p.z==0 then x+=6
+  elseif p.z==180 then x-=6 end
+  local y=p.pixel_y+3
+  if p.z==90 then y+=6
+  elseif p.z==-90 then y-=6 end
+  return x,y
 end
 
 function get_time()
