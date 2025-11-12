@@ -48,13 +48,13 @@
 - [x] sfx names
 - [x] Add initial timeout to game end state to ignore player input that spills over from game
 - [x] fix player move solid collision sfx stutter (sfxd)
+- [x] prevent continuous dash attacks (prevent dmg/push when taking damage)
 
 # TODO
 
+- [ ] add aiming (hold x to aim)
 - [ ] Add print delays to match end screen to reveal results with anticipation
 - [ ] Add match end screen music
-- [ ] prevent continuous dash attacks (prevent dmg/push when taking damage)
-- [ ] add aiming (hold x to aim)
 - [ ] add "reset_player" function
   - [ ] reset energy
 - [ ] set_score function

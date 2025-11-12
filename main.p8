@@ -537,15 +537,17 @@ function player_dash_collision(player)
         increase_score(other_player)
       end
     end
-    -- damage collider
-    dmg_player(other_player,g.settings.dash_damage)
-    if other_player.hp>0 then
-      collider_pushed=push_player(other_player,player.z)
-    elseif #other_player.explode_particles==0 then
-      explode_player(other_player,player.z)
-      increase_score(player)
+    if not is_taking_damage(other_player) then
+      -- damage collider
+      dmg_player(other_player,g.settings.dash_damage)
+      if other_player.hp>0 then
+        collider_pushed=push_player(other_player,player.z)
+      elseif #other_player.explode_particles==0 then
+        explode_player(other_player,player.z)
+        increase_score(player)
+      end
+      return true
     end
-    return true
   end
   -- check entity collisions
   local collider=raycast({x=player.tile_x,y=player.tile_y},player.z,true)
