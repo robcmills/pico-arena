@@ -323,6 +323,7 @@ function init_game(game_type, arena)
       score=0,
       hp=0,
       id=1,
+      is_aiming=false,
       flip_x=false,
       last_burst_time=0,
       last_dmg_time=0,
@@ -355,6 +356,7 @@ function init_game(game_type, arena)
       score=0,
       hp=0,
       id=2,
+      is_aiming=false,
       flip_x=true,
       last_burst_time=0,
       last_dmg_time=0,
@@ -459,8 +461,10 @@ end
 
 function _init()
   init_state()
-  --s.state="game"
-  --init_game("duel", arenas.arena2)
+  music(-1)
+  s.state="game"
+  s.menu.selected_time_limit_index=2
+  init_game("duel", arenas.test1)
   --init_tests()
 end
 
@@ -1040,8 +1044,22 @@ function update_player_xo(p)
   end
 end
 
-function update_player_x(p,x_pressed)
-  if x_pressed and g.now-p.last_fire_time>g.settings.line_delay and not is_spawning(p) then
+function aim_player(p,z)
+  p.is_aiming=true
+  if z==nil then return end
+  if z==0 then p.flip_x=false end
+  if z==180 then p.flip_x=true end
+  p.z=z
+end
+
+function update_player_x(p,i)
+  if i.left and i.x then aim_player(p,180)
+  elseif i.right and i.x then aim_player(p,0)
+  elseif i.up and i.x then aim_player(p,-90)
+  elseif i.down and i.x then aim_player(p,90)
+  elseif i.x then aim_player(p,nil)
+  elseif p.is_aiming and not i.x and g.now-p.last_fire_time>g.settings.line_delay and not is_spawning(p) then
+    p.is_aiming=false
     fire_weapon(p)
     p.last_fire_time=g.now
   end
@@ -1084,10 +1102,11 @@ function update_player_input(p,i)
   if i.x and i.o then
     update_player_xo(p)
   else
-    update_player_x(p,i.x)
+    update_player_x(p,i)
     update_player_o(p,i.o)
   end
-  if p.last_move_time~=nil then return end
+  -- movement
+  if p.last_move_time~=nil or p.is_aiming then return end
   if i.left and i.o then dash_player(p,180)
   elseif i.left then move_player(p,180)
   elseif i.right and i.o then dash_player(p,0)
@@ -1349,6 +1368,9 @@ function draw_player_dir(p)
   local sprn=x_offset==0 and 21 or 20
   if p.velocity==g.settings.player_dash_velocity then
     sprn=x_offset==0 and 25 or 24
+  end
+  if p.is_aiming then
+    pal(p.c,yellow)
   end
   spr(sprn,x,y,1,1,x_offset<0,y_offset<0)
 end
