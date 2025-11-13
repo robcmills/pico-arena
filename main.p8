@@ -61,6 +61,18 @@ arenas={
     celh=12,
     celw=12,
   },
+  arena4={
+    celx=38,
+    cely=0,
+    celh=12,
+    celw=13,
+  },
+  arena5={
+    celx=51,
+    cely=0,
+    celh=13,
+    celw=12,
+  },
   menu={
     celx=0,
     cely=52,
@@ -452,7 +464,7 @@ end
 function _init()
   init_state()
   --init_immediate()
-  init_tests()
+  --init_tests()
 end
 
 -- move player in direction z until they collide with something
