@@ -73,6 +73,12 @@ arenas={
     celh=13,
     celw=12,
   },
+  arena6={
+    celx=63,
+    cely=0,
+    celh=12,
+    celw=13,
+  },
   menu={
     celx=0,
     cely=52,
@@ -459,7 +465,7 @@ function init_immediate()
   music(-1)
   s.menu.selected_time_limit_index=2
   s.state="game"
-  init_game("duel", arenas.menu)
+  init_game("duel", arenas.arena6)
 end
 
 function _init()

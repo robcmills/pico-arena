@@ -49,14 +49,15 @@
 - [x] Add initial timeout to game end state to ignore player input that spills over from game
 - [x] fix player move solid collision sfx stutter (sfxd)
 - [x] prevent continuous dash attacks (prevent dmg/push when taking damage)
+- [x] respawn should reset energy
 
 
 # TODO
 
 - [ ] projectile weapon (cubes)
-  - [ ] line vs cube
+  - [ ] line beats cube
   - [ ] increase pushback
-- [ ] respawn should reset weapon
+  - [ ] direct hit does 3x dmg, adjacent splash does 2x dmg
 - [ ] increase burst radius
 - [ ] increase dash pushback
 - [ ] add burst delay
@@ -136,7 +137,7 @@
 - [ ] add aiming (hold x to aim)
 - [ ] enable player movement push
 - [ ] Add two types of spawn tiles, initial and regular
-- [ ] taking damage
+- [ ] taking damage (stun)
   - [ ] prevent player from firing
   - [ ] prevent player from dashing
   - [ ] prevent player from moving
