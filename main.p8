@@ -312,7 +312,7 @@ function is_taking_damage(p)
 end
 
 function is_void(spr)
-  return spr==sprites.void
+  return spr==nil or spr==sprites.void
 end
 
 function spawn_player(p)
@@ -337,6 +337,7 @@ function spawn_player(p)
   -- set dir towards map center
   p.z=p.tile_x<g.arena.celw/2 and 0 or 180
   p.flip_x=p.z==180
+  p.energy=settings.player_max_energy
   p.hp=settings.player_max_hp
   p.last_spawn_time=g.now
 
@@ -458,12 +459,12 @@ function init_immediate()
   music(-1)
   s.menu.selected_time_limit_index=2
   s.state="game"
-  init_game("duel", arenas.arena3)
+  init_game("duel", arenas.menu)
 end
 
 function _init()
   init_state()
-  --init_immediate()
+  init_immediate()
   --init_tests()
 end
 
@@ -688,7 +689,7 @@ function raycast(from_tile,dir,intersect_void)
     if dir==-90 then target.y-=1 end
     -- check for solid tile
     local to_spr=aget(target.x,target.y)
-    if to_spr==0 and intersect_void then
+    if is_void(to_spr) and intersect_void then
       return {type='void',x=target.x,y=target.y}
     end
     if fget(to_spr,sprites.is_solid) then
@@ -992,6 +993,7 @@ function update_cube_projectile_collisions(c)
   elseif c.z==-90 then cy-=c.r end
   local tile_x,tile_y=pixel_to_tile(cx,cy)
   local aspr=aget(tile_x,tile_y)
+  if is_void(aspr) then return end
   -- solid tiles
   if aspr~=nil and fget(aspr,sprites.is_solid) then
     explode_cube(c)
@@ -1226,7 +1228,7 @@ end
 
 function update_void_fall(p)
   -- start
-  if p.void_fall_start==nil and is_active(p) and p.velocity==0 and aget(p.tile_x,p.tile_y)==sprites.void then
+  if p.void_fall_start==nil and is_active(p) and p.velocity==0 and is_void(aget(p.tile_x,p.tile_y)) then
     p.void_fall_start=g.now
     p.hp=0
     sfx(sounds.player_void_fall)
