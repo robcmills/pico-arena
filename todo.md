@@ -54,6 +54,7 @@
 
 # TODO
 
+- [ ] add more arenas
 - [ ] projectile weapon (cubes)
   - [ ] line beats cube
   - [ ] increase pushback

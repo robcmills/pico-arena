@@ -171,7 +171,7 @@ test={
 
 tests={{
   init=function()
-    logt("cube")
+    log("cube")
     test.fall_time=0
     test.fire_time=0
     test.move_time=0
@@ -201,7 +201,7 @@ tests={{
   end,
   input=function()
     if g.frame==2 then
-      logt("p1 shoots p2 with cube")
+      log("p1 shoots p2 with cube")
       test.fire_time=g.now
       return input.p1_x
     end
@@ -215,7 +215,7 @@ tests={{
 
 function init_tests()
   extcmd("rec_frames")
-  logt("") -- separate tests with a blank line
+  log("") -- separate tests with a blank line
   s.state="game"
   test.enabled=true
   test.start_time=time()
@@ -357,7 +357,7 @@ function spawn_player(p)
     local size=rnd(2)
     local duration=settings.player_spawn_duration
     local particle={
-      c=rndw({{v=p.c,w=0.6},{v=white,w=0.1},{v=yellow,w=0.3}}),
+      c=rnd({p.c,p.c,p.c,p.c,white,yellow}),
       duration=duration,
       end_time=g.now+duration,
       size=size,
@@ -467,7 +467,7 @@ end
 
 function _init()
   init_state()
-  --init_immediate()
+  init_immediate()
   --init_tests()
 end
 
@@ -1844,7 +1844,7 @@ end
 -- utils
 
 function assertTrue(condition,msg)
-  logt("  "..(condition and "o" or "x").." "..msg)
+  log("  "..(condition and "o" or "x").." "..msg)
 end
 
 function debug_print(str)
@@ -1857,12 +1857,8 @@ function get_adjacent_tile(x,y,dir)
   return {x=x+dx,y=y+dy}
 end
 
-function get_opposite_direction(dir)
-  if dir==0 then return 180
-  elseif dir==180 then return 0
-  elseif dir==90 then return -90
-  elseif dir==-90 then return 90
-  end
+function get_opposite_direction(d)
+  return d*d==8100 and -d or 180-d
 end
 
 function get_reticle_pos(p)
@@ -1883,22 +1879,6 @@ function log(str)
   printh(str,"arena.log")
 end
 
-function logt(str)
-  printh(str,"arena_test.log")
-end
-
--- random weighted choice
-function rndw(choices)
-  local total=0
-  for c in all(choices) do total+=c.w end
-  local r=rnd(total)
-  local run=0
-  for c in all(choices) do
-    run+=c.w
-    if r<run then return c.v end
-  end
-end
-
 -- play sfx debounced
 function sfxd(sound,bounce)
   if s.sfx_start_times[sound]==nil or time()-s.sfx_start_times[sound]>bounce then
@@ -1912,19 +1892,4 @@ function slowdown(age,lifetime)
   if t<0 then t=0 end
   if t>1 then t=1 end
   return 1-(1-t)^3
-end
-
-function stringify(tbl)
-  if type(tbl)~="table" then return tostring(tbl) end
-  local s="{"
-  for k,v in pairs(tbl) do
-    local key=tostring(k)
-    local val=stringify(v)
-    s=s..key.."="..val..","
-  end
-  return s.."}"
-end
-
-function to_bin(n)
-  return n==0 and "0" or to_bin(flr(n/2))..(n%2)
 end
