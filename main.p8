@@ -87,6 +87,7 @@ settings={
   cube_explode_radius=16,
   cube_explode_time=0.2,
   cube_lifetime=3,
+  cube_radius=1,
   cube_ring_time=0.2,
   cube_velocity=100, -- pixels per second
   dash_damage=1,
@@ -152,7 +153,7 @@ test={
 
 tests={{
   init=function()
-    logt("explode polish")
+    logt("cube")
     test.fall_time=0
     test.fire_time=0
     test.move_time=0
@@ -176,19 +177,19 @@ tests={{
       -- set player positions
       set_player_pos(g.p1,2,4,0)
       set_player_pos(g.p2,6,4,180)
-      -- set player hp
-      g.p1.hp=1
+      -- set weapon
+      g.p1.w=sprites.cube_spr
     end
   end,
   input=function()
     if g.frame==2 then
-      logt("p2 shoots p1")
+      logt("p1 shoots p2 with cube")
       test.fire_time=g.now
-      return input.p2_x
+      return input.p1_x
     end
   end,
   update_post=function()
-    if test.fire_time~=0 and g.now>test.fire_time+settings.player_explode_duration+frame_duration_60 then
+    if g.now>test.fire_time+g.dt*50 then
       return true -- test finished
     end
   end,
@@ -450,8 +451,8 @@ end
 
 function _init()
   init_state()
-  init_immediate()
-  --init_tests()
+  --init_immediate()
+  init_tests()
 end
 
 -- move player in direction z until they collide with something
@@ -782,8 +783,9 @@ function fire_cube(p)
   local cube={
     c=yellow,
     explode_time=nil,
+    owner=p,
+    r=settings.cube_radius,
     start_time=g.now,
-    r=1, -- radius
     x=reticle_x,
     y=reticle_y,
     z=p.z, -- direction
@@ -962,11 +964,63 @@ function update_player_dash_particles(player)
   end
 end
 
+function explode_cube(c)
+  c.explode_time=g.now
+  sfx(sounds.cube_explode)
+end
+
+-- check if cube as projectile (unexploded) collides with anything
+function update_cube_projectile_collisions(c)
+  -- get collision pixel on leading edge
+  local cx=c.x
+  if c.z==0 then cx+=c.r
+  elseif c.z==180 then cx-=c.r end
+  local cy=c.y
+  if c.z==90 then cy+=c.r
+  elseif c.z==-90 then cy-=c.r end
+  local tile_x,tile_y=pixel_to_tile(cx,cy)
+  local aspr=aget(tile_x,tile_y)
+  -- solid tiles
+  if aspr~=nil and fget(aspr,sprites.is_solid) then
+    explode_cube(c)
+    return
+  end
+  -- players
+  for p in all({g.p1,g.p2}) do
+    local pc=get_player_center(p)
+    local dist=get_distance(pc.x,pc.y,c.x,c.y)
+    if dist-settings.player_radius+settings.cube_radius<4 then
+      explode_cube(c)
+      return
+    end
+  end
+end
+
+-- check if cube explosion collides with anything
+function update_cube_explosion_collisions(c)
+  for p in all({g.p1,g.p2}) do
+    local pc=get_player_center(p)
+    local dist=get_distance(pc.x,pc.y,c.x,c.y)
+    if dist<c.r then
+      if (p.shield or is_bursting(p)) and can_lose_energy(p) then
+        -- shield beats cube (at energy cost)
+        lose_energy(p,settings.cube_cost)
+      elseif is_dashing(p) then
+        -- cube beats dash
+        --cancel_dash(p)
+      elseif g.now-c.explode_time<settings.cube_explode_time and not is_taking_damage(p) then
+        local push_z=get_burst_push_z(c.x,c.y,pc.x,pc.y,p.z)
+        player_line_collision(p,c.owner,push_z)
+      end
+    end
+  end
+end
+
 function update_player_cubes(player)
   for c in all(player.cubes) do
     if g.now-c.start_time>settings.cube_lifetime or (c.explode_time~=nil and g.now-c.explode_time>settings.cube_explode_time+settings.cube_ring_time) then
       del(player.cubes,c)
-    elseif c.explode_time==nil then -- update projectile
+    elseif c.explode_time==nil and g.now~=c.start_time then -- update projectile
       -- position
       local d=settings.cube_velocity*g.dt
       if c.z==0 or c.z==180 then
@@ -974,30 +1028,15 @@ function update_player_cubes(player)
       elseif c.z==90 or c.z==-90 then
         c.y+=d*(c.z==90 and 1 or -1)
       end
-      -- collisions
-      -- get collision pixel on leading edge
-      -- accounting for "offset" tiles
-      local cx=c.x
-      if c.z==0 then cx+=c.r+1
-      elseif c.z==180 then cx-=c.r end
-      local cy=c.y
-      if c.z==90 then cy+=c.r+1
-      elseif c.z==-90 then cy-=c.r end
-      local tile_x,tile_y=pixel_to_tile(cx,cy)
-      local aspr=aget(tile_x,tile_y)
-      -- solid tiles
-      if aspr~=nil and fget(aspr,sprites.is_solid) then
-        -- explode
-        c.explode_time=g.now
-        sfx(sounds.cube_explode)
-      end
-    else -- update explosion
+      update_cube_projectile_collisions(c)
+    elseif c.explode_time~=nil then -- update explosion
       local ease=slowdown(g.now-c.explode_time,settings.cube_explode_time)
       c.r=1+ease*(settings.cube_explode_radius-1)
       -- update color
       if g.now-c.explode_time>settings.cube_explode_time then
         c.c=dark_gray
       end
+      update_cube_explosion_collisions(c)
     end
   end
 end

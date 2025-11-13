@@ -54,6 +54,8 @@
 # TODO
 
 - [ ] projectile weapon (cubes)
+  - [ ] line vs cube
+  - [ ] increase pushback
 - [ ] respawn should reset weapon
 - [ ] increase burst radius
 - [ ] increase dash pushback
