@@ -176,7 +176,7 @@ tests={{
     test.fire_time=0
     test.move_time=0
     test.shield_frame=0
-    init_game("duel", arenas.test1)
+    init_game(arenas.test1)
   end,
   update_pre=function()
     if g.frame==1 then
@@ -415,13 +415,12 @@ function init_player(id,c)
   }
 end
 
-function init_game(game_type, arena)
+function init_game(arena)
   g={
     arena=arena, -- active arena (map)
     entities={},
     debug="",
     frame=0,
-    game_type=game_type,
     now=0,
     p1=init_player(1,blue),
     p2=init_player(2,red),
@@ -444,14 +443,12 @@ function init_state()
     match_end_sfx_playing=false,
     match_end_time=nil,
     menu={
-      game_types={"duel","ctf"},
-      items={"game_type","time_limit","arena","start"},
+      items={"time_limit","arena","start"},
       selected_arena_index=1,
-      selected_game_type_index=1,
       selected_item_index=1,
       selected_time_limit_index=1,
       start_selected_time=nil,
-      time_limits={0.5,2,4,8},
+      time_limits={2,4,8},
       transition_time=2,
     },
     sfx_start_times={},
@@ -465,12 +462,12 @@ function init_immediate()
   music(-1)
   s.menu.selected_time_limit_index=2
   s.state="game"
-  init_game("duel", arenas.arena6)
+  init_game(arenas.arena6)
 end
 
 function _init()
   init_state()
-  init_immediate()
+  --init_immediate()
   --init_tests()
 end
 
@@ -948,7 +945,7 @@ function update_player_explode_particles(player)
     for particle in all(player.explode_particles) do
       if particle.end_time<g.now then
         del(player.explode_particles,particle)
-        if #player.explode_particles==0 and g.game_type=="duel" then
+        if #player.explode_particles==0 then
           spawn_player(player)
         end
       else
@@ -1359,14 +1356,6 @@ function update_menu()
   if left or right then
     local dx=left and -1 or 1
     if s.menu.selected_item_index==1 then
-      -- game type
-      s.menu.selected_game_type_index+=dx
-      if s.menu.selected_game_type_index<1 then
-        s.menu.selected_game_type_index=#s.menu.game_types
-      elseif s.menu.selected_game_type_index>#s.menu.game_types then
-        s.menu.selected_game_type_index=1
-      end
-    elseif s.menu.selected_item_index==2 then
       -- time limit
       s.menu.selected_time_limit_index+=dx
       if s.menu.selected_time_limit_index<1 then
@@ -1374,7 +1363,7 @@ function update_menu()
       elseif s.menu.selected_time_limit_index>#s.menu.time_limits then
         s.menu.selected_time_limit_index=1
       end
-    elseif s.menu.selected_item_index==3 then
+    elseif s.menu.selected_item_index==2 then
       -- arena
       s.menu.selected_arena_index+=dx
       if s.menu.selected_arena_index<1 then
@@ -1399,10 +1388,9 @@ end
 function update_game_start_countdown()
   if time()-s.countdown_start_time>3 then
     s.state="game"
-    local game_type=s.menu.game_types[s.menu.selected_game_type_index]
     local arena_key=keys(arenas)[s.menu.selected_arena_index]
     local arena=arenas[arena_key]
-    init_game(game_type, arena)
+    init_game(arena)
   end
 end
 
@@ -1790,16 +1778,14 @@ function draw_menu_items(items)
 end
 
 function draw_menu()
-  local selected_game_type=s.menu.game_types[s.menu.selected_game_type_index]
   local selected_arena=keys(arenas)[s.menu.selected_arena_index]
   local selected_item=s.menu.items[s.menu.selected_item_index]
   local time_limit=s.menu.time_limits[s.menu.selected_time_limit_index].." min"
   draw_menu_items({
-    {"game_type",selected_game_type,selected_item=="game_type"},
     {"time_limit",time_limit,selected_item=="time_limit"},
     {"arena",selected_arena,selected_item=="arena"},
   })
-  print("start",54,97,selected_item=="start" and yellow or dark_gray)
+  print("start",54,89,selected_item=="start" and yellow or dark_gray)
 end
 
 function draw_start()
