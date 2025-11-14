@@ -79,6 +79,12 @@ arenas={
     celh=12,
     celw=13,
   },
+  chess={
+    celx=77,
+    cely=0,
+    celh=12,
+    celw=12,
+  },
   menu={
     celx=0,
     cely=52,
@@ -153,6 +159,7 @@ sprites={
   cube_spr=35,
   flags={
     is_solid=0, -- block movement
+    is_spawn=1, -- spawn point
   },
   energy_spr=33, -- sprite index for energy pickups
   line_spr=34,
@@ -327,7 +334,7 @@ function spawn_player(p)
   local other_p=p.id==1 and g.p2 or g.p1
   for x=0,g.arena.celw do
     for y=0,g.arena.celh do
-      if aget(x,y)==sprites.spawn_spr and (other_p.tile_x~=x or other_p.tile_y~=y) then
+      if fget(aget(x,y),sprites.flags.is_spawn) and (other_p.tile_x~=x or other_p.tile_y~=y) then
         add(spawns,{x=x,y=y})
       end
     end
@@ -462,7 +469,7 @@ function init_immediate()
   music(-1)
   s.menu.selected_time_limit_index=2
   s.state="game"
-  init_game(arenas.arena6)
+  init_game(arenas.chess)
 end
 
 function _init()
