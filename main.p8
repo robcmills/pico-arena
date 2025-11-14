@@ -1,7 +1,7 @@
 -- pico-arena v0.1.0
 -- @author robcmills
 
--- pico8 colors
+-- pico8 palette
 black=0
 dark_blue=1
 dark_purple=2
@@ -773,8 +773,11 @@ function fire_cube(p)
     return
   end
   if #p.cubes>0 then
-    explode_cube(p.cubes[1])
-    return
+    local c=p.cubes[1]
+    if c.explode_time==nil then
+      explode_cube(c)
+      return
+    end
   end
   local reticle_x,reticle_y=get_reticle_pos(p)
   local cube={
