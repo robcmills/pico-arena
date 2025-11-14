@@ -1,3 +1,6 @@
+-- pico-arena v0.1.0
+-- @author robcmills
+
 -- pico8 colors
 black=0
 dark_blue=1
@@ -41,69 +44,23 @@ s={}
 -- game state
 g={}
 
--- maps
-arenas={
-  arena1={
-    celx=0,
-    cely=0,
-    celh=10,
-    celw=10,
-  },
-  arena2={
-    celx=10,
-    cely=0,
-    celh=12,
-    celw=16,
-  },
-  arena3={
-    celx=26,
-    cely=0,
-    celh=12,
-    celw=12,
-  },
-  arena4={
-    celx=38,
-    cely=0,
-    celh=12,
-    celw=13,
-  },
-  arena5={
-    celx=51,
-    cely=0,
-    celh=13,
-    celw=12,
-  },
-  arena6={
-    celx=63,
-    cely=0,
-    celh=12,
-    celw=13,
-  },
-  chess={
-    celx=76,
-    cely=0,
-    celh=10,
-    celw=12,
-  },
-  arena7={
-    celx=88,
-    cely=0,
-    celh=11,
-    celw=15,
-  },
-  menu={
-    celx=0,
-    cely=52,
-    celh=12,
-    celw=14,
-  },
-  test1={
-    celx=119,
-    cely=55,
-    celh=9,
-    celw=9,
-  }
-}
+-- arenas data is stored in a string to save tokens
+function parse_arenas(a)
+  local o={}
+  local s=split(a)
+  for i=0,#s-5,5 do
+    o[s[i+1]]={
+      x=s[i+2],
+      y=s[i+3],
+      h=s[i+4],
+      w=s[i+5],
+      sx=flr((128-8*s[i+5])/2),
+      sy=flr((128-8*s[i+4])/2)}
+  end
+  return o
+end
+
+arenas=parse_arenas("arena1,0,0,10,10,arena2,10,0,12,16,arena3,26,0,12,12,arena4,38,0,12,13,arena5,51,0,13,12,arena6,63,0,12,13,chess,76,0,10,12,arena7,88,0,11,15,menu,0,52,12,14,test1,119,55,9,9")
 
 settings={
   burst_color=yellow,
@@ -264,15 +221,15 @@ end
 -- get sprite number of arena tile
 function aget(x,y)
   -- bounds check
-  if x<0 or x>g.arena.celw or y<0 or y>g.arena.celh then
+  if x<0 or x>g.arena.w or y<0 or y>g.arena.h then
     return nil
   end
-  return mget(g.arena.celx+x,g.arena.cely+y)
+  return mget(g.arena.x+x,g.arena.y+y)
 end
 
 function init_energy_pickups()
-  for x=0,g.arena.celw do
-    for y=0,g.arena.celh do
+  for x=0,g.arena.w do
+    for y=0,g.arena.h do
       if aget(x,y)==sprites.energy_spr then
         local key=x..","..y
         g.entities[key]={
@@ -293,14 +250,7 @@ function init_entities()
   init_energy_pickups()
 end
 
-function center_arena(a)
-  -- add offset to center
-  a.sx=flr((g.screen_size-g.tile_size*a.celw)/2)
-  a.sy=flr((g.screen_size-g.tile_size*a.celh)/2)
-end
-
 function init_arena()
-  center_arena(g.arena)
   init_entities()
 end
 
@@ -344,8 +294,8 @@ function spawn_player(p)
   -- collect valid spawn points
   local spawns={}
   local other_p=p.id==1 and g.p2 or g.p1
-  for x=0,g.arena.celw-1 do
-    for y=0,g.arena.celh-1 do
+  for x=0,g.arena.w-1 do
+    for y=0,g.arena.h-1 do
       if fget(aget(x,y),sprites.flags.is_spawn) and (other_p.tile_x~=x or other_p.tile_y~=y) then
         add(spawns,{x=x,y=y})
       end
@@ -360,7 +310,7 @@ function spawn_player(p)
   p.pixel_y=tile_to_pixel(s.y,"y")
 
   -- set dir towards map center
-  p.z=p.tile_x<g.arena.celw/2 and 0 or 180
+  p.z=p.tile_x<g.arena.w/2 and 0 or 180
   p.flip_x=p.z==180
   p.energy=settings.player_max_energy
   p.hp=settings.player_max_hp
@@ -1354,7 +1304,6 @@ function init_game_start_countdown()
   local arena_key=keys(arenas)[s.menu.selected_arena_index]
   local arena=arenas[arena_key]
   g.arena=arena
-  center_arena(arena)
   s.state="game_start_countdown"
   s.countdown_start_time=time()
   sfx(sounds.countdown)
@@ -1452,7 +1401,7 @@ function _update60()
 end
 
 function draw_arena(a)
-  map(a.celx,a.cely,a.sx,a.sy,a.celw,a.celh)
+  map(a.x,a.y,a.sx,a.sy,a.w,a.h)
 end
 
 function draw_energy_sprite(e,x,y)
@@ -1767,7 +1716,6 @@ end
 function draw_menu_background()
   g.screen_size=128
   g.tile_size=8
-  center_arena(arenas.menu)
   draw_arena(arenas.menu)
 end
 
