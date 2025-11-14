@@ -178,7 +178,7 @@ test={
 
 tests={{
   init=function()
-    log("cube")
+    log("line beats cube")
     test.fall_time=0
     test.fire_time=0
     test.move_time=0
@@ -187,12 +187,12 @@ tests={{
   end,
   update_pre=function()
     if g.frame==1 then
-      -- enable firing immediately
-      g.p1.last_fire_time=-settings.line_delay
-      g.p2.last_fire_time=-settings.line_delay
       -- disable spawn animation
       g.p1.spawn_particles={}
       g.p2.spawn_particles={}
+      -- enable firing immediately
+      g.p1.last_fire_time=-settings.line_delay
+      g.p2.last_fire_time=-settings.line_delay
       -- enable immediate input
       g.p1.last_spawn_time=-settings.player_spawn_duration
       g.p2.last_spawn_time=-settings.player_spawn_duration
@@ -209,12 +209,17 @@ tests={{
   input=function()
     if g.frame==2 then
       log("p1 shoots p2 with cube")
-      test.fire_time=g.now
       return input.p1_x
+    elseif g.frame==5 then
+      log("p2 shoots cube with line")
+      test.fire_time=g.now
+      return input.p2_x
     end
   end,
   update_post=function()
-    if g.now>test.fire_time+g.dt*50 then
+    if g.now>test.fire_time+g.dt*25 then
+      assert_true(g.p1.hp<settings.player_max_hp,"p1 damaged")
+      assert_true(g.p2.hp==settings.player_max_hp,"p2 not damaged")
       return true -- test finished
     end
   end,
@@ -474,8 +479,8 @@ end
 
 function _init()
   init_state()
-  init_immediate()
-  --init_tests()
+  --init_immediate()
+  init_tests()
 end
 
 -- move player in direction z until they collide with something
@@ -710,6 +715,12 @@ function raycast(from_tile,dir,intersect_void)
       if p.tile_x==target.x and p.tile_y==target.y and is_active(p) then
         return {type='player',p=p,x=target.x,y=target.y}
       end
+      -- check for cubes
+      for c in all(p.cubes) do
+        if get_distance(c.x,c.y,tile_to_pixel(target.x,"x"),tile_to_pixel(target.y,"y"))<4 then
+          return {type='cube',cube=c,x=target.x,y=target.y}
+        end
+      end
     end
   end
   return {type='offscreen',x=target.x,y=target.y}
@@ -751,6 +762,9 @@ function fire_line(p)
     elseif not is_taking_damage(collider.p) then
       player_line_collision(collider.p,p,p.z)
     end
+  elseif collider.type=='cube' then
+    -- line beats cube
+    explode_cube(collider.cube)
   end
 
   -- convert tile pos to pixel pos + map offset
@@ -1850,7 +1864,7 @@ end
 
 -- utils
 
-function assertTrue(condition,msg)
+function assert_true(condition,msg)
   log("  "..(condition and "o" or "x").." "..msg)
 end
 

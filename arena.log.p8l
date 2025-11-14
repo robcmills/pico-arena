@@ -1,0 +1,6 @@
+
+line beats cube
+p1 shoots p2 with cube
+p2 shoots cube with line
+  o p1 damaged
+  o p2 not damaged
