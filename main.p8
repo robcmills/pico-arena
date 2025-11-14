@@ -343,8 +343,8 @@ function spawn_player(p)
   -- collect valid spawn points
   local spawns={}
   local other_p=p.id==1 and g.p2 or g.p1
-  for x=0,g.arena.celw do
-    for y=0,g.arena.celh do
+  for x=0,g.arena.celw-1 do
+    for y=0,g.arena.celh-1 do
       if fget(aget(x,y),sprites.flags.is_spawn) and (other_p.tile_x~=x or other_p.tile_y~=y) then
         add(spawns,{x=x,y=y})
       end
@@ -485,7 +485,7 @@ end
 
 function _init()
   init_state()
-  init_immediate()
+  --init_immediate()
   --init_tests()
 end
 
