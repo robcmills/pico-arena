@@ -56,10 +56,10 @@
 
 - [ ] add more arenas
 - [ ] projectile weapon (cubes)
+  - [x] enable controlled cube explosion
   - [x] line beats cube
   - [ ] increase pushback
   - [ ] direct hit does 3x dmg, adjacent splash does 2x dmg
-  - [ ] enable controlled burst
   - [ ] fix disappearing cubes
 - [ ] increase burst radius
 - [ ] increase dash pushback

@@ -478,14 +478,13 @@ end
 -- temp for development
 function init_immediate()
   music(-1)
-  s.menu.selected_time_limit_index=2
   s.state="game"
   init_game(arenas.arena7)
 end
 
 function _init()
   init_state()
-  --init_immediate()
+  init_immediate()
   --init_tests()
 end
 
@@ -820,6 +819,10 @@ function fire_cube(p)
   if p.energy<=0 then
     sfx(sounds.empty_energy)
     -- TODO: flash player energy bar
+    return
+  end
+  if #p.cubes>0 then
+    explode_cube(p.cubes[1])
     return
   end
   local reticle_x,reticle_y=get_reticle_pos(p)
