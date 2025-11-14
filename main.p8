@@ -184,15 +184,13 @@ test={
 
 tests={{
   init=function()
-    log("line beats cube")
-    test.fall_time=0
-    test.fire_time=0
-    test.move_time=0
-    test.shield_frame=0
+    log("cube explosion intersects")
+    test.mark_time=0
     init_game(arenas.test1)
   end,
   update_pre=function()
     if g.frame==1 then
+      music(-1)
       -- disable spawn animation
       g.p1.spawn_particles={}
       g.p2.spawn_particles={}
@@ -207,25 +205,26 @@ tests={{
       g.p2.last_energy_loss_time=-settings.energy_loss_delay
       -- set player positions
       set_player_pos(g.p1,2,4,0)
-      set_player_pos(g.p2,6,4,180)
+      set_player_pos(g.p2,6,2,180)
       -- set weapon
       g.p1.w=sprites.cube_spr
     end
   end,
   input=function()
     if g.frame==2 then
-      log("p1 shoots p2 with cube")
+      log("p1 shoots cube")
       return input.p1_x
-    elseif g.frame==5 then
-      log("p2 shoots cube with line")
-      test.fire_time=g.now
-      return input.p2_x
+    elseif g.frame==9 then
+      log("p1 explodes cube")
+      test.mark_time=g.now
+      g.p1.last_fire_time=-settings.line_delay
+      return input.p1_x
     end
   end,
   update_post=function()
-    if g.now>test.fire_time+g.dt*25 then
+    if g.now>test.mark_time+g.dt*25 then
       assert_true(g.p1.hp<settings.player_max_hp,"p1 damaged")
-      assert_true(g.p2.hp==settings.player_max_hp,"p2 not damaged")
+      assert_true(g.p2.hp<settings.player_max_hp,"p2 damaged")
       return true -- test finished
     end
   end,
@@ -484,8 +483,8 @@ end
 
 function _init()
   init_state()
-  init_immediate()
-  --init_tests()
+  --init_immediate()
+  init_tests()
 end
 
 -- move player in direction z until they collide with something
@@ -1047,8 +1046,8 @@ end
 function update_cube_explosion_collisions(c)
   for p in all({g.p1,g.p2}) do
     local pc=get_player_center(p)
-    local dist=get_distance(pc.x,pc.y,c.x,c.y)
-    if dist<c.r then
+    local pr=settings.player_radius
+    if intersects(pc.x,pc.y,c.x-c.r-pr,c.y-c.r-pr,c.x+c.r+pr,c.y+c.r+pr) then
       if (p.shield or is_bursting(p)) and can_lose_energy(p) then
         -- shield beats cube (at energy cost)
         lose_energy(p,settings.cube_cost)
@@ -1903,6 +1902,10 @@ end
 
 function get_time()
   return test.enabled and time()-test.start_time or time()-g.start_time
+end
+
+function intersects(px,py,x1,y1,x2,y2)
+  return px>=x1 and px<=x2 and py>=y1 and py<=y2
 end
 
 function log(str)

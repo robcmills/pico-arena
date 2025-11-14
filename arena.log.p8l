@@ -1,6 +1,6 @@
 
-line beats cube
-p1 shoots p2 with cube
-p2 shoots cube with line
+cube explosion intersects
+p1 shoots cube
+p1 explodes cube
   o p1 damaged
-  o p2 not damaged
+  o p2 damaged

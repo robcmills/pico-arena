@@ -13,6 +13,99 @@ settings={}
 
 tests={{
   init=function()
+    log("cube explosion intersects")
+    test.mark_time=0
+    init_game(arenas.test1)
+  end,
+  update_pre=function()
+    if g.frame==1 then
+      music(-1)
+      -- disable spawn animation
+      g.p1.spawn_particles={}
+      g.p2.spawn_particles={}
+      -- enable firing immediately
+      g.p1.last_fire_time=-settings.line_delay
+      g.p2.last_fire_time=-settings.line_delay
+      -- enable immediate input
+      g.p1.last_spawn_time=-settings.player_spawn_duration
+      g.p2.last_spawn_time=-settings.player_spawn_duration
+      -- enable immediate energy loss
+      g.p1.last_energy_loss_time=-settings.energy_loss_delay
+      g.p2.last_energy_loss_time=-settings.energy_loss_delay
+      -- set player positions
+      set_player_pos(g.p1,2,4,0)
+      set_player_pos(g.p2,6,2,180)
+      -- set weapon
+      g.p1.w=sprites.cube_spr
+    end
+  end,
+  input=function()
+    if g.frame==2 then
+      log("p1 shoots cube")
+      return input.p1_x
+    elseif g.frame==9 then
+      log("p1 explodes cube")
+      test.mark_time=g.now
+      g.p1.last_fire_time=-settings.line_delay
+      return input.p1_x
+    end
+  end,
+  update_post=function()
+    if g.now>test.mark_time+g.dt*25 then
+      assert_true(g.p1.hp<settings.player_max_hp,"p1 damaged")
+      assert_true(g.p2.hp<settings.player_max_hp,"p2 damaged")
+      return true -- test finished
+    end
+  end,
+},{
+  init=function()
+    log("line beats cube")
+    test.fall_time=0
+    test.fire_time=0
+    test.move_time=0
+    test.shield_frame=0
+    init_game(arenas.test1)
+  end,
+  update_pre=function()
+    if g.frame==1 then
+      -- disable spawn animation
+      g.p1.spawn_particles={}
+      g.p2.spawn_particles={}
+      -- enable firing immediately
+      g.p1.last_fire_time=-settings.line_delay
+      g.p2.last_fire_time=-settings.line_delay
+      -- enable immediate input
+      g.p1.last_spawn_time=-settings.player_spawn_duration
+      g.p2.last_spawn_time=-settings.player_spawn_duration
+      -- enable immediate energy loss
+      g.p1.last_energy_loss_time=-settings.energy_loss_delay
+      g.p2.last_energy_loss_time=-settings.energy_loss_delay
+      -- set player positions
+      set_player_pos(g.p1,2,4,0)
+      set_player_pos(g.p2,6,4,180)
+      -- set weapon
+      g.p1.w=sprites.cube_spr
+    end
+  end,
+  input=function()
+    if g.frame==2 then
+      log("p1 shoots p2 with cube")
+      return input.p1_x
+    elseif g.frame==5 then
+      log("p2 shoots cube with line")
+      test.fire_time=g.now
+      return input.p2_x
+    end
+  end,
+  update_post=function()
+    if g.now>test.fire_time+g.dt*25 then
+      assert_true(g.p1.hp<settings.player_max_hp,"p1 damaged")
+      assert_true(g.p2.hp==settings.player_max_hp,"p2 not damaged")
+      return true -- test finished
+    end
+  end,
+},{
+  init=function()
     log("cube")
     test.fall_time=0
     test.fire_time=0
