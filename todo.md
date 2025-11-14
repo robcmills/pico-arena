@@ -56,7 +56,7 @@
 
 - [ ] add more arenas
 - [ ] projectile weapon (cubes)
-  - [ ] line beats cube
+  - [x] line beats cube
   - [ ] increase pushback
   - [ ] direct hit does 3x dmg, adjacent splash does 2x dmg
   - [ ] enable controlled burst

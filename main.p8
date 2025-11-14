@@ -80,10 +80,16 @@ arenas={
     celw=13,
   },
   chess={
-    celx=77,
+    celx=76,
     cely=0,
-    celh=12,
+    celh=10,
     celw=12,
+  },
+  arena7={
+    celx=88,
+    cely=0,
+    celh=11,
+    celw=15,
   },
   menu={
     celx=0,
@@ -474,13 +480,13 @@ function init_immediate()
   music(-1)
   s.menu.selected_time_limit_index=2
   s.state="game"
-  init_game(arenas.chess)
+  init_game(arenas.arena7)
 end
 
 function _init()
   init_state()
-  --init_immediate()
-  init_tests()
+  init_immediate()
+  --init_tests()
 end
 
 -- move player in direction z until they collide with something
