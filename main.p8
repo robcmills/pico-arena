@@ -485,8 +485,8 @@ end
 
 function _init()
   init_state()
-  --init_immediate()
-  init_tests()
+  init_immediate()
+  --init_tests()
 end
 
 -- move player in direction z until they collide with something

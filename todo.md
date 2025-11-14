@@ -50,36 +50,24 @@
 - [x] fix player move solid collision sfx stutter (sfxd)
 - [x] prevent continuous dash attacks (prevent dmg/push when taking damage)
 - [x] respawn should reset energy
+- [x] enable controlled cube explosion
+- [x] line beats cube
+- [x] fix disappearing cubes
 
 
 # TODO
 
 - [ ] add more arenas
+- [ ] enable dash cancel (into shield or movement)
+- [ ] Add match end screen music
 - [ ] projectile weapon (cubes)
-  - [x] enable controlled cube explosion
-  - [x] line beats cube
   - [ ] increase pushback
   - [ ] direct hit does 3x dmg, adjacent splash does 2x dmg
-  - [ ] fix disappearing cubes
 - [ ] increase burst radius
 - [ ] increase dash pushback
 - [ ] add burst delay
-- [ ] enable dash cancel (into shield or movement)
 - [ ] handle line mid-movement/dash
-- [ ] tile art
-  - [ ] combine tiles and auto-"terrain"
-  - [ ] add fractal noise to voids
-- [ ] Add print delays to match end screen to reveal results with anticipation
-- [ ] Add match end screen music
-- [ ] add "reset_player" function
-  - [ ] reset energy
-- [ ] set_score function
-  - [ ] play score sounds
-  - [ ] play score animations
-- [ ] set_player_hp function
-  - [ ] play hp sounds
-  - [ ] hp transition animations
-- [ ] Enable choosing player color
+
 - [ ] Add more map tile types
   - [ ] destructible walls
   - [ ] movable walls
@@ -109,7 +97,6 @@
   - [ ] path finders
   - [ ] tetris
   - [ ] tron lightcycle
-- [ ] Add more maps
 - [ ] Add "overworld" map arena select
   - [ ] forest (trees, bushes, water tiles, falling leaves)
   - [ ] underground caves (lava tiles, falling rocks and lava flow) 
@@ -119,7 +106,11 @@
 
 ## Polish
 
+- [ ] tile art
+  - [ ] combine tiles and auto-"terrain"
+  - [ ] add fractal noise to voids
 - [ ] Add arena backgrounds/foregrounds
+- [ ] Add print delays to match end screen to reveal results with anticipation
 - [ ] find missing frame 2
 - [ ] Refactor naming (longer, more explicit, more scalable)
 - [ ] Add fancy animations for:
@@ -127,6 +118,8 @@
   - [ ] energy pickup
 - [ ] Add arena validation
   - [ ] ensure at least two spawn points
+- [ ] Enable choosing player color
+- [ ] hud transition animations
 
 ## Stretch Goals
 
