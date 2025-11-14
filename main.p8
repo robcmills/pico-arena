@@ -60,7 +60,7 @@ function parse_arenas(a)
   return o
 end
 
-arenas=parse_arenas("arena1,0,0,10,10,arena2,10,0,12,16,arena3,26,0,12,12,arena4,38,0,12,13,arena5,51,0,13,12,arena6,63,0,12,13,chess,76,0,10,12,arena7,88,0,11,15,menu,0,52,12,14,test1,119,55,9,9")
+arenas=parse_arenas("arena1,0,0,10,10,arena2,10,0,12,16,arena3,26,0,12,12,arena4,38,0,12,13,arena5,51,0,13,12,arena6,63,0,12,13,chess,76,0,10,12,arena7,88,0,11,15,red_pill,103,0,6,14,menu,0,52,12,14,test1,119,55,9,9")
 
 settings={
   burst_color=yellow,
@@ -430,7 +430,7 @@ end
 function init_immediate()
   music(-1)
   s.state="game"
-  init_game(arenas.arena7)
+  init_game(arenas.red_pill)
 end
 
 function _init()
