@@ -1,6 +1,8 @@
 
-cube explosion intersects
+cube explosion push_z
 p1 shoots cube
 p1 explodes cube
   o p1 damaged
   o p2 damaged
+  o p1 pushed horizontally by cube explosion
+  o p2 pushed vertically by cube explosion

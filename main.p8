@@ -184,7 +184,7 @@ test={
 
 tests={{
   init=function()
-    log("cube explosion intersects")
+    log("cube explosion push_z")
     test.mark_time=0
     init_game(arenas.test1)
   end,
@@ -205,7 +205,7 @@ tests={{
       g.p2.last_energy_loss_time=-settings.energy_loss_delay
       -- set player positions
       set_player_pos(g.p1,2,4,0)
-      set_player_pos(g.p2,6,2,180)
+      set_player_pos(g.p2,4,3,180)
       -- set weapon
       g.p1.w=sprites.cube_spr
     end
@@ -225,6 +225,8 @@ tests={{
     if g.now>test.mark_time+g.dt*25 then
       assert_true(g.p1.hp<settings.player_max_hp,"p1 damaged")
       assert_true(g.p2.hp<settings.player_max_hp,"p2 damaged")
+      assert_true(g.p1.tile_x==1,"p1 pushed horizontally by cube explosion")
+      assert_true(g.p2.tile_y==2,"p2 pushed vertically by cube explosion")
       return true -- test finished
     end
   end,
@@ -1055,7 +1057,10 @@ function update_cube_explosion_collisions(c)
         -- cube beats dash
         --cancel_dash(p)
       elseif g.now-c.explode_time<settings.cube_explode_time and not is_taking_damage(p) then
-        local push_z=get_burst_push_z(c.x,c.y,pc.x,pc.y,p.z)
+        -- get_burst_push_z wants tile coordinates
+        local ctx,cty=pixel_to_tile(c.x,c.y)
+        local ptx,pty=pixel_to_tile(pc.x,pc.y)
+        local push_z=get_burst_push_z(ctx,cty,ptx,pty,p.z)
         player_line_collision(p,c.owner,push_z)
       end
     end
