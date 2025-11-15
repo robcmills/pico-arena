@@ -1,5 +1,4 @@
 
-cube explosion push_z
-p1 shoots cube
-  o p2 damaged
-  o p2 pushed horizontally by cube explosion
+player movement collisions with other player
+  both players move to same tile
+  o both players do not occupy same tile

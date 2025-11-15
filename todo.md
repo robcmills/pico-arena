@@ -57,6 +57,8 @@
 
 # TODO
 
+- [ ] fix bug where both players occupy/cross same tile
+- [ ] fix controlled last cube explosion (when energy is zero)
 - [ ] add more arenas
 - [ ] enable dash cancel (into shield or movement)
 - [ ] Add match end screen music

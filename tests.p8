@@ -13,6 +13,88 @@ settings={}
 
 tests={{
   init=function()
+    log("player movement collisions with other player")
+    test.mark_time=0
+    init_game(arenas.test1)
+    music(-1)
+    sfx(-1)
+  end,
+  update_pre=function()
+    if g.frame==1 then
+      -- disable spawn animation
+      g.p1.spawn_particles={}
+      g.p2.spawn_particles={}
+      -- enable firing immediately
+      g.p1.last_fire_time=-settings.line_delay
+      g.p2.last_fire_time=-settings.line_delay
+      -- enable immediate input
+      g.p1.last_spawn_time=-settings.player_spawn_duration
+      g.p2.last_spawn_time=-settings.player_spawn_duration
+      -- enable immediate energy loss
+      g.p1.last_energy_loss_time=-settings.energy_loss_delay
+      g.p2.last_energy_loss_time=-settings.energy_loss_delay
+      -- set player positions
+      set_player_pos(g.p1,2,4,0)
+      set_player_pos(g.p2,4,4,180)
+    end
+  end,
+  input=function()
+    if g.frame==2 then
+      log("  both players move to same tile")
+      test.mark_time=g.now
+      return input.p1_right|input.p2_left
+    end
+  end,
+  update_post=function()
+    if g.now>test.mark_time+settings.player_velocity+frame_duration_60 then
+      assert_true(g.p1.tile_x~=g.p2.tile_x,"both players do not occupy same tile")
+      return true -- test finished
+    end
+  end,
+},{
+  init=function()
+    log("cube explosion push_z")
+    test.mark_time=0
+    init_game(arenas.test1)
+  end,
+  update_pre=function()
+    if g.frame==1 then
+      music(-1)
+      -- disable spawn animation
+      g.p1.spawn_particles={}
+      g.p2.spawn_particles={}
+      -- enable firing immediately
+      g.p1.last_fire_time=-settings.line_delay
+      g.p2.last_fire_time=-settings.line_delay
+      -- enable immediate input
+      g.p1.last_spawn_time=-settings.player_spawn_duration
+      g.p2.last_spawn_time=-settings.player_spawn_duration
+      -- enable immediate energy loss
+      g.p1.last_energy_loss_time=-settings.energy_loss_delay
+      g.p2.last_energy_loss_time=-settings.energy_loss_delay
+      -- set player positions
+      set_player_pos(g.p1,6,4,180)
+      set_player_pos(g.p2,2,4,0)
+      -- set weapon
+      g.p1.w=sprites.cube_spr
+    end
+  end,
+  input=function()
+    if g.frame==2 then
+      log("p1 shoots cube")
+      test.mark_time=g.now
+      return input.p1_x
+    end
+  end,
+  update_post=function()
+    if g.now>test.mark_time+g.dt*25 then
+      assert_true(g.p2.hp<settings.player_max_hp,"p2 damaged")
+      assert_true(g.p2.tile_x==1,"p2 pushed horizontally by cube explosion")
+      return true -- test finished
+    end
+  end,
+},{
+  init=function()
     log("cube explosion push_z")
     test.mark_time=0
     init_game(arenas.test1)

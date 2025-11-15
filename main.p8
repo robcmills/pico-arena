@@ -143,13 +143,14 @@ test={
 
 tests={{
   init=function()
-    log("cube explosion push_z")
+    log("player movement collisions with other player")
     test.mark_time=0
     init_game(arenas.test1)
+    music(-1)
+    sfx(-1)
   end,
   update_pre=function()
     if g.frame==1 then
-      music(-1)
       -- disable spawn animation
       g.p1.spawn_particles={}
       g.p2.spawn_particles={}
@@ -163,23 +164,20 @@ tests={{
       g.p1.last_energy_loss_time=-settings.energy_loss_delay
       g.p2.last_energy_loss_time=-settings.energy_loss_delay
       -- set player positions
-      set_player_pos(g.p1,6,4,180)
-      set_player_pos(g.p2,2,4,0)
-      -- set weapon
-      g.p1.w=sprites.cube_spr
+      set_player_pos(g.p1,2,4,0)
+      set_player_pos(g.p2,4,4,180)
     end
   end,
   input=function()
     if g.frame==2 then
-      log("p1 shoots cube")
+      log("  both players move to same tile")
       test.mark_time=g.now
-      return input.p1_x
+      return input.p1_right|input.p2_left
     end
   end,
   update_post=function()
-    if g.now>test.mark_time+g.dt*25 then
-      assert_true(g.p2.hp<settings.player_max_hp,"p2 damaged")
-      assert_true(g.p2.tile_x==1,"p2 pushed horizontally by cube explosion")
+    if g.now>test.mark_time+settings.player_velocity+frame_duration_60 then
+      assert_true(g.p1.tile_x~=g.p2.tile_x,"both players do not occupy same tile")
       return true -- test finished
     end
   end,
@@ -431,8 +429,8 @@ end
 
 function _init()
   init_state()
-  init_immediate()
-  --init_tests()
+  --init_immediate()
+  init_tests()
 end
 
 -- move player in direction z until they collide with something
@@ -529,6 +527,22 @@ function player_dash_collision(player)
   return false
 end
 
+-- @param p player intending to move
+-- @param to_x,to_y destination tile
+-- @return true if player would collide with other player
+function check_other_player_collision(p,to_x,to_y)
+  local op=p.id==1 and g.p2 or g.p1 -- other player
+  -- can not collide with inactive player
+  if not is_active(op) then return false end
+  -- op is already occupying dest tile
+  if op.tile_x==to_x and op.tile_y==to_y then return true end
+  -- op is moving to dest tile and would get there first
+  local opc=get_player_center(op)
+  local toc=get_tile_center(to_x,to_y)
+  local op_dist=get_distance(opc.x,opc.y,toc.x,toc.y)
+  return op.to_x==to_x and op.to_y==to_y and op_dist<=8
+end
+
 -- move player in direction z one tile
 function move_player(player,z,is_push)
   is_push=is_push==nil and false or is_push
@@ -554,8 +568,7 @@ function move_player(player,z,is_push)
     return false
   end
   -- other player collisions
-  local other_player=player.id==1 and g.p2 or g.p1
-  if other_player.tile_x==to_x and other_player.tile_y==to_y and other_player.hp>0 then
+  if check_other_player_collision(player,to_x,to_y) then
     sfxd(sounds.player_move_solid_collision_bump,0.5)
     return false
   end
@@ -1845,6 +1858,10 @@ function get_reticle_pos(p)
   if p.z==90 then y+=6
   elseif p.z==-90 then y-=6 end
   return x,y
+end
+
+function get_tile_center(x,y)
+  return {x=tile_to_pixel(x,"x")+3,y=tile_to_pixel(y,"y")+3}
 end
 
 function get_time()
