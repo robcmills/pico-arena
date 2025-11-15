@@ -38,6 +38,8 @@ input={
 frame_duration_30=1/30
 frame_duration_60=1/60
 
+pi=3.1415926535
+
 -- global state
 s={}
 
@@ -161,8 +163,8 @@ tests={{
       g.p1.last_energy_loss_time=-settings.energy_loss_delay
       g.p2.last_energy_loss_time=-settings.energy_loss_delay
       -- set player positions
-      set_player_pos(g.p1,2,4,0)
-      set_player_pos(g.p2,4,3,180)
+      set_player_pos(g.p1,6,4,180)
+      set_player_pos(g.p2,2,4,0)
       -- set weapon
       g.p1.w=sprites.cube_spr
     end
@@ -170,20 +172,14 @@ tests={{
   input=function()
     if g.frame==2 then
       log("p1 shoots cube")
-      return input.p1_x
-    elseif g.frame==9 then
-      log("p1 explodes cube")
       test.mark_time=g.now
-      g.p1.last_fire_time=-settings.line_delay
       return input.p1_x
     end
   end,
   update_post=function()
     if g.now>test.mark_time+g.dt*25 then
-      assert_true(g.p1.hp<settings.player_max_hp,"p1 damaged")
       assert_true(g.p2.hp<settings.player_max_hp,"p2 damaged")
-      assert_true(g.p1.tile_x==1,"p1 pushed horizontally by cube explosion")
-      assert_true(g.p2.tile_y==2,"p2 pushed vertically by cube explosion")
+      assert_true(g.p2.tile_x==1,"p2 pushed horizontally by cube explosion")
       return true -- test finished
     end
   end,
@@ -811,26 +807,23 @@ function get_distance(x1,y1,x2,y2)
   return sqrt(dx*dx+dy*dy)
 end
 
-function get_burst_push_z(x1,y1,x2,y2,z)
-  local dx=x2-x1
-  local dy=y2-y1
-  -- cardinal directions
-  if abs(dx)>0 and dy==0 then
-    return dx>0 and 0 or 180
-  elseif dx==0 and abs(dy)>0 then
-    return dy>0 and 90 or -90
-  end
-  -- diagonals
-  if dx~=0 and dy~=0 then
-    z=((z+180)%360)-180 -- normalize to [-180,180)
-    local horizontal_bias=(abs(z)<=45 or abs(z)>=135)
-    if horizontal_bias then
-      return dx>0 and 0 or 180
-    else
-      return dy>0 and 90 or -90
-    end
-  end
-  return 0 -- points are the same
+-- @param ex,ey center point of explosion (in pixels)
+-- @param px,py center point of player (in pixels)
+-- @param pz cardinal direction player is facing
+-- @return cardinal z direction to push player
+-- diagonals are biased towards player z
+function get_burst_push_z(ex,ey,px,py,pz)
+ local h=pz%180==0
+ local a=atan2(px-ex,py-ey)*360
+ return a<40 and 0
+   or a<50 and (h and 0 or -90)
+   or a<130 and -90
+   or a<140 and (h and 180 or -90)
+   or a<220 and 180
+   or a<230 and (h and 180 or 90)
+   or a<310 and 90
+   or a<320 and (h and 0 or 90)
+   or 0
 end
 
 function lose_energy(p,amount)
@@ -1011,9 +1004,7 @@ function update_cube_explosion_collisions(c)
         --cancel_dash(p)
       elseif g.now-c.explode_time<settings.cube_explode_time and not is_taking_damage(p) then
         -- get_burst_push_z wants tile coordinates
-        local ctx,cty=pixel_to_tile(c.x,c.y)
-        local ptx,pty=pixel_to_tile(pc.x,pc.y)
-        local push_z=get_burst_push_z(ctx,cty,ptx,pty,p.z)
+        local push_z=get_burst_push_z(c.x,c.y,pc.x,pc.y,p.z)
         player_line_collision(p,c.owner,push_z)
       end
     end

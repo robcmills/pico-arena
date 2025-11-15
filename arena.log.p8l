@@ -1,0 +1,5 @@
+
+cube explosion push_z
+p1 shoots cube
+  o p2 damaged
+  o p2 pushed horizontally by cube explosion
