@@ -58,6 +58,7 @@
 # TODO
 
 - [ ] fix bug where both players occupy/cross same tile
+- [ ] fix bug where activating shield with no energy does not play sfx
 - [ ] fix controlled last cube explosion (when energy is zero)
 - [ ] add more arenas
 - [ ] enable dash cancel (into shield or movement)
