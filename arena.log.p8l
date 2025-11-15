@@ -1,4 +1,5 @@
 
-player dash collisions with other player
+player dash collisions with other player (long distance)
   both players move to same tile (one dashes)
-  o both players do not occupy same tile
+  x p1 pushed back to starting position
+  x p2 dash canceled

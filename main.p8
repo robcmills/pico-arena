@@ -62,7 +62,7 @@ function parse_arenas(a)
   return o
 end
 
-arenas=parse_arenas("arena1,0,0,10,10,arena2,10,0,12,16,arena3,26,0,12,12,arena4,38,0,12,13,arena5,51,0,13,12,arena6,63,0,12,13,chess,76,0,10,12,arena7,88,0,11,15,red_pill,103,0,6,14,menu,0,52,12,14,test1,119,55,9,9")
+arenas=parse_arenas("arena1,0,0,10,10,arena2,10,0,12,16,arena3,26,0,12,12,arena4,38,0,12,13,arena5,51,0,13,12,arena6,63,0,12,13,chess,76,0,10,12,arena7,88,0,11,15,red_pill,103,0,6,14,menu,0,52,12,14,test1,119,55,9,9,test2,107,54,9,12")
 
 settings={
   burst_color=yellow,
@@ -143,9 +143,9 @@ test={
 
 tests={{
   init=function()
-    log("player dash collisions with other player (short distance)")
+    log("player dash collisions with other player (long distance)")
     test.mark_time=0
-    init_game(arenas.test1)
+    init_game(arenas.test2)
     music(-1)
     sfx(-1)
   end,
@@ -164,8 +164,8 @@ tests={{
       g.p1.last_energy_loss_time=-settings.energy_loss_delay
       g.p2.last_energy_loss_time=-settings.energy_loss_delay
       -- set player positions
-      set_player_pos(g.p1,2,4,0)
-      set_player_pos(g.p2,6,4,180)
+      set_player_pos(g.p1,1,4,0)
+      set_player_pos(g.p2,10,4,180)
     end
   end,
   input=function()
@@ -176,8 +176,9 @@ tests={{
     end
   end,
   update_post=function()
-    if g.now>test.mark_time+settings.player_velocity+frame_duration_60 then
-      assert_true(g.p1.tile_x~=g.p2.tile_x,"both players do not occupy same tile")
+    if g.now>test.mark_time+settings.player_dash_velocity*10+frame_duration_60 then
+      assert_true(g.p1.tile_x==1,"p1 pushed back to starting position")
+      assert_true(g.p2.tile_x==3,"p2 dash canceled")
       return true -- test finished
     end
   end,
@@ -429,8 +430,8 @@ end
 
 function _init()
   init_state()
-  init_immediate()
-  --init_tests()
+  --init_immediate()
+  init_tests()
 end
 
 -- move player in direction z until they collide with something
