@@ -143,7 +143,7 @@ test={
 
 tests={{
   init=function()
-    log("player movement collisions with other player")
+    log("player dash collisions with other player (short distance)")
     test.mark_time=0
     init_game(arenas.test1)
     music(-1)
@@ -165,14 +165,14 @@ tests={{
       g.p2.last_energy_loss_time=-settings.energy_loss_delay
       -- set player positions
       set_player_pos(g.p1,2,4,0)
-      set_player_pos(g.p2,4,4,180)
+      set_player_pos(g.p2,6,4,180)
     end
   end,
   input=function()
     if g.frame==2 then
-      log("  both players move to same tile")
+      log("  both players move to same tile (one dashes)")
       test.mark_time=g.now
-      return input.p1_right|input.p2_left
+      return input.p1_right|input.p2_left|input.p2_o
     end
   end,
   update_post=function()

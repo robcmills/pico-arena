@@ -1,4 +1,4 @@
 
-player movement collisions with other player
-  both players move to same tile
+player dash collisions with other player
+  both players move to same tile (one dashes)
   o both players do not occupy same tile
