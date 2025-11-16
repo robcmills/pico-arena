@@ -430,8 +430,8 @@ end
 
 function _init()
   init_state()
-  --init_immediate()
-  init_tests()
+  init_immediate()
+  --init_tests()
 end
 
 -- move player in direction z until they collide with something
@@ -558,11 +558,6 @@ function move_player(player,z,is_push)
   local to_y=player.tile_y+dy
   -- check for collisions that would prevent movement
   local to_spr=aget(to_x,to_y) -- target arena sprite
-  -- solid tiles
-  if fget(to_spr,sprites.is_solid) then
-    sfxd(sounds.player_move_solid_collision_bump,0.5)
-    return false
-  end
   -- void
   if not is_push and not settings.enable_void_suicide and is_void(to_spr) then
     sfxd(sounds.player_move_solid_collision_bump,0.5)
@@ -699,7 +694,7 @@ function player_line_collision(collider,shooter,z)
     if is_dashing(collider) then
       collider.dash_particles={}
     end
-    collider_pushed=push_player(collider,z)
+    push_player(collider,z)
   elseif #collider.explode_particles==0 then
     explode_player(collider,z)
     increase_score(shooter)
@@ -1237,7 +1232,21 @@ function update_void_fall(p)
   end
 end
 
+function update_solid_tile_collisions(p)
+  local cps=get_player_collision_points(p)
+  for cp in all(cps) do
+    local tx,ty=pixel_to_tile(cp.x,cp.y)
+    local to_spr=aget(tx,ty) -- target arena sprite
+    if fget(to_spr,sprites.is_solid) then
+      cancel_movement(p)
+      sfxd(sounds.player_move_solid_collision_bump,0.5)
+      return
+    end
+  end
+end
+
 function update_player_collisions(p)
+  update_solid_tile_collisions(p)
   update_void_fall(p)
 end
 
@@ -1851,6 +1860,16 @@ function get_opposite_direction(d)
   return d*d==8100 and -d or 180-d
 end
 
+-- get points on edge of player hitbox in each cardinal direction
+function get_player_collision_points(p)
+  local points={}
+  local pc=get_player_center(p)
+  for z in all({0,90,180,-90}) do
+    add(points,translate_point(pc,z,2))
+  end
+  return points
+end
+
 function get_reticle_pos(p)
   local x=p.pixel_x+3
   if p.z==0 then x+=6
@@ -1890,4 +1909,11 @@ function slowdown(age,lifetime)
   if t<0 then t=0 end
   if t>1 then t=1 end
   return 1-(1-t)^3
+end
+
+-- @param p point {x,y}
+-- @param z direction in degrees clockwise (0=East,90=South)
+-- @param r radius distance to translate
+function translate_point(p,z,r)
+  return {x=p.x+r*cos(z/360),y=p.y+r*sin(-z/360)}
 end
