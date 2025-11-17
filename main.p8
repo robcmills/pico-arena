@@ -62,7 +62,7 @@ function parse_arenas(a)
   return o
 end
 
-arenas=parse_arenas("arena1,0,0,10,10,arena2,10,0,12,16,arena3,26,0,12,12,arena4,38,0,12,13,arena5,51,0,13,12,arena6,63,0,12,13,chess,76,0,10,12,arena7,88,0,11,15,red_pill,103,0,6,14,menu,0,52,12,14,test1,119,55,9,9,test2,107,54,9,12")
+arenas=parse_arenas("cube,0,0,10,10,rainbow,10,0,12,16,space,26,0,12,12,diamond,38,0,12,13,invader,51,0,13,12,rooms,63,0,12,13,chess,76,0,10,12,bluey,88,0,11,15,red_pill,103,0,6,14,menu,0,52,12,14,test1,119,55,9,9,test2,107,54,9,12")
 
 settings={
   burst_color=yellow,
@@ -216,8 +216,8 @@ end
 -- get sprite number of arena tile
 function aget(x,y)
   -- bounds check
-  if x<0 or x>g.arena.w or y<0 or y>g.arena.h then
-    return nil
+  if x<0 or x>g.arena.w-1 or y<0 or y>g.arena.h-1 then
+    return sprites.void
   end
   return mget(g.arena.x+x,g.arena.y+y)
 end
@@ -425,13 +425,13 @@ end
 function init_immediate()
   music(-1)
   s.state="game"
-  init_game(arenas.red_pill)
+  init_game(arenas.invader)
 end
 
 function _init()
   init_state()
   --init_immediate()
-  init_tests()
+  --init_tests()
 end
 
 -- move player in direction z until they collide with something

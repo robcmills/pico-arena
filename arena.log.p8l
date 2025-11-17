@@ -3,3 +3,8 @@ player dash collisions with other player (long distance)
   both players move to same tile (one dashes)
   x p1 pushed back to starting position
   x p2 dash canceled
+
+player dash collisions with other player (long distance)
+  both players move to same tile (one dashes)
+  x p1 pushed back to starting position
+  x p2 dash canceled
