@@ -66,7 +66,7 @@ arenas=parse_arenas("cube,0,0,10,10,rainbow,10,0,12,16,space,26,0,12,12,diamond,
 
 settings={
   burst_color=yellow,
-  burst_delay=0.2,  -- seconds between burst fires
+  burst_delay=0.4,  -- seconds between burst fires
   burst_energy_loss=1,
   burst_grow_duration=0.2,  -- seconds burst radius grows
   burst_ring_color=dark_gray,
