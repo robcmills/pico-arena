@@ -90,7 +90,7 @@ settings={
   line_push=1,  -- number of tiles a line collision pushes the player
   player_damage_duration=0.32, -- seconds player damage animation lasts
   player_dash_particle_lifetime=0.2,  -- seconds a dash particle lasts
-  player_dash_velocity=0.02,  -- seconds per tile of movement (lower is faster)
+  player_dash_velocity=0.04,  -- seconds per tile of movement (lower is faster)
   player_explode_duration=1, -- seconds player explode animation lasts
   player_fall_into_void_anim_time=0.3, -- seconds player fall into void animation lasts
   player_fire_anim_time=0.3,  -- seconds player fire animation lasts
@@ -361,6 +361,8 @@ function init_player(id,c)
     last_fire_time=0,
     last_move_bits=0,
     last_move_time=nil,
+    last_pixel_x=0,
+    last_pixel_y=0,
     last_spawn_time=0,
     spawn_particles={},
     w=sprites.line_spr, -- selected weapon
@@ -434,51 +436,30 @@ function _init()
   --init_tests()
 end
 
--- move player in direction z until they collide with something
--- is_continue is true if we are continuing existing dash
-function dash_player(player,z,is_continue)
-  is_continue=is_continue==nil and false or is_continue
-  if not is_continue then
-    -- check if can dash
-    if player.last_move_time~=nil then return end
-    if player.energy<=0 then
-      sfx(sounds.empty_energy)
-      -- TODO: flash player energy bar light_gray
-      move_player(player,z)
-      return
-    end
+function dash_player(player,z)
+  -- check if can dash
+  if player.last_move_time~=nil then return end
+  if player.energy<=0 then
+    sfx(sounds.empty_energy)
+    -- TODO: flash player energy bar light_gray
+    move_player(player,z)
+    return
   end
-  local collider=raycast({x=player.tile_x,y=player.tile_y},z,true)
-  local target={x=collider.x,y=collider.y}
-  if collider.type~='void' or (collider.type=='void' and not settings.enable_void_suicide) then
-    -- get adjacent tile
-    if z==0 then target.x-=1
-    elseif z==180 then target.x+=1
-    elseif z==90 then target.y-=1
-    elseif z==-90 then target.y+=1 end
-  end
-  -- cannot dash if already adjacent to collider
-  if target.x==player.tile_x and target.y==player.tile_y then return end
   -- dash is happening
   -- update player flip state and z dir
   if z==0 then player.flip_x=false end
   if z==180 then player.flip_x=true end
   player.z=z
-  if not is_continue then
-    lose_energy(player,1)
-  end
+  lose_energy(player,1)
   -- dash player
   player.last_move_time=g.now
-  player.to_x=target.x
-  player.to_y=target.y
-  player.from_x=player.tile_x
-  player.from_y=player.tile_y
   player.velocity=settings.player_dash_velocity
   sfx(sounds.player_dash)
 end
 
 function increase_score(p)
   p.score+=1
+  -- TODO: play score change animation
 end
 
 -- check for collisions mid-dash
@@ -528,22 +509,6 @@ function player_dash_collision(player)
   return false
 end
 
--- @param p player intending to move
--- @param to_x,to_y destination tile
--- @return true if player would collide with other player
-function check_other_player_collision(p,to_x,to_y)
-  local op=p.id==1 and g.p2 or g.p1 -- other player
-  -- can not collide with inactive player
-  if not is_active(op) then return false end
-  -- op is already occupying dest tile
-  if op.tile_x==to_x and op.tile_y==to_y then return true end
-  -- op is moving to dest tile and would get there first
-  local opc=get_player_center(op)
-  local toc=get_tile_center(to_x,to_y)
-  local op_dist=get_distance(opc.x,opc.y,toc.x,toc.y)
-  return op.to_x==to_x and op.to_y==to_y and op_dist<=8
-end
-
 -- move player in direction z one tile
 function move_player(player,z,is_push)
   is_push=is_push==nil and false or is_push
@@ -560,11 +525,6 @@ function move_player(player,z,is_push)
   local to_spr=aget(to_x,to_y) -- target arena sprite
   -- void
   if not is_push and not settings.enable_void_suicide and is_void(to_spr) then
-    sfxd(sounds.player_move_solid_collision_bump,0.5)
-    return false
-  end
-  -- other player collisions
-  if check_other_player_collision(player,to_x,to_y) then
     sfxd(sounds.player_move_solid_collision_bump,0.5)
     return false
   end
@@ -1088,6 +1048,7 @@ end
 
 function cancel_movement(p)
   p.last_move_time=nil
+  -- revert to previous position
   p.pixel_x=tile_to_pixel(p.tile_x,"x")
   p.pixel_y=tile_to_pixel(p.tile_y,"y")
   p.from_x=nil
@@ -1097,41 +1058,61 @@ function cancel_movement(p)
   p.velocity=0
 end
 
+function update_player_dash_movement(p)
+  local d=8/settings.player_dash_velocity*g.dt
+  if p.z==0 or p.z==180 then
+    p.pixel_x+=d*(p.z==0 and 1 or -1)
+  elseif p.z==90 or p.z==-90 then
+    p.pixel_y+=d*(p.z==90 and 1 or -1)
+  end
+end
+
 function update_player_movement(p)
   if p.last_move_time==nil then return end
+  -- calculate delta pixels
+  local m=get_move_vector(p)
+  local dpixels=0
+  local interpolation=0
+  if is_dashing(p) then
+    dpixels=8/settings.player_dash_velocity*g.dt
+  else
+    local dtime=g.now-p.last_move_time
+    local dtiles=(m==0 or m==180) and p.to_x-p.from_x or p.to_y-p.from_y
+    local total_time=abs(dtiles)*p.velocity
+    interpolation=min(dtime/total_time,1)
+    dpixels=dtiles*g.tile_size*interpolation
+  end
 
-  local dir=p.from_x<p.to_x and 0 or p.from_x>p.to_x and 180 or p.from_y<p.to_y and 90 or -90
-  local dtime=g.now-p.last_move_time
-  local dtiles=(dir==0 or dir==180) and p.to_x-p.from_x or p.to_y-p.from_y
-  local total_time=abs(dtiles)*p.velocity
-  local interpolation=min(dtime/total_time,1)
-  local dpixels=dtiles*g.tile_size*interpolation
+  -- preserve previous position for collision rollbacks
+  p.last_pixel_x=p.pixel_x
+  p.last_pixel_y=p.pixel_y
 
-  if dir==0 or dir==180 then
-    p.pixel_x=tile_to_pixel(p.from_x,"x")+dpixels
-    -- if existing perpendicular partially interpolated movement then
-    -- cancel it by "snapping" to new movement direction
-    p.pixel_y=tile_to_pixel(p.to_y,"y")
-  elseif dir==90 or dir==-90 then
-    p.pixel_y=tile_to_pixel(p.from_y,"y")+dpixels
-    p.pixel_x=tile_to_pixel(p.to_x,"x")
+  -- update player position
+  if is_dashing(p) then
+    if p.z==0 or p.z==180 then
+      p.pixel_x+=dpixels*(p.z==0 and 1 or -1)
+    elseif p.z==90 or p.z==-90 then
+      p.pixel_y+=dpixels*(p.z==90 and 1 or -1)
+    end
+  else
+    if m==0 or m==180 then
+      p.pixel_x=tile_to_pixel(p.from_x,"x")+dpixels
+      -- if existing perpendicular partially interpolated movement then
+      -- cancel it by "snapping" to new movement direction
+      -- (occurs when player movement is interrupted by weapon knockback)
+      p.pixel_y=tile_to_pixel(p.to_y,"y")
+    elseif m==90 or m==-90 then
+      p.pixel_y=tile_to_pixel(p.from_y,"y")+dpixels
+      p.pixel_x=tile_to_pixel(p.to_x,"x")
+    end
   end
 
   -- update current tile position based on pixel position
   p.tile_x=flr((p.pixel_x+g.tile_size/2-g.arena.sx)/g.tile_size)
   p.tile_y=flr((p.pixel_y+g.tile_size/2-g.arena.sy)/g.tile_size)
 
-  -- if we are dashing, do collision check
-  if p.velocity==settings.player_dash_velocity then
-    if interpolation==1 and not player_dash_collision(p) then
-      -- if no collision then continue dashing
-      dash_player(p,p.z,true)
-    end
-    return
-  end
-
-  -- are we done moving?
-  if interpolation==1 then
+  -- clean up at end of movement
+  if not is_dashing(p) and interpolation==1 then
     p.last_move_time=nil
     p.pixel_x=tile_to_pixel(p.to_x,"x")
     p.pixel_y=tile_to_pixel(p.to_y,"y")
@@ -1245,7 +1226,26 @@ function update_solid_tile_collisions(p)
   end
 end
 
+function update_other_player_collisions(p)
+  local op=p.id==1 and g.p2 or g.p1 -- other player
+  if not is_active(op) then return end -- can not collide with inactive player
+  local pc=get_player_center(p)
+  local opc=get_player_center(op)
+  local dist=get_distance(pc.x,pc.y,opc.x,opc.y)
+  if dist<=6 then
+    sfxd(sounds.player_move_solid_collision_bump,0.5)
+    cancel_movement(p)
+    -- rollback player position
+    local ptx,pty=pixel_to_tile(p.last_pixel_x,p.last_pixel_y)
+    p.tile_x=ptx
+    p.tile_y=pty
+    p.pixel_x=tile_to_pixel(ptx,"x")
+    p.pixel_y=tile_to_pixel(pty,"y")
+  end
+end
+
 function update_player_collisions(p)
+  update_other_player_collisions(p)
   update_solid_tile_collisions(p)
   update_void_fall(p)
 end
@@ -1854,6 +1854,18 @@ function get_adjacent_tile(x,y,dir)
   local dx=dir==0 and 1 or dir==180 and -1 or 0
   local dy=dir==90 and 1 or dir==-90 and -1 or 0
   return {x=x+dx,y=y+dy}
+end
+
+-- get movement as vector between "from" and "to" points
+-- because player may be "pushed" in a direction different than they are facing
+-- unless "to" point is nil (player is dashing)
+function get_move_vector(p)
+  return (p.to_x==nil or p.to_y==nil) and p.z or get_z(p.from_x,p.from_y,p.to_x,p.to_y)
+end
+
+function get_z(ax,ay,bx,by)
+  local angle=atan2(bx-ax,-(by-ay))*360
+  return angle>180 and angle-360 or angle
 end
 
 function get_opposite_direction(d)
