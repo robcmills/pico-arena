@@ -164,21 +164,21 @@ tests={{
       g.p1.last_energy_loss_time=-settings.energy_loss_delay
       g.p2.last_energy_loss_time=-settings.energy_loss_delay
       -- set player positions
-      set_player_pos(g.p1,1,4,0)
+      set_player_pos(g.p1,2,3,0)
       set_player_pos(g.p2,10,4,180)
     end
   end,
   input=function()
     if g.frame==2 then
-      log("  both players move to same tile (one dashes)")
+      log("  player2 dashes p1 moves into dash path")
       test.mark_time=g.now
-      return input.p1_right|input.p2_left|input.p2_o
+      return input.p1_down|input.p2_left|input.p2_o
     end
   end,
   update_post=function()
-    if g.now>test.mark_time+settings.player_dash_velocity*10+frame_duration_60 then
+    if g.now>test.mark_time+settings.player_dash_velocity*10+settings.player_velocity+frame_duration_60 then
       assert_true(g.p1.tile_x==1,"p1 pushed back to starting position")
-      assert_true(g.p2.tile_x==3,"p2 dash canceled")
+      assert_true(g.p2.tile_x==2,"p2 does not occupy same tile")
       return true -- test finished
     end
   end,
@@ -430,8 +430,8 @@ end
 
 function _init()
   init_state()
-  init_immediate()
-  --init_tests()
+  --init_immediate()
+  init_tests()
 end
 
 -- move player in direction z until they collide with something
@@ -488,13 +488,13 @@ end
 function player_dash_collision(player)
   local other_player=player.id==1 and g.p2 or g.p1
   local target={x=player.tile_x,y=player.tile_y}
-  -- get adjacent tile
-  if player.z==0 then target.x+=1
-  elseif player.z==180 then target.x-=1
-  elseif player.z==90 then target.y+=1
-  elseif player.z==-90 then target.y-=1 end
+  -- check occupied tile
+  local is_occupied=player.tile_x==target.x and player.tile_y==target.y
+  -- check adjacent tile
+  local adj=get_adjacent_tile(player.tile_x,player.tile_y,player.z)
+  local is_adj=adj.x==other_player.tile_x and adj.y==other_player.tile_y
   -- check if other player is occupying adjacent tile
-  if target.x==other_player.tile_x and target.y==other_player.tile_y then
+  if is_occupied or is_adj then
     -- if collision detected, cancel dash
     cancel_movement(player)
     -- check for dash vs dash collision

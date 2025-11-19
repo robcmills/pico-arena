@@ -1,10 +1,20 @@
 
 player dash collisions with other player (long distance)
-  both players move to same tile (one dashes)
-  x p1 pushed back to starting position
-  x p2 dash canceled
+  both players move to same tile (raycast tile) (one dashes)
+  o p1 pushed back to starting position
+  o p2 does not occupy same tile
 
 player dash collisions with other player (long distance)
-  both players move to same tile (one dashes)
-  x p1 pushed back to starting position
-  x p2 dash canceled
+  both players move to same tile (raycast tile) (one dashes)
+  o p1 pushed back to starting position
+  o p2 does not occupy same tile
+
+player dash collisions with other player (long distance)
+  player2 dashes p1 moves into dash path
+  o p1 pushed back to starting position
+  x p2 does not occupy same tile
+
+player dash collisions with other player (long distance)
+  player2 dashes p1 moves into dash path
+  o p1 pushed back to starting position
+  x p2 does not occupy same tile
