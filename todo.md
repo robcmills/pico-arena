@@ -12,7 +12,6 @@
   - [ ] direct hit does 3x dmg, adjacent splash does 2x dmg
 - [ ] increase burst radius
 - [ ] increase dash pushback
-- [ ] add burst delay
 - [ ] handle line mid-movement/dash
 
 - [ ] Add more map tile types
@@ -142,4 +141,5 @@
 - [x] enable controlled cube explosion
 - [x] line beats cube
 - [x] fix disappearing cubes
+- [x] add burst delay
 

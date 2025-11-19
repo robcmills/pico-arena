@@ -62,11 +62,11 @@ function parse_arenas(a)
   return o
 end
 
-arenas=parse_arenas("arena1,0,0,10,10,arena2,10,0,12,16,arena3,26,0,12,12,arena4,38,0,12,13,arena5,51,0,13,12,arena6,63,0,12,13,chess,76,0,10,12,arena7,88,0,11,15,red_pill,103,0,6,14,menu,0,52,12,14,test1,119,55,9,9,test2,107,54,9,12")
+arenas=parse_arenas("cube,0,0,10,10,rainbow,10,0,12,16,space,26,0,12,12,diamond,38,0,12,13,invader,51,0,13,12,rooms,63,0,12,13,chess,76,0,10,12,bluey,88,0,11,15,red_pill,103,0,6,14,void,0,12,10,14,columns,14,12,11,15,menu,0,52,12,14,test1,119,55,9,9,test2,107,54,9,12")
 
 settings={
   burst_color=yellow,
-  burst_delay=0.2,  -- seconds between burst fires
+  burst_delay=0.4,  -- seconds between burst fires
   burst_energy_loss=1,
   burst_grow_duration=0.2,  -- seconds burst radius grows
   burst_ring_color=dark_gray,
@@ -164,21 +164,21 @@ tests={{
       g.p1.last_energy_loss_time=-settings.energy_loss_delay
       g.p2.last_energy_loss_time=-settings.energy_loss_delay
       -- set player positions
-      set_player_pos(g.p1,1,4,0)
+      set_player_pos(g.p1,2,3,0)
       set_player_pos(g.p2,10,4,180)
     end
   end,
   input=function()
     if g.frame==2 then
-      log("  both players move to same tile (one dashes)")
+      log("  player2 dashes p1 moves into dash path")
       test.mark_time=g.now
-      return input.p1_right|input.p2_left|input.p2_o
+      return input.p1_down|input.p2_left|input.p2_o
     end
   end,
   update_post=function()
-    if g.now>test.mark_time+settings.player_dash_velocity*10+frame_duration_60 then
+    if g.now>test.mark_time+settings.player_dash_velocity*10+settings.player_velocity+frame_duration_60 then
       assert_true(g.p1.tile_x==1,"p1 pushed back to starting position")
-      assert_true(g.p2.tile_x==3,"p2 dash canceled")
+      assert_true(g.p2.tile_x==2,"p2 does not occupy same tile")
       return true -- test finished
     end
   end,
@@ -216,8 +216,8 @@ end
 -- get sprite number of arena tile
 function aget(x,y)
   -- bounds check
-  if x<0 or x>g.arena.w or y<0 or y>g.arena.h then
-    return nil
+  if x<0 or x>g.arena.w-1 or y<0 or y>g.arena.h-1 then
+    return sprites.void
   end
   return mget(g.arena.x+x,g.arena.y+y)
 end
@@ -425,7 +425,7 @@ end
 function init_immediate()
   music(-1)
   s.state="game"
-  init_game(arenas.red_pill)
+  init_game(arenas.columns)
 end
 
 function _init()
@@ -488,13 +488,13 @@ end
 function player_dash_collision(player)
   local other_player=player.id==1 and g.p2 or g.p1
   local target={x=player.tile_x,y=player.tile_y}
-  -- get adjacent tile
-  if player.z==0 then target.x+=1
-  elseif player.z==180 then target.x-=1
-  elseif player.z==90 then target.y+=1
-  elseif player.z==-90 then target.y-=1 end
+  -- check occupied tile
+  local is_occupied=player.tile_x==target.x and player.tile_y==target.y
+  -- check adjacent tile
+  local adj=get_adjacent_tile(player.tile_x,player.tile_y,player.z)
+  local is_adj=adj.x==other_player.tile_x and adj.y==other_player.tile_y
   -- check if other player is occupying adjacent tile
-  if target.x==other_player.tile_x and target.y==other_player.tile_y then
+  if is_occupied or is_adj then
     -- if collision detected, cancel dash
     cancel_movement(player)
     -- check for dash vs dash collision
