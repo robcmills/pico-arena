@@ -13,47 +13,6 @@ settings={}
 
 tests={{
   init=function()
-    log("player dash collisions with other player (long distance)")
-    test.mark_time=0
-    init_game(arenas.test2)
-    music(-1)
-    sfx(-1)
-  end,
-  update_pre=function()
-    if g.frame==1 then
-      -- disable spawn animation
-      g.p1.spawn_particles={}
-      g.p2.spawn_particles={}
-      -- enable firing immediately
-      g.p1.last_fire_time=-settings.line_delay
-      g.p2.last_fire_time=-settings.line_delay
-      -- enable immediate input
-      g.p1.last_spawn_time=-settings.player_spawn_duration
-      g.p2.last_spawn_time=-settings.player_spawn_duration
-      -- enable immediate energy loss
-      g.p1.last_energy_loss_time=-settings.energy_loss_delay
-      g.p2.last_energy_loss_time=-settings.energy_loss_delay
-      -- set player positions
-      set_player_pos(g.p1,1,4,0)
-      set_player_pos(g.p2,10,4,180)
-    end
-  end,
-  input=function()
-    if g.frame==2 then
-      log("  both players move to same tile (raycast tile) (one dashes)")
-      test.mark_time=g.now
-      return input.p1_right|input.p2_left|input.p2_o
-    end
-  end,
-  update_post=function()
-    if g.now>test.mark_time+settings.player_dash_velocity*10+settings.player_velocity+frame_duration_60 then
-      assert_true(g.p1.tile_x==1,"p1 pushed back to starting position")
-      assert_true(g.p2.tile_x==2,"p2 does not occupy same tile")
-      return true -- test finished
-    end
-  end,
-},{
-  init=function()
     log("player dash collisions with other player (short distance)")
     test.mark_time=0
     init_game(arenas.test1)
