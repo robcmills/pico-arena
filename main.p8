@@ -430,7 +430,7 @@ end
 
 function _init()
   init_state()
-  init_immediate()
+  --init_immediate()
   --init_tests()
 end
 
@@ -1762,7 +1762,7 @@ function draw_menu_items(items)
     local key_color=is_selected and white or dark_gray
     local value_color=is_selected and yellow or dark_gray
     local y=(6+i)*g.tile_size+1
-    local text="\f"..int_to_p8hex(key_color)..item[1]..":".."\f"..int_to_p8hex(value_color).."⬅️ "..item[2].." ➡️"
+    local text="\f"..int_to_p8hex(key_color)..item[1]..":".."\f"..int_to_p8hex(value_color).."⬅️"..item[2].."➡️"
     printcx(text,y)
   end
 end
