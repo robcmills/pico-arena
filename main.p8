@@ -439,7 +439,7 @@ end
 
 function _init()
   init_state()
-  init_immediate()
+  --init_immediate()
   --init_tests()
 end
 
@@ -1738,7 +1738,7 @@ end
 
 function draw_title()
   print("pic",43,33,blue)
-  spr(17,54,32,1,1)
+  spr(sprites.player_right,54,32,1,1)
   spr(sprites.reticle_right,61,32,1,1)
   print("arena",64,33,red)
 end
