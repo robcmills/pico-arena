@@ -121,20 +121,24 @@ sounds={
 }
 
 sprites={
-  cube_spr=35,
+  cube_spr=21,
+  dash_down=18,
+  dash_right=17,
+  energy_spr=19,
   flags={
     is_solid=0, -- block movement
     is_spawn=1, -- spawn point
   },
-  energy_spr=33, -- sprite index for energy pickups
-  line_spr=34,
+  line_spr=20,
   player_down=3,
   player_right=1,
   player_squint_down=5,
   player_squint_right=4,
   player_up=2,
-  trophy_spr=49,
+  reticle_down=7,
+  reticle_right=6,
   spawn_spr=4,
+  trophy_spr=22,
   void=0,
 }
 
@@ -1457,9 +1461,9 @@ function draw_player_dir(p)
   local y_offset=p.z==-90 and -1 or p.z==90 and 1 or 0
   local y_tile_offset=p.z==90 and -1 or 0
   local y=p.pixel_y+y_offset*8+y_tile_offset
-  local sprn=x_offset==0 and 21 or 20
+  local sprn=x_offset==0 and sprites.reticle_down or sprites.reticle_right
   if p.velocity==settings.player_dash_velocity then
-    sprn=x_offset==0 and 25 or 24
+    sprn=x_offset==0 and sprites.dash_down or sprites.dash_right
   end
   spr(sprn,x,y,1,1,x_offset<0,y_offset<0)
 end
@@ -1735,7 +1739,7 @@ end
 function draw_title()
   print("pic",43,33,blue)
   spr(17,54,32,1,1)
-  spr(20,61,32,1,1)
+  spr(sprites.reticle_right,61,32,1,1)
   print("arena",64,33,red)
 end
 
