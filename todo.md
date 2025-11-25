@@ -1,63 +1,8 @@
-# Bugs
-
-# DONE
-
-- [x] Use _update60
-- [x] Refactor movement
-- [x] Add "tests"
-- [x] Fix line
-  - [x] fix line end point not aligning with player
-  - [x] line collision should cancel player movement|dash
-- [x] Add "dash" move
-  - [x] dmg collider and push back
-  - [x] add particle trail
-  - [x] change dash trail color
-  - [x] drain energy when dashing
-  - [x] handle dash vs dash collision (cancel)
-  - [x] cancel dash if hit with line weapon
-- [x] Add blocking (energy shield)
-  - [x] drain energy while shielding
-  - [x] reflect line shots
-- [x] rock, paper, scissor mechanic
-    - shield beats laser
-    - dash beats shield
-    - laser beats dash
-- [x] fall into void
-  - [x] subtract from player score (enable negative score)
-  - [x] insulate falling player (no damage, no shield, no movement, etc.)
-- [x] Namespace all game state globals (game.x)
-- [x] Prevent fragged player from colliding
-- [x] Respawn fragged player
-- [x] Add frag counts to HUD
-- [x] segment hp and energy bars
-- [x] enable shield mid-movement
-- [x] disable move into void (suicide)
-- [x] Make players face each other on first spawn
-- [x] disable shield while firing
-- [x] add shield attack (burst)
-  - [x] test dash beats burst
-  - [x] test burst vs burst
-  - [x] test burst vs shield
-- [x] prevent negative scores
-- [x] Add game clock
-- [x] Add energy
-  - [x] Implement energy respawn (timer)
-- [x] Add splash start screen
-- [x] Add menu screen to choose game type, arena, player color, etc.
-- [x] add slowdown to player explode particles
-- [x] sfx names
-- [x] Add initial timeout to game end state to ignore player input that spills over from game
-- [x] fix player move solid collision sfx stutter (sfxd)
-- [x] prevent continuous dash attacks (prevent dmg/push when taking damage)
-- [x] respawn should reset energy
-- [x] enable controlled cube explosion
-- [x] line beats cube
-- [x] fix disappearing cubes
-- [x] add burst delay
-
-
 # TODO
 
+- [ ] add powerups
+  some unique powerups that are featured as the centerpoint of each arena
+  that start the match unspawned, and respawn on a much slower timer (30/60/90 seconds)
 - [ ] fix bug where both players occupy/cross same tile
 - [ ] fix bug where activating shield with no energy does not play sfx
 - [ ] fix controlled last cube explosion (when energy is zero)
@@ -72,7 +17,7 @@
 - [ ] handle line mid-movement/dash
 
 - [ ] Add more map tile types
-  - [ ] destructible walls
+  - [ ] destructible blocks
   - [ ] movable walls
   - [x] voids
   - [ ] "push" pads
@@ -144,4 +89,60 @@
 - [ ] Prevent fire when taking damage (duel mechanic:first to draw gains advantage)
 - [ ] enable adjacent dash
 - [ ] dash player collisions should push back 1 tile or more? into void?
+
+# DONE
+
+- [x] Use _update60
+- [x] Refactor movement
+- [x] Add "tests"
+- [x] Fix line
+  - [x] fix line end point not aligning with player
+  - [x] line collision should cancel player movement|dash
+- [x] Add "dash" move
+  - [x] dmg collider and push back
+  - [x] add particle trail
+  - [x] change dash trail color
+  - [x] drain energy when dashing
+  - [x] handle dash vs dash collision (cancel)
+  - [x] cancel dash if hit with line weapon
+- [x] Add blocking (energy shield)
+  - [x] drain energy while shielding
+  - [x] reflect line shots
+- [x] rock, paper, scissor mechanic
+    - shield beats laser
+    - dash beats shield
+    - laser beats dash
+- [x] fall into void
+  - [x] subtract from player score (enable negative score)
+  - [x] insulate falling player (no damage, no shield, no movement, etc.)
+- [x] Namespace all game state globals (game.x)
+- [x] Prevent fragged player from colliding
+- [x] Respawn fragged player
+- [x] Add frag counts to HUD
+- [x] segment hp and energy bars
+- [x] enable shield mid-movement
+- [x] disable move into void (suicide)
+- [x] Make players face each other on first spawn
+- [x] disable shield while firing
+- [x] add shield attack (burst)
+  - [x] test dash beats burst
+  - [x] test burst vs burst
+  - [x] test burst vs shield
+- [x] prevent negative scores
+- [x] Add game clock
+- [x] Add energy
+  - [x] Implement energy respawn (timer)
+- [x] Add splash start screen
+- [x] Add menu screen to choose game type, arena, player color, etc.
+- [x] add slowdown to player explode particles
+- [x] sfx names
+- [x] Add initial timeout to game end state to ignore player input that spills over from game
+- [x] fix player move solid collision sfx stutter (sfxd)
+- [x] prevent continuous dash attacks (prevent dmg/push when taking damage)
+- [x] respawn should reset energy
+- [x] enable controlled cube explosion
+- [x] line beats cube
+- [x] fix disappearing cubes
+- [x] add burst delay
+
 

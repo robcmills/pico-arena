@@ -128,6 +128,11 @@ sprites={
   },
   energy_spr=33, -- sprite index for energy pickups
   line_spr=34,
+  player_down=3,
+  player_right=1,
+  player_squint_down=5,
+  player_squint_right=4,
+  player_up=2,
   trophy_spr=49,
   spawn_spr=4,
   void=0,
@@ -1550,21 +1555,21 @@ function draw_player(p)
     return
   end
 
-  local sprn=17 -- left/right
-  if p.z==-90 then sprn=18 end -- up
-  if p.z==90 then sprn=19 end -- down
+  local sprn=sprites.player_right
+  if p.z==-90 then sprn=sprites.player_up end
+  if p.z==90 then sprn=sprites.player_down end
 
   local xoffset=p.flip_x and -1 or 0 -- account for off-center sprites
 
   -- player fire animation
   if is_firing(p) then
-    if sprn==17 then sprn=22 end -- use "squinting" sprites
-    if sprn==19 then sprn=23 end
+    if sprn==sprites.player_right then sprn=sprites.player_squint_right
+    elseif sprn==sprites.player_down then sprn=sprites.player_squint_down end
   end
 
   if is_taking_damage(p) then
-    if sprn==17 then sprn=22 end -- use "squinting" sprites
-    if sprn==19 then sprn=23 end
+    if sprn==sprites.player_right then sprn=sprites.player_squint_right
+    elseif sprn==sprites.player_down then sprn=sprites.player_squint_down end
     pal(g.p1.c,10) -- swap player color -> yellow
   end
 
