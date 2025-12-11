@@ -1,6 +1,8 @@
 pico-8 cartridge // http://www.pico-8.com
 version 43
 __lua__
+-- pico arena
+-- by robcmills
 cls()
 #include main.p8
 __gfx__

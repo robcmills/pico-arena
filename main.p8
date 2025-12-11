@@ -152,9 +152,9 @@ test={
 
 tests={{
   init=function()
-    log("player dash collisions with other player (long distance)")
+    log("line weapon demo")
     test.mark_time=0
-    init_game(arenas.test2)
+    init_game(arenas.test1)
     music(-1)
     sfx(-1)
   end,
@@ -174,20 +174,22 @@ tests={{
       g.p2.last_energy_loss_time=-settings.energy_loss_delay
       -- set player positions
       set_player_pos(g.p1,1,4,0)
-      set_player_pos(g.p2,10,4,180)
+      set_player_pos(g.p2,5,4,180)
+      -- set weapons
+      g.p1.w=sprites.cube_spr
+      -- set hp
+      g.p2.hp=1
     end
   end,
   input=function()
     if g.frame==2 then
-      log("  both players move to same tile (one dashes)")
+      log("  player 1 shoots cube")
       test.mark_time=g.now
-      return input.p1_right|input.p2_left|input.p2_o
+      return input.p1_x
     end
   end,
   update_post=function()
-    if g.now>test.mark_time+settings.player_dash_velocity*10+frame_duration_60 then
-      assert_true(g.p1.tile_x==1,"p1 pushed back to starting position")
-      assert_true(g.p2.tile_x==3,"p2 dash canceled")
+    if g.now>test.mark_time+frame_duration_60*10+settings.player_explode_duration+frame_duration_60 then
       return true -- test finished
     end
   end,
